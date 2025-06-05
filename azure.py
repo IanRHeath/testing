@@ -1,4 +1,16 @@
-1 validation error for JiraAPIWrapper
-mode
-  Extra inputs are not permitted [type=extra_forbidden, input_value='server', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+from langchain_community.utilities.jira import JiraAPIWrapper
+
+jira = JiraAPIWrapper(
+    jira_instance_url="https://ontrack-internal.amd.com",
+    jira_api_token   ="MjQ0MzM3NDQzNTY0OsLr4yZLHgekftk2OkuNGC+Ngumk",
+    # PAT alone is enough on Data‑Center / Server
+    # ⬅️  no  mode=  here
+)
+
+issues = jira.run(
+    Query="project = STXH ORDER BY updated DESC"
+)[:2]                                        # cap to 2
+
+print("Got", len(issues), "issues")
+for i in issues:
+    print(i.key, i.fields.summary, f"[{i.fields.status.name}]")
