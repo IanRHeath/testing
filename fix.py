@@ -1,6 +1,7 @@
 """
-jira_llm_search_retry.py
+jira_llm_search_2cap.py
 Natural‑language ➜ Azure GPT‑4o ➜ JQL ➜ Jira search
+Prints at most TWO matching tickets.
 """
 
 # ─── 1. HARD‑CODED CREDENTIALS (local dev only!) ───────────────────────
@@ -9,21 +10,20 @@ JIRA_USERNAME     = "iheath12"
 JIRA_API_TOKEN    = "MTk3NzYzMTQxNzg4Olqxo3LJfC2bcC8R6XVE1XzbF+bo"
 
 AZURE_OPENAI_ENDPOINT         = "https://llm-api.amd.com"
-AZURE_OPENAI_DEPLOYMENT       = "o3-mini"                 # <- exact name in portal
+AZURE_OPENAI_DEPLOYMENT       = "o3-mini"                 # exact name in portal
 AZURE_OPENAI_API_VERSION      = "2024-05-01-preview"
 AZURE_OPENAI_KEY              = "37f0bc138e7944eab89e3421d445675f"
 AZURE_OPENAI_SUBSCRIPTION_KEY = "37f0bc138e7944eab89e3421d445675f"
 
 # ─── 2. DEPENDENCIES ──────────────────────────────────────────────────
-import os, openai
-from tenacity import retry, wait_exponential, stop_after_attempt          # pip install tenacity
+import os
 from langchain_openai import AzureChatOpenAI
 from langchain_community.utilities.jira import JiraAPIWrapper
 from langchain_community.tools.jira.tool import JiraAction
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_openai_functions_agent, AgentExecutor
 
-#  Ensure fallback client always has a key
+# Ensure fallback client always has a key
 os.environ["OPENAI_API_KEY"] = AZURE_OPENAI_KEY
 
 # ─── 3. LLM (built internally by LangChain) ───────────────────────────
@@ -34,7 +34,7 @@ llm = AzureChatOpenAI(
     default_headers      = {
         "Ocp-Apim-Subscription-Key": AZURE_OPENAI_SUBSCRIPTION_KEY
     },
-    max_tokens           = 512,       # stay well under limit during triage
+    max_tokens           = 512,
     temperature          = 0,
 )
 
@@ -69,17 +69,7 @@ def build_executor() -> AgentExecutor:
     agent = create_openai_functions_agent(llm, tools, prompt)
     return AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-# ─── 5. RETRY WRAPPER FOR LLM CALLS ────────────────────────────────────
-@retry(                                     # 2 s → 4 s → 8 s → 16 s
-    wait=wait_exponential(multiplier=1, min=2, max=16),
-    stop=stop_after_attempt(5),
-    retry_error_callback=lambda rs: (_ for _ in ()).throw(rs.outcome.exception()),
-)
-def invoke_with_retry(executor, user_prompt: str):
-    """Run the agent with back‑off on transient 5xx Azure errors."""
-    return executor.invoke({"input": user_prompt})
-
-# ─── 6. CLI LOOP ───────────────────────────────────────────────────────
+# ─── 5. CLI LOOP (prints max 2 issues) ────────────────────────────────
 def main() -> None:
     executor = build_executor()
     print("🤖  Ask me about Jira tickets (type 'quit' to exit)\n")
@@ -88,8 +78,8 @@ def main() -> None:
             q = input("➜ ")
             if q.lower() in {"quit", "exit"}:
                 break
-            res = invoke_with_retry(executor, q)     # <‑ use retry wrapper
-            issues = res["output"]
+            res = executor.invoke({"input": q})
+            issues = res["output"][:2]           # ← HARD CAP at 2
             if not issues:
                 print("No matches.\n")
                 continue
@@ -102,14 +92,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# ─── 7. (Optional) CURL PROBE  ─────────────────────────────────────────
-"""
-curl -X POST \
-  "https://llm-api.amd.com/openai/deployments/o3-mini/chat/completions?api-version=2024-05-01-preview" \
-  -H "Content-Type: application/json" \
-  -H "api-key: 37f0bc138e7944eab89e3421d445675f" \
-  -H "Ocp-Apim-Subscription-Key: 37f0bc138e7944eab89e3421d445675f" \
-  -d '{"messages":[{"role":"user","content":"Hello"}],"max_tokens":1}'
-"""
