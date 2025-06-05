@@ -1,7 +1,1 @@
-   <p>Basic Authentication Failure - Reason : AUTHENTICATED_FAILED</p>
-                            <p><a href="/secure/MyJiraHome.jspa">Go to Jira home</a></p>
-                        </div>
-                </main>
-        </div></div>
-</body>
-</html>
+MjQ0MzM3NDQzNTY0OsLr4yZLHgekftk2OkuNGC+Ngumk
