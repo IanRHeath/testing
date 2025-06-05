@@ -1,41 +1,48 @@
+"""
+jira_llm_search.py  —  NL request ➜ Azure GPT‑4o ➜ JQL ➜ Jira search
+"""
+
+# ─── 1. HARD‑CODED CREDENTIALS (for local testing only) ───────────────
 JIRA_INSTANCE_URL = "https://ontrack-internal.amd.com"
 JIRA_USERNAME     = "iheath12"
 JIRA_API_TOKEN    = "MTk3NzYzMTQxNzg4Olqxo3LJfC2bcC8R6XVE1XzbF+bo"
 
 AZURE_OPENAI_ENDPOINT         = "https://llm-api.amd.com"
+AZURE_OPENAI_DEPLOYMENT       = "gpt‑4o‑mini‑dev"        # deployment (not model) name
 AZURE_OPENAI_API_VERSION      = "2024-05-01-preview"
-AZURE_OPENAI_DEPLOYMENT       = "gpt‑4o‑mini‑dev"
 AZURE_OPENAI_KEY              = "37f0bc138e7944eab89e3421d445675f"
 AZURE_OPENAI_SUBSCRIPTION_KEY = "37f0bc138e7944eab89e3421d445675f"
 
-from openai import AzureOpenAI
-from langchain_openai import ChatOpenAI
+# ─── 2. DEPENDENCIES ──────────────────────────────────────────────────
+from langchain_openai import AzureChatOpenAI                # NOTE: Azure variant
 from langchain_community.utilities.jira import JiraAPIWrapper
 from langchain_community.tools.jira.tool import JiraAction
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_openai_functions_agent, AgentExecutor
+import os, warnings
 
-aoai_client = AzureOpenAI(
-    api_key        = AZURE_OPENAI_KEY,
-    api_version    = AZURE_OPENAI_API_VERSION,
-    azure_endpoint = AZURE_OPENAI_ENDPOINT,
-    default_headers={
-        "Ocp-Apim-Subscription-Key": AZURE_OPENAI_SUBSCRIPTION_KEY,
+# Ensure the base SDK sees a key even if LC spins up a fallback client
+os.environ["OPENAI_API_KEY"] = AZURE_OPENAI_KEY
+
+# ─── 3. LLM (built internally by LangChain) ───────────────────────────
+llm = AzureChatOpenAI(
+    azure_deployment     = AZURE_OPENAI_DEPLOYMENT,
+    azure_endpoint       = AZURE_OPENAI_ENDPOINT,
+    openai_api_version   = AZURE_OPENAI_API_VERSION,
+    default_headers      = {
+        "Ocp-Apim-Subscription-Key": AZURE_OPENAI_SUBSCRIPTION_KEY
     },
+    temperature          = 0,
 )
 
-llm = ChatOpenAI(
-    client  = aoai_client,              
-    model   = AZURE_OPENAI_DEPLOYMENT,  
-    temperature = 0,
-)
-
+# ─── 4. BUILD AGENT EXECUTOR ──────────────────────────────────────────
 def build_executor() -> AgentExecutor:
     jira_wrapper = JiraAPIWrapper(
         jira_instance_url = JIRA_INSTANCE_URL,
         jira_username     = JIRA_USERNAME,
         jira_api_token    = JIRA_API_TOKEN,
     )
+
     jira_search = JiraAction(
         api_wrapper = jira_wrapper,
         action      = "search_issues",
@@ -59,9 +66,10 @@ def build_executor() -> AgentExecutor:
     agent = create_openai_functions_agent(llm, tools, prompt)
     return AgentExecutor(agent=agent, tools=tools, verbose=True)
 
+# ─── 5. CLI LOOP ──────────────────────────────────────────────────────
 def main() -> None:
     executor = build_executor()
-    print("Ask me about Jira tickets (type 'quit' to exit)\n")
+    print("🤖  Ask me about Jira tickets (type 'quit' to exit)\n")
     try:
         while True:
             q = input("➜ ")
@@ -77,7 +85,7 @@ def main() -> None:
                 print(f"{i.key:<10} {i.fields.summary} [{i.fields.status.name}]")
             print()
     except KeyboardInterrupt:
-        print("\nBye!")
+        print("\nBye! 👋")
 
 if __name__ == "__main__":
     main()
