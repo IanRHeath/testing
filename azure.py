@@ -1,13 +1,25 @@
-from langchain_community.utilities.jira import JiraAPIWrapper
+# jira_probe.py  –  run with:  python jira_probe.py
+# The "atlassian" package is already a dependency of langchain‑community
+from atlassian import Jira
 
-jira = JiraAPIWrapper(
-    jira_instance_url="https://ontrack-internal.amd.com",
-    jira_api_token   ="MjQ0MzM3NDQzNTY0OsLr4yZLHgekftk2OkuNGC+Ngumk",
+jira = Jira(
+    url   = "https://ontrack-internal.amd.com",
+    token = "MjQ0MzM3NDQzNTY0OsLr4yZLHgekftk2OkuNGC+Ngumk",  #  PAT  (Data‑Center)
+    cloud = False                                           #  DC/Server mode
+    # If your server still requires a username, add  username="iheath12"
 )
 
-#            ── mode ──                     ────── query ──────
-issues = jira.run("server", "project = STXH ORDER BY updated DESC")[:2]
+response = jira.jql(
+    "project = STXH ORDER BY updated DESC",
+    limit = 2          # hard cap to 2 results
+)
 
+issues = response["issues"]
 print("Got", len(issues), "issues")
 for i in issues:
-    print(i.key, i.fields.summary, f"[{i.fields.status.name}]")
+    fields = i["fields"]
+    print(
+        i["key"],
+        fields["summary"],
+        f"[{fields['status']['name']}]"
+    )
