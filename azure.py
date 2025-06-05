@@ -1,6 +1,2 @@
-issues = jira.client.search_issues(         # note “client”, not “run”
-            jql_str   = "project = STXH ORDER BY updated DESC",
-            maxResults=2                    # camel‑case R (SDK style)
-)
-for i in issues:
-    print(i.key, i.fields.summary)
+ raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'JiraAPIWrapper' object has no attribute 'client'
