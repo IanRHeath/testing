@@ -1,1 +1,1 @@
-openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable
+AttributeError: 'AzureOpenAI' object has no attribute 'create'
