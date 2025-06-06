@@ -1,7 +1,9 @@
+Your JIRA Query Request: Please give me the 10 latest P1 STXH PLAT tickets
+
 
 > Entering new AgentExecutor chain...
 
-Invoking: `jira_search_tool` with `{'query': 'Please give me the 10 latest P1 STXH PLAT tickets'}`
+Invoking: `jira_search_tool` with `{'query': 'project = PLATFORM AND priority = Highest AND summary ~ "STXH" ORDER BY created DESC fetch 10'}`
 
 
 
@@ -33,9 +35,20 @@ Messages:
     For 'stale' tickets, infer 'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND updated < "-30d"'
     For 'duplicate' tickets, extract relevant keywords from the user's prompt (e.g., "login errors" -> "login error").
 
-  Role: user, Content: Please give me the 10 latest P1 STXH PLAT tickets
+  Role: user, Content: project = PLATFORM AND priority = Highest AND summary ~ "STXH" ORDER BY created DESC fetch 10
 ----------------------------------------------
 
+LLM extracted parameters: {
+    "intent": "list",
+    "priority": "P1",
+    "program": "STXH",
+    "project": "PLAT",
+    "maxResults": 10,
+    "order": "DESC"
+}
+Built JQL: project = 'PLATFORM' AND priority = "P1 (Gating)" AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC
 
-JIRA Bot Error: LLM API Error during parameter extraction: Status Code: 400, Response: {"elapsed":"00:00:00.1745205","llmService":"AzureOpenAI","deploymentInfo":{"id":"dvue-aoai-001-o3mini","version":"2024-12-01-preview"},"statusCode":400,"response":{"error":{"message":"Unsupported parameter: 'temperature' is not supported with this model.","type":"invalid_request_error","param":"temperature","code":"unsupported_parameter"}},"message":"Generate one or more predicted (chat) completions returned BadRequest."}
+Attempting JIRA search with JQL: project = 'PLATFORM' AND priority = "P1 (Gating)" AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC
+
+JIRA Bot Error: JIRA search failed for JQL 'project = 'PLATFORM' AND priority = "P1 (Gating)" AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC': The value 'PLATFORM' does not exist for the field 'project'.. Status code: 400. Please refine the query.
 Please check your JQL query or JIRA connection.
