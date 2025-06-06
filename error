@@ -1,16 +1,2 @@
-JIRA client initialized successfully with basic_auth (username/password).
-Welcome to the JiraTriageLLMAgent!
-Type your request in natural language. Type 'exit' to quit.
-Examples: 'Show me all stale tickets in PLATFORM project'
-          'Find duplicate tickets related to login errors'
-          'Bugs assigned to me in PLATFORM with high priority'
-LangChain Azure LLM configured: Model=o3-mini, Endpoint=https://llm-api.amd.com
-LangChain Agent initialized successfully.
-
-Your JIRA Query Request: Please give me the 10 latest P1 STXH PLAT tickets
-
-
-> Entering new AgentExecutor chain...
-
-An unexpected error occurred: Error code: 401 - {'statusCode': 401, 'message': 'Access denied due to missing subscription key. Make sure to include subscription key when making requests to an API.'}
+An unexpected error occurred: Completions.create() got an unexpected keyword argument 'openai_api_extra_headers'
 Please try rephrasing your request or contact support if the issue persists.
