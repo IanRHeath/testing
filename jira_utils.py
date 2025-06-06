@@ -3,24 +3,24 @@ import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
 
-load_dotenv() # Load environment variables from .env
+load_dotenv()
 
 JIRA_SERVER_URL = os.getenv("JIRA_SERVER_URL")
 JIRA_USERNAME = os.getenv("JIRA_USERNAME")
-JIRA_PASSWORD = os.getenv("JIRA_PASSWORD") # <-- Renamed and now explicitly for password
+JIRA_PASSWORD = os.getenv("JIRA_PASSWORD")
 
 class JiraBotError(Exception):
     """Custom exception for Jira Bot related errors."""
     pass
 
 def initialize_jira_client():
-    """Initializes and returns a JIRA client using basic_auth with username and password."""
+    """Initializes and returns a JIRA client."""
     if not all([JIRA_SERVER_URL, JIRA_USERNAME, JIRA_PASSWORD]):
-        raise JiraBotError("JIRA environment variables (URL, USERNAME, PASSWORD) are not set. Please check .env file.")
+        raise JiraBotError("JIRA environment variables (URL, USERNAME, PASSWORD) are not set.")
     try:
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
-            basic_auth=(JIRA_USERNAME, JIRA_PASSWORD), # <-- Direct basic_auth with password
+            basic_auth=(JIRA_USERNAME, JIRA_PASSWORD),
             timeout=10
         )
         print("JIRA client initialized successfully with basic_auth (username/password).")
@@ -30,23 +30,24 @@ def initialize_jira_client():
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA client initialization: {e}")
 
-def search_jira_issues(jql_query: str, client: JIRA) -> list[dict]:
+def search_jira_issues(jql_query: str, client: JIRA, max_results: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
     :param jql_query: The JQL query string.
     :param client: An initialized JIRA client.
+    :param max_results: The maximum number of issues to return.
     :return: A list of dictionaries, each representing a formatted JIRA issue.
     """
     print(f"\nAttempting JIRA search with JQL: {jql_query}")
     try:
-        issues = client.search_issues(jql_query, maxResults=20) # Limit results for CLI display
+        # Use the max_results parameter from the function argument
+        issues = client.search_issues(jql_query, maxResults=max_results)
         if not issues:
             print("No issues found for the given JQL.")
             return []
 
         formatted_issues = []
         for issue in issues:
-            # Safely access fields, as some might be None if not set on an issue
             assignee_name = issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned"
             status_name = issue.fields.status.name if issue.fields.status else "Unknown"
             priority_name = issue.fields.priority.name if issue.fields.priority else "Unknown"
