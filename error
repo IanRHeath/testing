@@ -1,46 +1,23 @@
-Your JIRA Query Request: Please give me the 10 latest P1 STXH PLAT tickets
+Sending a simple test prompt to the LLM...
 
-
-> Entering new AgentExecutor chain...
-
-An unexpected error occurred: Error code: 500
---- FULL TRACEBACK ---
+--- LLM Test FAILED ---
+An error occurred while trying to invoke the LLM: Error code: 400 - {'elapsed': '00:00:00.1515704', 'llmService': 'AzureOpenAI', 'deploymentInfo': {'id': 'dvue-aoai-001-o3mini', 'version': '2024-12-01-preview'}, 'statusCode': 400, 'response': {'error': {'message': "Unsupported parameter: 'temperature' is not supported with this model.", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_parameter'}}, 'message': 'Generate one or more predicted (chat) completions returned BadRequest.'}
+This confirms the issue is with the LLM server or your connection to it.
 Traceback (most recent call last):
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/main.py", line 34, in main
-    result = agent.invoke({"input": user_input})
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/chains/base.py", line 167, in invoke
-    raise e
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/chains/base.py", line 157, in invoke
-    self._call(inputs, run_manager=run_manager)
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1620, in _call
-    next_step_output = self._take_next_step(
-                       ^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1326, in _take_next_step
-    [
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1354, in _iter_next_step
-    output = self._action_agent.plan(
-             ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 577, in plan
-    for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3438, in stream
-    yield from self.transform(iter([input]), config, **kwargs)
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3424, in transform
-    yield from self._transform_stream_with_config(
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2215, in _transform_stream_with_config
-    chunk: Output = context.run(next, iterator)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3386, in _transform
-    yield from final_pipeline
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1429, in transform
-    for ichunk in input:
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5647, in transform
-    yield from self.bound.transform(
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1447, in transform
-    yield from self.stream(final, config, **kwargs)
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 499, in stream
-    for chunk in self._stream(input_messages, stop=stop, **kwargs):
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 911, in _stream
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/test_llm_connection.py", line 21, in test_connection
+    response = llm.invoke("Hello, are you working?")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 372, in invoke
+    self.generate_prompt(
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 957, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 776, in generate
+    self._generate_with_cache(
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1022, in _generate_with_cache
+    result = self._generate(
+             ^^^^^^^^^^^^^^^
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 995, in _generate
     response = self.client.create(**payload)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/_utils/_utils.py", line 287, in wrapper
@@ -54,7 +31,4 @@ Traceback (most recent call last):
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1037, in request
     raise self._make_status_error_from_response(err.response) from None
-openai.InternalServerError: Error code: 500
-----------------------
-
-Please try rephrasing your request or contact support if the issue persists.
+openai.BadRequestError: Error code: 400 - {'elapsed': '00:00:00.1515704', 'llmService': 'AzureOpenAI', 'deploymentInfo': {'id': 'dvue-aoai-001-o3mini', 'version': '2024-12-01-preview'}, 'statusCode': 400, 'response': {'error': {'message': "Unsupported parameter: 'temperature' is not supported with this model.", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_parameter'}}, 'message': 'Generate one or more predicted (chat) completions returned BadRequest.'}
