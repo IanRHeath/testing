@@ -1,2 +1,19 @@
-An unexpected error occurred: Completions.create() got an unexpected keyword argument 'openai_api_extra_headers'
+Raw Azure OpenAI client configured.
+JIRA client initialized successfully with basic_auth (username/password).
+Welcome to the JiraTriageLLMAgent!
+Type your request in natural language. Type 'exit' to quit.
+Examples: 'Show me all stale tickets in PLATFORM project'
+          'Find duplicate tickets related to login errors'
+          'Bugs assigned to me in PLATFORM with high priority'
+/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/main.py:15: UserWarning: Parameters {'default_headers'} should be specified explicitly. Instead they were passed in as part of `model_kwargs` parameter.
+  agent = get_jira_agent()
+LangChain Azure LLM configured: Model=o3-mini, Endpoint=https://llm-api.amd.com
+LangChain Agent initialized successfully.
+
+Your JIRA Query Request: Please give me the 10 latest P1 STXH PLAT tickets
+
+
+> Entering new AgentExecutor chain...
+
+An unexpected error occurred: Error code: 500
 Please try rephrasing your request or contact support if the issue persists.
