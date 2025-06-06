@@ -1,0 +1,9 @@
+JIRA_SERVER_URL="https://ontrack-internal.amd.com"
+JIRA_USERNAME="iheath12" # <-- Your new username
+JIRA_PASSWORD="your_actual_password_for_iheath12" # <-- This is the actual password, not a PAT
+
+# Azure OpenAI Specific Configuration (remain unchanged from previous setup)
+LLM_API_KEY="37f0bc138e7944eab89e3421d445675f"
+LLM_API_VERSION="2024-06-01"
+LLM_RESOURCE_ENDPOINT="https://llm-api.amd.com"
+LLM_CHAT_DEPLOYMENT_NAME="o3-mini"
