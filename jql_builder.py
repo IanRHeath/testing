@@ -1,12 +1,13 @@
 # jql_builder.py
 import json
+import os # Make sure os is imported for getenv
 from typing import Dict, Any
-import openai
-from jira import JIRA # Just for type hinting
+import openai # Needed for the raw openai.AzureOpenAI client
+from jira import JIRA # Just for type hinting in comments
 
 # Assuming local imports
 from llm_config import get_azure_openai_client
-from jira_utils import JiraBotError # For error handling in JQL building
+from jira_utils import JiraBotError # For custom error handling
 
 # Global client for parameter extraction (initialized once)
 RAW_AZURE_OPENAI_CLIENT = None
@@ -79,13 +80,24 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         projects_list=", ".join(project_map.keys())
     )
 
+    messages_to_send = [
+        {"role": "system", "content": formatted_system_prompt},
+        {"role": "user", "content": prompt_text}
+    ]
+
+    # --- ADDED PRINT STATEMENT FOR DEBUGGING ---
+    print("\n--- LLM Request Details (for extract_params) ---")
+    print(f"Model: {os.getenv('LLM_CHAT_DEPLOYMENT_NAME')}")
+    print("Messages:")
+    for msg in messages_to_send:
+        print(f"  Role: {msg['role']}, Content: {msg['content']}")
+    print("----------------------------------------------\n")
+    # --- END ADDITION ---
+
     try:
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
             model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), # Use the deployment name for the model
-            messages=[
-                {"role": "system", "content": formatted_system_prompt},
-                {"role": "user", "content": prompt_text}
-            ],
+            messages=messages_to_send,
             max_tokens=256, # Increased token limit for potentially more complex JSON
             temperature=0.0 # Keep low for structured output
         )
@@ -96,6 +108,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         return params
     except json.JSONDecodeError as e:
         raise JiraBotError(f"LLM output was not valid JSON: {content}. Error: {e}")
+    except openai.APIStatusError as e: # Catch specific API status errors for more detail
+        raise JiraBotError(f"LLM API Error during parameter extraction: Status Code: {e.status_code}, Response: {e.response.text}")
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
@@ -104,6 +118,8 @@ def build_jql(params: Dict[str, Any]) -> str:
     Constructs a JQL query string based on extracted parameters.
     """
     jql_parts = []
+    order_clause = ""
+    max_results_clause = ""
 
     # Handle project
     raw_proj = params.get("project", "").strip().upper()
@@ -150,25 +166,45 @@ def build_jql(params: Dict[str, Any]) -> str:
     if keywords:
         # Assuming keywords can apply to summary or description
         keyword_parts = []
-        for kw in keywords.split(','):
-            kw = kw.strip()
+        # Split keywords by comma, then strip whitespace
+        for kw_raw in keywords.split(','):
+            kw = kw_raw.strip()
             if kw:
                 keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
     # Handle order
-    if params.get("order"):
-        order_clause = f" ORDER BY created {params['order']}" # Assuming 'created' is the default field for ordering
+    order_direction = params.get("order", "").strip().upper()
+    if order_direction in ["ASC", "DESC"]:
+        # Defaulting to 'created' field for ordering, you might need to adjust this
+        order_clause = f" ORDER BY created {order_direction}"
+
+    # Handle maxResults for the JQL (this is for display limit, not part of JQL syntax itself)
+    # The maxResults param will be passed to jira.search_issues, not concatenated into JQL.
+    # So, we just ensure it's a valid integer for later use.
+    max_results = params.get("maxResults")
+    if isinstance(max_results, (int, str)):
+        try:
+            max_results_clause = int(max_results)
+        except ValueError:
+            max_results_clause = "" # Invalid, so ignore
+    else:
+        max_results_clause = "" # Default to 10 in search_jira_issues if not provided/valid
 
     if not jql_parts:
         # Fallback to a broad query if no specific parameters were extracted
-        return "project = 'PLATFORM'" # Or some other default
+        # This prevents an empty JQL query from being passed
+        jql = "project = 'PLATFORM'"
+    else:
+        jql = " AND ".join(jql_parts)
 
-    jql = " AND ".join(jql_parts)
-
-    if params.get("order"):
+    if order_clause:
         jql += order_clause # Append order clause at the very end
 
     print(f"Built JQL: {jql}")
+    
+    # Return JQL and maxResults separately if you need to use maxResults later,
+    # or just JQL if search_jira_issues will always use a fixed limit.
+    # For now, build_jql only returns the JQL string as per previous usage.
     return jql
