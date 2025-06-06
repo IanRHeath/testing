@@ -1,34 +1,41 @@
-Sending a simple test prompt to the LLM...
 
---- LLM Test FAILED ---
-An error occurred while trying to invoke the LLM: Error code: 400 - {'elapsed': '00:00:00.1515704', 'llmService': 'AzureOpenAI', 'deploymentInfo': {'id': 'dvue-aoai-001-o3mini', 'version': '2024-12-01-preview'}, 'statusCode': 400, 'response': {'error': {'message': "Unsupported parameter: 'temperature' is not supported with this model.", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_parameter'}}, 'message': 'Generate one or more predicted (chat) completions returned BadRequest.'}
-This confirms the issue is with the LLM server or your connection to it.
-Traceback (most recent call last):
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/test_llm_connection.py", line 21, in test_connection
-    response = llm.invoke("Hello, are you working?")
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 372, in invoke
-    self.generate_prompt(
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 957, in generate_prompt
-    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 776, in generate
-    self._generate_with_cache(
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1022, in _generate_with_cache
-    result = self._generate(
-             ^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 995, in _generate
-    response = self.client.create(**payload)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/_utils/_utils.py", line 287, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/resources/chat/completions/completions.py", line 925, in create
-    return self._post(
-           ^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1242, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1037, in request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'elapsed': '00:00:00.1515704', 'llmService': 'AzureOpenAI', 'deploymentInfo': {'id': 'dvue-aoai-001-o3mini', 'version': '2024-12-01-preview'}, 'statusCode': 400, 'response': {'error': {'message': "Unsupported parameter: 'temperature' is not supported with this model.", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_parameter'}}, 'message': 'Generate one or more predicted (chat) completions returned BadRequest.'}
+> Entering new AgentExecutor chain...
+
+Invoking: `jira_search_tool` with `{'query': 'Please give me the 10 latest P1 STXH PLAT tickets'}`
+
+
+
+--- LLM Request Details (for extract_params) ---
+Model: o3-mini
+Messages:
+  Role: system, Content:
+    You are an expert in extracting JIRA query parameters from natural language prompts.
+    Extract the intent (e.g., "list", "count", "find"), priority, program, project,
+    maximum number of results (maxResults), and order (ASC/DESC) as a JSON object only.
+    Infer keywords for summary/description search for 'duplicate' or 'similar' intent.
+
+    Available programs: STX, STXH, GNR, KRK, KRK2E, SHP, FRG
+    Available priorities: P1, P2, P3, P4
+    Available projects: PLAT
+
+    Example of expected JSON output:
+    {
+        "intent":"list",
+        "priority":"P2",
+        "program":"STXH",
+        "project":"PLAT",
+        "maxResults":5,
+        "order":"ASC",
+        "keywords": "login failure, timeout"
+    }
+
+    If a parameter is not explicitly mentioned, omit it from the JSON.
+    For 'stale' tickets, infer 'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND updated < "-30d"'
+    For 'duplicate' tickets, extract relevant keywords from the user's prompt (e.g., "login errors" -> "login error").
+
+  Role: user, Content: Please give me the 10 latest P1 STXH PLAT tickets
+----------------------------------------------
+
+
+JIRA Bot Error: LLM API Error during parameter extraction: Status Code: 400, Response: {"elapsed":"00:00:00.1745205","llmService":"AzureOpenAI","deploymentInfo":{"id":"dvue-aoai-001-o3mini","version":"2024-12-01-preview"},"statusCode":400,"response":{"error":{"message":"Unsupported parameter: 'temperature' is not supported with this model.","type":"invalid_request_error","param":"temperature","code":"unsupported_parameter"}},"message":"Generate one or more predicted (chat) completions returned BadRequest."}
+Please check your JQL query or JIRA connection.
