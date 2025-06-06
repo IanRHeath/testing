@@ -1,5 +1,23 @@
-An unexpected error occurred: Error code: 404 - {'statusCode': 404, 'message': 'Resource not found'}
-Please try rephrasing your request or contact support if the issue persists.
+import openai, json
+from jira import JIRA
+
+jira = JIRA('https://ontrack-internal.amd.com', basic_auth=('Z1_LSE_APEX_1','Ap3xp@ssword!2'))
+url = 'https://llm-api.amd.com'
+chat_dep = 'o3-mini'
+embed_dep = 'text-embedding-3-large'
+client = openai.AzureOpenAI(
+    api_key="37f0bc138e7944eab89e3421d445675f",
+    api_version='2024-06-01',
+    base_url=f"{url}/openai/deployments/{chat_dep}",
+    default_headers={'Ocp-Apim-Subscription-Key': "37f0bc138e7944eab89e3421d445675f"}
+)
+
+embed_client = openai.AzureOpenAI(
+    api_key="37f0bc138e7944eab89e3421d445675f",
+    api_version='2024-06-01',
+    base_url=f"{url}/openai/deployments/{embed_dep}",
+    default_headers={'Ocp-Apim-Subscription-Key': "37f0bc138e7944eab89e3421d445675f"}
+)
 
 program_map = {
     "STX": "Strix1 [PRG-000384]",
@@ -82,3 +100,21 @@ def build_jql(params: dict) -> str:
         jql += f" ORDER BY createdDate {params['order']}"
 
     return jql
+
+def summarize_issues(issues) -> str:
+    return "\n".join(
+        f"{i.key}: {i.fields.summary} [{i.fields.status.name}] assigned to {i.fields.assignee.displayName}"
+        for i in issues
+    )
+
+def main():
+    user_input = input("Enter your user prompt: ")
+    params = extract_params(user_input)
+    jql = build_jql(params)
+    print(jql)
+    issues = jira.search_issues(jql, maxResults=params.get("maxResults", 10))
+    summary = summarize_issues(issues)
+    print(summary)
+
+if __name__ == "__main__":
+    main()
