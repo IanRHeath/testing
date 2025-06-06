@@ -1,6 +1,8 @@
 # jira_agent.py
+import sys
 from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import PromptTemplate
+# Changed import: Use ChatPromptTemplate and MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.language_models.chat_models import BaseChatModel
 
 # Assuming local imports
@@ -48,12 +50,13 @@ def get_jira_agent() -> AgentExecutor:
     -   If the JIRA search tool returns an error, acknowledge the error and provide a user-friendly message, potentially suggesting rephrasing the request or checking JQL syntax if applicable.
     """
 
-    # Create the prompt template for the agent
-    prompt = PromptTemplate.from_messages(
+    # --- CORRECTED PROMPT CREATION ---
+    # Use ChatPromptTemplate for messages and MessagesPlaceholder for agent_scratchpad
+    prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_message),
             ("human", "{input}"),
-            ("placeholder", "{agent_scratchpad}"), # Required for agent internal thought process
+            MessagesPlaceholder(variable_name="agent_scratchpad"), # This is the correct way for ReAct agents
         ]
     )
 
