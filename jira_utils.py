@@ -18,20 +18,36 @@ def initialize_jira_client():
     if not all([JIRA_SERVER_URL, JIRA_USERNAME, JIRA_PAT]):
         raise JiraBotError("JIRA environment variables are not set. Please check .env file.")
     try:
-        # Using token_auth for PAT. If this fails, try basic_auth=(JIRA_USERNAME, JIRA_PAT)
+        # --- MODIFICATION HERE ---
+        # First, try token_auth for PAT (standard for Jira Cloud)
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
             token_auth=JIRA_PAT,
-            # For older JIRA Server/Data Center versions, basic_auth might be required:
-            # basic_auth=(JIRA_USERNAME, JIRA_PAT),
             timeout=10
         )
-        print("JIRA client initialized successfully.")
-        return jira_client
+        print("Attempted JIRA client initialization with token_auth.")
+
     except JIRAError as e:
-        raise JiraBotError(f"Failed to initialize JIRA client: {e.text}")
+        # If token_auth failed, try basic_auth as a fallback for Jira Server/Data Center PATs
+        print(f"Token_auth failed ({e.text}). Trying basic_auth with PAT as password...")
+        try:
+            jira_client = JIRA(
+                server=JIRA_SERVER_URL,
+                basic_auth=(JIRA_USERNAME, JIRA_PAT), # Use PAT as password
+                timeout=10
+            )
+            print("Attempted JIRA client initialization with basic_auth using PAT.")
+        except JIRAError as e_basic:
+            raise JiraBotError(f"Failed to initialize JIRA client with both token_auth and basic_auth: {e_basic.text}")
+        except Exception as e_basic_other:
+            raise JiraBotError(f"An unexpected error occurred during JIRA client basic_auth initialization: {e_basic_other}")
+
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA client initialization: {e}")
+
+    # If we reached here, one of the methods succeeded
+    print("JIRA client initialized successfully.")
+    return jira_client
 
 def search_jira_issues(jql_query: str, client: JIRA) -> list[dict]:
     """
@@ -64,7 +80,6 @@ def search_jira_issues(jql_query: str, client: JIRA) -> list[dict]:
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
     except JIRAError as e:
-        # JIRAError.text contains the detailed error message from JIRA
         raise JiraBotError(f"JIRA search failed for JQL '{jql_query}': {e.text}. Please refine the query.")
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA search: {e}")
