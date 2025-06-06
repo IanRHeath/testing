@@ -36,9 +36,11 @@ priority_map = {
     "P4": "P4 (No Impact/Notify)"
 }
 
+# --- MODIFIED BLOCK ---
 project_map = {
-    "PLAT": "PLATFORM" # Assuming PLAT maps to the full "PLATFORM" project key
+    "PLAT": "PLAT" # Corrected "PLATFORM" to "PLAT"
 }
+# --- END MODIFICATION ---
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     """
@@ -95,14 +97,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     # --- END ADDITION ---
 
     try:
-        # --- MODIFIED BLOCK ---
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
             model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), # Use the deployment name for the model
             messages=messages_to_send,
-            max_tokens=256 # Increased token limit for potentially more complex JSON
-            # temperature=0.0 <-- REMOVED THIS LINE
+            max_tokens=256, # Increased token limit for potentially more complex JSON
         )
-        # --- END MODIFICATION ---
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
         # Robustly try to parse JSON
@@ -131,8 +130,8 @@ def build_jql(params: Dict[str, Any]) -> str:
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     else:
-        # Default to "PLATFORM" if no project is specified, as per your instruction
-        jql_parts.append("project = 'PLATFORM'")
+        # Default to "PLAT" if no project is specified
+        jql_parts.append("project = 'PLAT'")
 
 
     # Handle priority
@@ -146,13 +145,9 @@ def build_jql(params: Dict[str, Any]) -> str:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
     # Handle program (assuming 'program' is a custom field in JIRA)
-    # If 'program' is not a direct JIRA field or a custom field, this part needs adjustment.
     raw_prog = params.get("program", "").strip().upper()
     if raw_prog:
         if raw_prog in program_map:
-            # Assuming program is a custom field in JIRA, and the JQL needs the full name.
-            # You might need to change 'program' to 'cf[xxxx]' if it's a custom field ID.
-            # For now, we'll assume 'program' is a JQL-queryable field name.
             jql_parts.append(f"program = '{program_map[raw_prog]}'")
         elif raw_prog in program_map.values():
             jql_parts.append(f"program = '{raw_prog}'")
@@ -166,9 +161,7 @@ def build_jql(params: Dict[str, Any]) -> str:
     # Handle keywords for "duplicate" or general search
     keywords = params.get("keywords")
     if keywords:
-        # Assuming keywords can apply to summary or description
         keyword_parts = []
-        # Split keywords by comma, then strip whitespace
         for kw_raw in keywords.split(','):
             kw = kw_raw.strip()
             if kw:
@@ -179,34 +172,26 @@ def build_jql(params: Dict[str, Any]) -> str:
     # Handle order
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
-        # Defaulting to 'created' field for ordering, you might need to adjust this
         order_clause = f" ORDER BY created {order_direction}"
 
-    # Handle maxResults for the JQL (this is for display limit, not part of JQL syntax itself)
-    # The maxResults param will be passed to jira.search_issues, not concatenated into JQL.
-    # So, we just ensure it's a valid integer for later use.
+    # Handle maxResults
     max_results = params.get("maxResults")
     if isinstance(max_results, (int, str)):
         try:
             max_results_clause = int(max_results)
         except ValueError:
-            max_results_clause = "" # Invalid, so ignore
+            max_results_clause = "" 
     else:
-        max_results_clause = "" # Default to 10 in search_jira_issues if not provided/valid
+        max_results_clause = ""
 
     if not jql_parts:
-        # Fallback to a broad query if no specific parameters were extracted
-        # This prevents an empty JQL query from being passed
-        jql = "project = 'PLATFORM'"
+        jql = "project = 'PLAT'"
     else:
         jql = " AND ".join(jql_parts)
 
     if order_clause:
-        jql += order_clause # Append order clause at the very end
+        jql += order_clause
 
     print(f"Built JQL: {jql}")
     
-    # Return JQL and maxResults separately if you need to use maxResults later,
-    # or just JQL if search_jira_issues will always use a fixed limit.
-    # For now, build_jql only returns the JQL string as per previous usage.
     return jql
