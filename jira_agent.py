@@ -1,6 +1,7 @@
 # jira_agent.py
 import sys
-from langchain.agents import AgentExecutor, create_react_agent
+# Changed import: Use create_tool_calling_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 # Changed import: Use ChatPromptTemplate and MessagesPlaceholder
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -16,7 +17,9 @@ def get_jira_agent() -> AgentExecutor:
     llm = get_llm() # Get your configured LLM instance
 
     # The agent's persona and instructions
-    # This is the most crucial part for good performance!
+    # Note: With create_tool_calling_agent, you generally don't need to explicitly mention
+    # '{tools}' or '{tool_names}' in the system message, as the LLM handles this via
+    # its function calling mechanism. The system message should focus on its persona.
     system_message = """
     You are an expert JQL (Jira Query Language) bot for your company's internal JIRA instance.
     Your primary goal is to accurately translate natural language requests into valid JQL queries
@@ -42,26 +45,28 @@ def get_jira_agent() -> AgentExecutor:
     -   **"Duplicate" Tickets:** A duplicate ticket implies a search for issues with *similar content* in their summary or description. Infer relevant keywords/phrases from the user's request and use the `~` operator (e.g., `summary ~ "timeout error" OR description ~ "login failure"`).
 
     **General Agent Behavior:**
-    -   If the user asks for information that requires a JQL query, use the `jira_search_tool`.
-    -   Your response should always be concise and directly answer the user's request.
+    -   When a JQL query is needed, use the `jira_search_tool`.
+    -   Your response should always be concise and directly answer the user's request, based on the results from the tools.
     -   If a query is ambiguous, ask for clarification (e.g., "Which project are you referring to?").
     -   If you cannot fulfill the request, state that clearly and offer alternative actions.
     -   Always prioritize generating valid JQL that accurately reflects the user's intent based on the context provided.
     -   If the JIRA search tool returns an error, acknowledge the error and provide a user-friendly message, potentially suggesting rephrasing the request or checking JQL syntax if applicable.
     """
 
-    # --- CORRECTED PROMPT CREATION ---
-    # Use ChatPromptTemplate for messages and MessagesPlaceholder for agent_scratchpad
+    # --- CORRECTED PROMPT CREATION for create_tool_calling_agent ---
+    # The MessagesPlaceholder for agent_scratchpad is still necessary for agent's thoughts.
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_message),
+            MessagesPlaceholder(variable_name="chat_history", optional=True), # Good for future conversational memory
             ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"), # This is the correct way for ReAct agents
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
 
-    # Create the agent
-    agent = create_react_agent(llm, ALL_JIRA_TOOLS, prompt)
+    # Create the agent using create_tool_calling_agent
+    # It automatically handles presenting tools to the LLM
+    agent = create_tool_calling_agent(llm, ALL_JIRA_TOOLS, prompt)
 
     # Create the AgentExecutor
     agent_executor = AgentExecutor(
