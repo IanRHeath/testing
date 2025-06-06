@@ -95,12 +95,14 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     # --- END ADDITION ---
 
     try:
+        # --- MODIFIED BLOCK ---
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
             model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), # Use the deployment name for the model
             messages=messages_to_send,
-            max_tokens=256, # Increased token limit for potentially more complex JSON
-            temperature=0.0 # Keep low for structured output
+            max_tokens=256 # Increased token limit for potentially more complex JSON
+            # temperature=0.0 <-- REMOVED THIS LINE
         )
+        # --- END MODIFICATION ---
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
         # Robustly try to parse JSON
