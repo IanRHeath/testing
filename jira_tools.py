@@ -1,64 +1,50 @@
 # jira_tools.py
 from langchain.tools import tool
 from typing import List, Dict, Any
-from jira import JIRA # Just for type hinting, not initialization here
-from datetime import datetime
+from jira import JIRA # Just for type hinting
 
-# Assuming jira_utils is in the same directory
+# Assuming local imports
 from jira_utils import search_jira_issues, initialize_jira_client, JiraBotError
+from jql_builder import extract_params, build_jql # Import the JQL builder functions
 
-# Initialize JIRA client globally or pass it around
-# For simplicity in this example, we'll initialize it once globally.
-# In a more complex application, you might use dependency injection.
+# Initialize JIRA client once globally for the tools
 JIRA_CLIENT_INSTANCE = None
 try:
     JIRA_CLIENT_INSTANCE = initialize_jira_client()
 except JiraBotError as e:
-    print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tool will not work: {e}")
-    # Exit or handle gracefully if JIRA is absolutely required.
-    # For now, we let it try to proceed, but functions will fail if client is None.
+    print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. JIRA search tool will not work: {e}")
 
 
 @tool
-def jira_search_tool(jql_query: str) -> List[Dict[str, Any]]:
+def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     """
-    Executes a JQL (Jira Query Language) query to search for issues.
-    This tool is designed to be called by an LLM agent that needs to find
-    JIRA tickets based on user requests.
+    Searches JIRA issues based on a natural language query.
+    This tool first extracts parameters from the query using an LLM, then constructs
+    a JQL query, and finally executes the JQL to find JIRA tickets.
 
-    **Instructions for LLM:**
-    - Always provide a complete and valid JQL query string as input.
-    - DO NOT include any explanatory text, only the JQL query string.
-    - Ensure field names are correct (e.g., 'project', 'status', 'assignee', 'summary', 'updated').
-    - When user asks for 'stale' tickets, interpret this as:
-      'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND updated < "-30d"'
-      Adjust the list of "open" statuses if "To Do", "In Progress", etc., are considered "open" in your context.
-    - When user asks for 'duplicate' tickets, interpret this as a search for issues
-      with similar summary or description content. Infer relevant keywords/phrases from
-      the user's request and use the `~` (text search) operator on `summary` or `description` fields.
-      Example: `summary ~ "login failure" OR description ~ "authentication error"`
-    - Use `currentUser()` for the current user's assignee/reporter.
-    - For date ranges, use relative JQL like `created >= "-1w"` (last week), `updated < "-30d"` (older than 30 days).
-    - Available project keys: "PLATFORM", "PLAT".
-    - Available standard fields: project, status, assignee, reporter, summary, description, comments, labels, components, fixVersion, affectedVersion, resolution, created, updated, priority, due.
-    - Available issue types: Bug, Task, Story, Epic, Sub-task, Change Request (assume common ones).
-    - Available priorities: Highest, High, Medium, Low, Lowest, Critical.
-    - **Example JQL:**
-        - `project = PLATFORM AND status in ("Open", "In Progress") AND assignee = currentUser()`
-        - `type = Bug AND priority = High AND updated >= "-1d"`
-        - `project = PLAT AND summary ~ "database connection refused" AND status = "To Do"`
-        - `status in ("Open", "To Do") AND updated < "-30d"` (for stale tickets)
-        - `summary ~ "timeout error" OR description ~ "connection reset"` (for duplicate-like search)
+    **Instructions for LLM Agent:**
+    - Call this tool with the full natural language query provided by the user.
+    - Do not try to convert the query to JQL yourself; this tool handles it.
+    - Focus on identifying user intent (e.g., searching for issues, counting, listing).
+    - This tool can understand concepts like 'stale tickets' and 'duplicate tickets' based on internal definitions.
 
-    :param jql_query: The JQL string to execute.
+    :param query: The natural language query from the user (e.g., "Show me all stale tickets in PLATFORM project", "Find duplicate tickets related to login errors").
     :return: A list of dictionaries, each representing a formatted JIRA issue.
              Returns an empty list if no issues are found.
-             Raises JiraBotError on JIRA API errors.
+             Raises JiraBotError on any error during parameter extraction, JQL building, or JIRA API call.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized. Cannot perform search.")
     try:
-        return search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE)
+        # Step 1: Extract parameters from natural language query
+        params = extract_params(query)
+        
+        # Step 2: Build JQL from extracted parameters
+        jql_query = build_jql(params)
+        
+        # Step 3: Execute JQL against JIRA
+        results = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE)
+        return results
     except JiraBotError as e:
         # Re-raise the custom error to be caught by the agent
         raise e
