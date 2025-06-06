@@ -26,8 +26,7 @@ def get_llm() -> BaseChatModel:
             api_version=LLM_API_VERSION,
             azure_endpoint=LLM_RESOURCE_ENDPOINT,
             azure_deployment=LLM_CHAT_DEPLOYMENT_NAME,
-            temperature=0.0,
-            # Pass default_headers directly as a keyword argument instead of in model_kwargs
+            # temperature=0.0,  <-- REMOVED THIS LINE
             default_headers=AZURE_OPENAI_DEFAULT_HEADERS
         )
         # --- END MODIFICATION ---
@@ -45,7 +44,7 @@ def get_azure_openai_client() -> openai.AzureOpenAI:
             api_key=LLM_API_KEY,
             api_version=LLM_API_VERSION,
             base_url=f"{LLM_RESOURCE_ENDPOINT}/openai/deployments/{LLM_CHAT_DEPLOYMENT_NAME}",
-            default_headers=AZURE_OPENAI_DEFAULT_HEADERS # This is correct for the raw client
+            default_headers=AZURE_OPENAI_DEFAULT_HEADERS
         )
         print("Raw Azure OpenAI client configured.")
         return client
