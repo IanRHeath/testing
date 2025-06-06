@@ -1,5 +1,6 @@
 # main.py
 import sys
+import traceback # <-- ADD THIS IMPORT
 from jira_agent import get_jira_agent
 from jira_utils import JiraBotError # Import the custom error
 
@@ -73,12 +74,14 @@ def main():
             print(f"\nJIRA Bot Error: {e}", file=sys.stderr)
             print("Please check your JQL query or JIRA connection.", file=sys.stderr)
         except Exception as e:
+            # --- MODIFIED BLOCK ---
             # Broader exceptions from LangChain or LLM
             print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
-            print("Please try rephrasing your request or contact support if the issue persists.", file=sys.stderr)
-            # Optionally print full traceback for detailed debugging:
-            # import traceback
-            # traceback.print_exc()
+            print("--- FULL TRACEBACK ---", file=sys.stderr)
+            traceback.print_exc() # This will print the full error stack
+            print("----------------------", file=sys.stderr)
+            print("\nPlease try rephrasing your request or contact support if the issue persists.", file=sys.stderr)
+            # --- END MODIFICATION ---
 
 if __name__ == "__main__":
     main()
