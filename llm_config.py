@@ -20,16 +20,17 @@ def get_llm() -> BaseChatModel:
     if not all([LLM_API_KEY, LLM_API_VERSION, LLM_RESOURCE_ENDPOINT, LLM_CHAT_DEPLOYMENT_NAME]):
         raise ValueError("Azure LLM environment variables are not fully set. Please check .env file.")
     try:
+        # --- MODIFIED BLOCK ---
         llm = AzureChatOpenAI(
             api_key=LLM_API_KEY,
             api_version=LLM_API_VERSION,
             azure_endpoint=LLM_RESOURCE_ENDPOINT,
             azure_deployment=LLM_CHAT_DEPLOYMENT_NAME,
-            temperature=0.0, # Set low temperature for factual JQL generation
-            # --- CRUCIAL CHANGE HERE ---
-            # Pass default_headers via model_kwargs which are directly passed to openai.AzureOpenAI constructor
-            model_kwargs={"default_headers": AZURE_OPENAI_DEFAULT_HEADERS}
+            temperature=0.0,
+            # Pass default_headers directly as a keyword argument instead of in model_kwargs
+            default_headers=AZURE_OPENAI_DEFAULT_HEADERS
         )
+        # --- END MODIFICATION ---
         print(f"LangChain Azure LLM configured: Model={LLM_CHAT_DEPLOYMENT_NAME}, Endpoint={LLM_RESOURCE_ENDPOINT}")
         return llm
     except Exception as e:
