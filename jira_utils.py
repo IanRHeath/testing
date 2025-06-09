@@ -2,11 +2,11 @@ import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
 
-load_dotenv() 
+load_dotenv()
 
 JIRA_SERVER_URL = os.getenv("JIRA_SERVER_URL")
 JIRA_USERNAME = os.getenv("JIRA_USERNAME")
-JIRA_PASSWORD = os.getenv("JIRA_PASSWORD") 
+JIRA_PASSWORD = os.getenv("JIRA_PASSWORD")
 
 class JiraBotError(Exception):
     """Custom exception for Jira Bot related errors."""
@@ -29,16 +29,17 @@ def initialize_jira_client():
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA client initialization: {e}")
 
-def search_jira_issues(jql_query: str, client: JIRA) -> list[dict]:
+def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
     :param jql_query: The JQL query string.
     :param client: An initialized JIRA client.
+    :param limit: The maximum number of issues to return. Defaults to 20.
     :return: A list of dictionaries, each representing a formatted JIRA issue.
     """
-    print(f"\nAttempting JIRA search with JQL: {jql_query}")
+    print(f"\nAttempting JIRA search with JQL: {jql_query} | Limit: {limit}")
     try:
-        issues = client.search_issues(jql_query, maxResults=20) 
+        issues = client.search_issues(jql_query, maxResults=limit)
         if not issues:
             print("No issues found for the given JQL.")
             return []
