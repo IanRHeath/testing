@@ -1,13 +1,12 @@
-# jira_utils.py
 import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
 
-load_dotenv() # Load environment variables from .env
+load_dotenv() 
 
 JIRA_SERVER_URL = os.getenv("JIRA_SERVER_URL")
 JIRA_USERNAME = os.getenv("JIRA_USERNAME")
-JIRA_PASSWORD = os.getenv("JIRA_PASSWORD") # <-- Renamed and now explicitly for password
+JIRA_PASSWORD = os.getenv("JIRA_PASSWORD") 
 
 class JiraBotError(Exception):
     """Custom exception for Jira Bot related errors."""
@@ -20,7 +19,7 @@ def initialize_jira_client():
     try:
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
-            basic_auth=(JIRA_USERNAME, JIRA_PASSWORD), # <-- Direct basic_auth with password
+            basic_auth=(JIRA_USERNAME, JIRA_PASSWORD),
             timeout=10
         )
         print("JIRA client initialized successfully with basic_auth (username/password).")
@@ -39,14 +38,13 @@ def search_jira_issues(jql_query: str, client: JIRA) -> list[dict]:
     """
     print(f"\nAttempting JIRA search with JQL: {jql_query}")
     try:
-        issues = client.search_issues(jql_query, maxResults=20) # Limit results for CLI display
+        issues = client.search_issues(jql_query, maxResults=20) 
         if not issues:
             print("No issues found for the given JQL.")
             return []
 
         formatted_issues = []
         for issue in issues:
-            # Safely access fields, as some might be None if not set on an issue
             assignee_name = issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned"
             status_name = issue.fields.status.name if issue.fields.status else "Unknown"
             priority_name = issue.fields.priority.name if issue.fields.priority else "Unknown"
