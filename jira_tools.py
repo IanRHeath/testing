@@ -1,13 +1,9 @@
-# jira_tools.py
 from langchain.tools import tool
 from typing import List, Dict, Any
-from jira import JIRA # Just for type hinting
-
-# Assuming local imports
+from jira import JIRA 
 from jira_utils import search_jira_issues, initialize_jira_client, JiraBotError
-from jql_builder import extract_params, build_jql # Import the JQL builder functions
+from jql_builder import extract_params, build_jql 
 
-# Initialize JIRA client once globally for the tools
 JIRA_CLIENT_INSTANCE = None
 try:
     JIRA_CLIENT_INSTANCE = initialize_jira_client()
@@ -36,20 +32,13 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized. Cannot perform search.")
     try:
-        # Step 1: Extract parameters from natural language query
         params = extract_params(query)
-        
-        # Step 2: Build JQL from extracted parameters
         jql_query = build_jql(params)
-        
-        # Step 3: Execute JQL against JIRA
         results = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE)
         return results
     except JiraBotError as e:
-        # Re-raise the custom error to be caught by the agent
         raise e
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
 
-# You can collect all tools in a list for the agent
 ALL_JIRA_TOOLS = [jira_search_tool]
