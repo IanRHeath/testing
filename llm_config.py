@@ -1,9 +1,8 @@
-# llm_config.py
 import os
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 from langchain_core.language_models.chat_models import BaseChatModel
-import openai # Needed for AzureOpenAI client for param extraction
+import openai
 
 load_dotenv()
 
@@ -11,8 +10,6 @@ LLM_API_KEY = os.getenv("LLM_API_KEY")
 LLM_API_VERSION = os.getenv("LLM_API_VERSION")
 LLM_RESOURCE_ENDPOINT = os.getenv("LLM_RESOURCE_ENDPOINT")
 LLM_CHAT_DEPLOYMENT_NAME = os.getenv("LLM_CHAT_DEPLOYMENT_NAME")
-
-# Define the extra header once, using the API key from .env
 AZURE_OPENAI_DEFAULT_HEADERS = {'Ocp-Apim-Subscription-Key': LLM_API_KEY}
 
 def get_llm() -> BaseChatModel:
@@ -20,16 +17,13 @@ def get_llm() -> BaseChatModel:
     if not all([LLM_API_KEY, LLM_API_VERSION, LLM_RESOURCE_ENDPOINT, LLM_CHAT_DEPLOYMENT_NAME]):
         raise ValueError("Azure LLM environment variables are not fully set. Please check .env file.")
     try:
-        # --- MODIFIED BLOCK ---
         llm = AzureChatOpenAI(
             api_key=LLM_API_KEY,
             api_version=LLM_API_VERSION,
             azure_endpoint=LLM_RESOURCE_ENDPOINT,
             azure_deployment=LLM_CHAT_DEPLOYMENT_NAME,
-            # temperature=0.0,  <-- REMOVED THIS LINE
             default_headers=AZURE_OPENAI_DEFAULT_HEADERS
         )
-        # --- END MODIFICATION ---
         print(f"LangChain Azure LLM configured: Model={LLM_CHAT_DEPLOYMENT_NAME}, Endpoint={LLM_RESOURCE_ENDPOINT}")
         return llm
     except Exception as e:
