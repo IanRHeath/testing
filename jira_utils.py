@@ -64,3 +64,36 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
         raise JiraBotError(f"JIRA search failed for JQL '{jql_query}': {e.text}. Status code: {e.status_code}. Please refine the query.")
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA search: {e}")
+
+def get_ticket_details(issue_key: str, client: JIRA) -> str:
+    """
+    Fetches detailed information for a single JIRA ticket, including comments.
+    :param issue_key: The key of the JIRA issue (e.g., "PLAT-123").
+    :param client: An initialized JIRA client.
+    :return: A formatted string containing the ticket's details.
+    """
+    print(f"Fetching details for ticket: {issue_key}")
+    try:
+        issue = client.issue(issue_key, expand="comments")
+        details = []
+        details.append(f"Title: {issue.fields.summary}")
+        details.append(f"Status: {issue.fields.status.name}")
+        assignee = issue.fields.assignee
+        details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
+        details.append("\n-- Description --")
+        details.append(issue.fields.description if issue.fields.description else "No description.")
+        details.append("\n-- Comments --")
+        if issue.fields.comment.comments:
+            for comment in issue.fields.comment.comments:
+                details.append(f"Comment by {comment.author.displayName} on {comment.created[:10]}:")
+                details.append(comment.body)
+                details.append("-" * 10)
+        else:
+            details.append("No comments.")
+        return "\n".join(details)
+    except JIRAError as e:
+        if e.status_code == 404:
+            raise JiraBotError(f"Ticket '{issue_key}' not found.")
+        raise JiraBotError(f"Failed to get details for '{issue_key}': {e.text}")
+    except Exception as e:
+        raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
