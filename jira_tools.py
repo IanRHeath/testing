@@ -22,10 +22,13 @@ def summarize_ticket_tool(issue_key: str) -> str:
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
-    
-    print(f"Summarizing ticket {issue_key}...")
-    # 1. Get the raw details and comments from Jira
-    details_text = get_ticket_details(issue_key, JIRA_CLIENT_INSTANCE)
+
+    # **FIX:** Sanitize the input to ensure correct JIRA key format (hyphen, not underscore).
+    sanitized_key = issue_key.replace('_', '-').upper()
+
+    print(f"Summarizing ticket {sanitized_key} (sanitized from input: '{issue_key}')...")
+    # 1. Get the raw details and comments from Jira using the sanitized key
+    details_text = get_ticket_details(sanitized_key, JIRA_CLIENT_INSTANCE)
 
     # 2. Use an LLM to generate a summary of the details
     llm = get_llm()
