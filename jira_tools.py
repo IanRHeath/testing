@@ -1,8 +1,8 @@
 from langchain.tools import tool
 from typing import List, Dict, Any
-from jira import JIRA 
+from jira import JIRA
 from jira_utils import search_jira_issues, initialize_jira_client, JiraBotError
-from jql_builder import extract_params, build_jql 
+from jql_builder import extract_params, build_jql
 
 JIRA_CLIENT_INSTANCE = None
 try:
@@ -17,6 +17,7 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     Searches JIRA issues based on a natural language query.
     This tool first extracts parameters from the query using an LLM, then constructs
     a JQL query, and finally executes the JQL to find JIRA tickets.
+    This tool can understand a requested number of results, like "top 5" or "latest 10".
 
     **Instructions for LLM Agent:**
     - Call this tool with the full natural language query provided by the user.
@@ -24,7 +25,7 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     - Focus on identifying user intent (e.g., searching for issues, counting, listing).
     - This tool can understand concepts like 'stale tickets' and 'duplicate tickets' based on internal definitions.
 
-    :param query: The natural language query from the user (e.g., "Show me all stale tickets in PLATFORM project", "Find duplicate tickets related to login errors").
+    :param query: The natural language query from the user (e.g., "Show me the top 10 stale tickets", "Find 5 duplicate tickets related to login errors").
     :return: A list of dictionaries, each representing a formatted JIRA issue.
              Returns an empty list if no issues are found.
              Raises JiraBotError on any error during parameter extraction, JQL building, or JIRA API call.
@@ -32,9 +33,17 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized. Cannot perform search.")
     try:
+        # Extract structured parameters from the natural language query
         params = extract_params(query)
+
+        # Get the user-specified limit, defaulting to 20 if not provided
+        limit = int(params.get("maxResults", 20))
+
+        # Build the JQL query string from the parameters
         jql_query = build_jql(params)
-        results = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE)
+
+        # Perform the search with the dynamic limit
+        results = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=limit)
         return results
     except JiraBotError as e:
         raise e
