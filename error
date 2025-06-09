@@ -1,67 +1,9 @@
-Built JQL: project = 'PLAT' AND priority = "P1 (Gating)" AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC
-
-Attempting JIRA search with JQL: project = 'PLAT' AND priority = "P1 (Gating)" AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC
-Successfully found 20 issues.
-[{'key': 'PLAT-177493', 'summary': '[STXH][SSV_Farm]MPIPU in a while loop of MaskPollTransaction when run S4-recall.FR:5/10U', 'status': 'Analyzed', 'assignee': 'Wang, Fubin', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-177493'}, {'key': 'PLAT-177489', 'summary': '[STXH][SSV_Farm]3D engine(GFX engine) TDR in CP/PFP when running reboot, F/R:6/77', 'status': 'Triaged', 'assignee': 'Wang, Chun', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-177489'}, {'key': 'PLAT-173036', 'summary': '[STX-Halo] Power Regression on Patch C RC1 Stack', 'status': 'Closed', 'assignee': 'Tarquini, Joseph', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-173036'}, {'key': 'PLAT-171065', 'summary': '[STXH][SSV_Farm] DF CCM0 HWA5+ 0xB0000A18 when run PCMark extended. FR:2/23U. & S0I3+S4 mix, FR: 1/11u&3DMark timespy.FR:1/24U', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-171065'}, {'key': 'PLAT-171053', 'summary': '[STXH][SSV_Farm]VCN TDR occur when run Media player with ACPI.FR:1/16U&PCMark.FR:4/19U', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-171053'}, {'key': 'PLAT-171052', 'summary': '[STXH][SSV_Farm]BSOD 0x1_SysCallNum_0_AMS_MailBoxDrv!unknown_function occurred when run S4. FR:3/11u ', 'status': 'Closed', 'assignee': 'Che, Xuan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-171052'}, {'key': 'PLAT-170928', 'summary': '[STX_HALO][VQE][PWR][VPE]\xa0LVP is Consuming higher power with the stack change.', 'status': 'Closed', 'assignee': 'Punagani, Vidya Sagar', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170928'}, {'key': 'PLAT-170927', 'summary': '[STX_HALO][VQE][PWR][VPE] LVP Consuming higher power with the stack change.', 'status': 'Rejected', 'assignee': 'Punagani, Vidya Sagar', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170927'}, {'key': 'PLAT-170821', 'summary': '[STXH][SSV_Farm]AMD Audio CoProcessor show YB (code 43) during S4 Test, FR: 7/42U,S0i3+S4 mix :2/12u [PSP regression]', 'status': 'Closed', 'assignee': 'Xiao, Qi', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170821'}, {'key': 'PLAT-170764', 'summary': '[STXH][SSV_Farm][Z8]PMFW-FclkFreq block Z8 during LVP Test and pointed to GFX driver [24.20.45.01],FR:9/9U', 'status': 'Closed', 'assignee': 'Xiao, Qi', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170764'}, {'key': 'PLAT-170558', 'summary': '[STX Halo_FP11]CRB 3DMARK Wild Life Extreme score SPPT 92W lower than 80W', 'status': 'Rejected', 'assignee': 'Tien, Daryl', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170558'}, {'key': 'PLAT-170513', 'summary': '[STXH] The Core and Thread counts info of SMBIOS Type-4 are not correct for some APUs', 'status': 'Closed', 'assignee': 'Yeh, Peter', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170513'}, {'key': 'PLAT-170492', 'summary': '[STXH][SSV_Farm] PageFault occurred and VCN TDR when running media player with ACPI. FR:17/23U', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170492'}, {'key': 'PLAT-170080', 'summary': '[STXH_FP11][HLK]System HLK test "Camera Driver System Test - MediaCapture - TestVideoProfileWithValidPreviewResolution" failed with No matching Preview resolution found !!', 'status': 'Closed', 'assignee': 'Ding, Caoqi', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170080'}, {'key': 'PLAT-170072', 'summary': '[STXH][SSV_Farm]Unexpected reboot with no BSOD occurred during PCMark test in DC mode(real battery).FR:3/3U', 'status': 'Closed', 'assignee': 'Xiao, Qi', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170072'}, {'key': 'PLAT-170034', 'summary': '[STXH][SSV_Farm]BSOD 20001 with TDR/TDR error occurred during ACPI/Stress test of 1000D BIOS  FR:2/2U', 'status': 'Closed', 'assignee': 'Xiao, Qi', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-170034'}, {'key': 'PLAT-169997', 'summary': '[STXH][SSV_Farm]Random HWA occur when run  Prime_UVD_IOZoneWithACPI:1.0.0.2 (Uncheck Vclk S0i3 (CUSTOM)).failed at S4.FR:4/23U', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-169997'}, {'key': 'PLAT-169826', 'summary': '[STXH][SSV_Farm]Random HWA with Mall HWA10 when run S4 with camera on/off.FR:1/5U', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-169826'}, {'key': 'PLAT-169335', 'summary': '[STXH][SSV_Farm]][DC]CPU downclocking to below 0.6GHz_occurred when running PCMark10:2.1.2600.FR:1/19U & Furmark.FR:100%', 'status': 'Closed', 'assignee': 'Chen, Lan', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-169335'}, {'key': 'PLAT-169310', 'summary': 'STX-HL ML Perf Regression', 'status': 'Closed', 'assignee': 'Nayanipati, Vinodh', 'priority': 'P1 (Gating)', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-169310'}]Here are the 10 latest P1 PLAT STXH tickets:
-
-1. PLAT-177493
-   Summary: [STXH][SSV_Farm]MPIPU in a while loop of MaskPollTransaction when run S4-recall.FR:5/10U
-   Status: Analyzed
-   Assignee: Wang, Fubin
-
-2. PLAT-177489
-   Summary: [STXH][SSV_Farm]3D engine(GFX engine) TDR in CP/PFP when running reboot, F/R:6/77
-   Status: Triaged
-   Assignee: Wang, Chun
-
-3. PLAT-173036
-   Summary: [STX-Halo] Power Regression on Patch C RC1 Stack
-   Status: Closed
-   Assignee: Tarquini, Joseph
-
-4. PLAT-171065
-   Summary: [STXH][SSV_Farm] DF CCM0 HWA5+ 0xB0000A18 when run PCMark extended. FR:2/23U. & S0I3+S4 mix, FR: 1/11u&3DMark timespy.FR:1/24U
-   Status: Closed
-   Assignee: Chen, Lan
-
-5. PLAT-171053
-   Summary: [STXH][SSV_Farm]VCN TDR occur when run Media player with ACPI.FR:1/16U&PCMark.FR:4/19U
-   Status: Closed
-   Assignee: Chen, Lan
-
-6. PLAT-171052
-   Summary: [STXH][SSV_Farm]BSOD 0x1_SysCallNum_0_AMS_MailBoxDrv!unknown_function occurred when run S4. FR:3/11u
-   Status: Closed
-   Assignee: Che, Xuan
-
-7. PLAT-170928
-   Summary: [STX_HALO][VQE][PWR][VPE] LVP is Consuming higher power with the stack change.
-   Status: Closed
-   Assignee: Punagani, Vidya Sagar
-
-8. PLAT-170927
-   Summary: [STX_HALO][VQE][PWR][VPE] LVP Consuming higher power with the stack change.
-   Status: Rejected
-   Assignee: Punagani, Vidya Sagar
-
-9. PLAT-170821
-   Summary: [STXH][SSV_Farm]AMD Audio CoProcessor show YB (code 43) during S4 Test, FR: 7/42U,S0i3+S4 mix :2/12u [PSP regression]
-   Status: Closed
-   Assignee: Xiao, Qi
-
-10. PLAT-170764
-    Summary: [STXH][SSV_Farm][Z8]PMFW-FclkFreq block Z8 during LVP Test and pointed to GFX driver [24.20.45.01],FR:9/9U
-    Status: Closed
-    Assignee: Xiao, Qi
-
-Let me know if you need additional details or further filtering!
-
 > Finished chain.
 
 An unexpected error occurred: 'tuple' object has no attribute 'thought'
 --- FULL TRACEBACK ---
 Traceback (most recent call last):
-  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/main.py", line 47, in main
+  File "/mnt/c/users/iheath12/OneDrive - Advanced Micro Devices Inc/desktop/JiraTriageLLMAgent/main.py", line 36, in main
     if 'tool_name' in step.thought and step.thought['tool_name'] == 'jira_search_tool':
                       ^^^^^^^^^^^^
 AttributeError: 'tuple' object has no attribute 'thought'
