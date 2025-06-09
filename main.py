@@ -1,6 +1,5 @@
-# main.py
 import sys
-import traceback
+import traceback 
 from jira_agent import get_jira_agent
 from jira_utils import JiraBotError
 
@@ -30,20 +29,13 @@ def main():
 
         try:
             result = agent.invoke({"input": user_input})
-
-            # --- MODIFIED BLOCK TO FIX ATTRIBUTEERROR AND UNWANTED OUTPUT ---
-            
+            final_output = result.get('output')
             issues_found = None
-            # The new structure for intermediate_steps is a list of tuples: (action, observation)
-            # action is an AgentAction object, observation is the tool's return value.
             if result.get('intermediate_steps'):
-                # We only care about the last tool run, which should be our jira_search_tool
-                last_step = result['intermediate_steps'][-1]
-                agent_action, tool_output = last_step
-
-                # The AgentAction object has a 'tool' attribute with the tool's name
-                if agent_action.tool == 'jira_search_tool':
-                    issues_found = tool_output
+                for step in reversed(result['intermediate_steps']):
+                    if 'tool_name' in step.thought and step.thought['tool_name'] == 'jira_search_tool':
+                        issues_found = step.tool_output
+                        break
 
             if issues_found:
                 print(f"\n--- Found {len(issues_found)} JIRA Issues ---")
@@ -55,14 +47,13 @@ def main():
                     print(f"   Priority: {issue['priority']}")
                     print(f"   URL: {issue['url']}")
                     print("-" * 20)
-                if len(issues_found) >= 20: # Use >= to be safe
+                if len(issues_found) == 20:
                     print("Note: Displaying a maximum of 20 results. Refine your query for more specific results.")
+            elif final_output:
+                print(f"\nAgent's response: {final_output}")
             else:
-                # If we couldn't find tool output, print the agent's final answer as a fallback.
-                print("\nAgent's response:")
-                print(result.get('output', "No result found."))
+                print("\nNo specific issues found, or the agent did not return a clear result.")
 
-            # --- END MODIFICATION ---
 
         except JiraBotError as e:
             print(f"\nJIRA Bot Error: {e}", file=sys.stderr)
@@ -70,7 +61,7 @@ def main():
         except Exception as e:
             print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
             print("--- FULL TRACEBACK ---", file=sys.stderr)
-            traceback.print_exc()
+            traceback.print_exc() 
             print("----------------------", file=sys.stderr)
             print("\nPlease try rephrasing your request or contact support if the issue persists.", file=sys.stderr)
 
