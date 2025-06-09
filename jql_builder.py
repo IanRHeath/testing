@@ -1,19 +1,19 @@
 # jql_builder.py
 import json
-import os 
+import os
 from typing import Dict, Any
-import openai 
-from jira import JIRA 
+import openai
+from jira import JIRA
 
 from llm_config import get_azure_openai_client
-from jira_utils import JiraBotError 
+from jira_utils import JiraBotError
 
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
- 
+
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -32,7 +32,7 @@ priority_map = {
 }
 
 project_map = {
-    "PLAT": "PLAT" 
+    "PLAT": "PLAT"
 }
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
@@ -43,28 +43,27 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Extract the intent (e.g., "list", "count", "find"), priority, program, project,
     maximum number of results (maxResults), and order (ASC/DESC) as a JSON object only.
+    If the user asks for "top 5", "latest 10", or "5 most recent", this corresponds to "maxResults".
     Infer keywords for summary/description search for 'duplicate' or 'similar' intent.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
     Available projects: {projects_list}
 
-    Example of expected JSON output:
+    Example of expected JSON output for the query "show me the top 5 p2 tickets for STXH":
     {{
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
         "project":"PLAT",
-        "maxResults":5,
-        "order":"ASC",
-        "keywords": "login failure, timeout"
+        "maxResults":5
     }}
 
     If a parameter is not explicitly mentioned, omit it from the JSON.
     For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'
     For 'duplicate' tickets, extract relevant keywords from the user's prompt (e.g., "login errors" -> "login error").
     """
-    
+
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
         priorities_list=", ".join(priority_map.keys()),
@@ -85,7 +84,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
     try:
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), 
+            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
             messages=messages_to_send,
             max_tokens=256,
         )
@@ -95,7 +94,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         return params
     except json.JSONDecodeError as e:
         raise JiraBotError(f"LLM output was not valid JSON: {content}. Error: {e}")
-    except openai.APIStatusError as e: 
+    except openai.APIStatusError as e:
         raise JiraBotError(f"LLM API Error during parameter extraction: Status Code: {e.status_code}, Response: {e.response.text}")
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
@@ -106,7 +105,6 @@ def build_jql(params: Dict[str, Any]) -> str:
     """
     jql_parts = []
     order_clause = ""
-    max_results_clause = ""
 
     raw_proj = params.get("project", "").strip().upper()
     if raw_proj:
@@ -115,16 +113,13 @@ def build_jql(params: Dict[str, Any]) -> str:
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     else:
-
         jql_parts.append("project = 'PLAT'")
-
-
 
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
         if raw_prio.upper() in priority_map:
             jql_parts.append(f"priority = \"{priority_map[raw_prio.upper()]}\"")
-        elif raw_prio in priority_map.values(): 
+        elif raw_prio in priority_map.values():
             jql_parts.append(f"priority = \"{raw_prio}\"")
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
@@ -154,15 +149,12 @@ def build_jql(params: Dict[str, Any]) -> str:
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
+    
+    # If a number of results is specified, it makes sense to sort by creation date descending
+    # unless another order is specified.
+    elif params.get("maxResults") and not order_clause:
+        order_clause = " ORDER BY created DESC"
 
-    max_results = params.get("maxResults")
-    if isinstance(max_results, (int, str)):
-        try:
-            max_results_clause = int(max_results)
-        except ValueError:
-            max_results_clause = "" 
-    else:
-        max_results_clause = ""
 
     if not jql_parts:
         jql = "project = 'PLAT'"
@@ -173,5 +165,5 @@ def build_jql(params: Dict[str, Any]) -> str:
         jql += order_clause
 
     print(f"Built JQL: {jql}")
-    
+
     return jql
