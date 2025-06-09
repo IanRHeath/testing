@@ -1,15 +1,46 @@
 from langchain.tools import tool
 from typing import List, Dict, Any
 from jira import JIRA
-from jira_utils import search_jira_issues, initialize_jira_client, JiraBotError
+from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, JiraBotError
 from jql_builder import extract_params, build_jql
+from llm_config import get_llm # Import the LLM config
 
 JIRA_CLIENT_INSTANCE = None
 try:
     JIRA_CLIENT_INSTANCE = initialize_jira_client()
 except JiraBotError as e:
-    print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. JIRA search tool will not work: {e}")
+    print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
+@tool
+def summarize_ticket_tool(issue_key: str) -> str:
+    """
+    Use this tool when a user asks to summarize, get details of, or understand a specific ticket.
+    It takes a single JIRA issue key and returns a concise summary of its content,
+    including the description and the latest comments.
+    :param issue_key: The JIRA issue key (e.g., "PLAT-123").
+    :return: A text summary of the ticket's content and status.
+    """
+    if JIRA_CLIENT_INSTANCE is None:
+        raise JiraBotError("JIRA client not initialized.")
+    
+    print(f"Summarizing ticket {issue_key}...")
+    # 1. Get the raw details and comments from Jira
+    details_text = get_ticket_details(issue_key, JIRA_CLIENT_INSTANCE)
+
+    # 2. Use an LLM to generate a summary of the details
+    llm = get_llm()
+    prompt = f"""
+    Based on the following Jira ticket details, provide a concise summary in 3-4 sentences.
+    Focus on the main problem, the current status, and what the latest updates are about.
+
+    Ticket Details:
+    ---
+    {details_text}
+    ---
+    Concise Summary:
+    """
+    summary = llm.invoke(prompt).content
+    return summary
 
 @tool
 def jira_search_tool(query: str) -> List[Dict[str, Any]]:
@@ -50,4 +81,5 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
 
-ALL_JIRA_TOOLS = [jira_search_tool]
+# Add the new tool to the list of tools available to the agent
+ALL_JIRA_TOOLS = [jira_search_tool, summarize_ticket_tool]
