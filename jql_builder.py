@@ -1,24 +1,19 @@
 # jql_builder.py
 import json
-import os # Make sure os is imported for getenv
+import os 
 from typing import Dict, Any
-import openai # Needed for the raw openai.AzureOpenAI client
-from jira import JIRA # Just for type hinting in comments
+import openai 
+from jira import JIRA 
 
-# Assuming local imports
 from llm_config import get_azure_openai_client
-from jira_utils import JiraBotError # For custom error handling
+from jira_utils import JiraBotError 
 
-# Global client for parameter extraction (initialized once)
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
-    # This will prevent the JQL builder from working, handled gracefully below.
-
-
-# --- Your provided mappings ---
+ 
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -36,16 +31,11 @@ priority_map = {
     "P4": "P4 (No Impact/Notify)"
 }
 
-# --- MODIFIED BLOCK ---
 project_map = {
-    "PLAT": "PLAT" # Corrected "PLATFORM" to "PLAT"
+    "PLAT": "PLAT" 
 }
-# --- END MODIFICATION ---
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
-    """
-    Uses LLM to extract JQL parameters from a natural language prompt.
-    """
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
@@ -75,7 +65,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     For 'duplicate' tickets, extract relevant keywords from the user's prompt (e.g., "login errors" -> "login error").
     """
     
-    # Dynamically inject available mappings into the system prompt
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
         priorities_list=", ".join(priority_map.keys()),
@@ -87,29 +76,26 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         {"role": "user", "content": prompt_text}
     ]
 
-    # --- ADDED PRINT STATEMENT FOR DEBUGGING ---
     print("\n--- LLM Request Details (for extract_params) ---")
     print(f"Model: {os.getenv('LLM_CHAT_DEPLOYMENT_NAME')}")
     print("Messages:")
     for msg in messages_to_send:
         print(f"  Role: {msg['role']}, Content: {msg['content']}")
     print("----------------------------------------------\n")
-    # --- END ADDITION ---
 
     try:
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), # Use the deployment name for the model
+            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), 
             messages=messages_to_send,
-            max_tokens=256, # Increased token limit for potentially more complex JSON
+            max_tokens=256,
         )
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
-        # Robustly try to parse JSON
         params = json.loads(content)
         return params
     except json.JSONDecodeError as e:
         raise JiraBotError(f"LLM output was not valid JSON: {content}. Error: {e}")
-    except openai.APIStatusError as e: # Catch specific API status errors for more detail
+    except openai.APIStatusError as e: 
         raise JiraBotError(f"LLM API Error during parameter extraction: Status Code: {e.status_code}, Response: {e.response.text}")
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
@@ -122,7 +108,6 @@ def build_jql(params: Dict[str, Any]) -> str:
     order_clause = ""
     max_results_clause = ""
 
-    # Handle project
     raw_proj = params.get("project", "").strip().upper()
     if raw_proj:
         if raw_proj in project_map:
@@ -130,21 +115,20 @@ def build_jql(params: Dict[str, Any]) -> str:
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     else:
-        # Default to "PLAT" if no project is specified
+
         jql_parts.append("project = 'PLAT'")
 
 
-    # Handle priority
+
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
         if raw_prio.upper() in priority_map:
             jql_parts.append(f"priority = \"{priority_map[raw_prio.upper()]}\"")
-        elif raw_prio in priority_map.values(): # Already in full format
+        elif raw_prio in priority_map.values(): 
             jql_parts.append(f"priority = \"{raw_prio}\"")
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
-    # Handle program (assuming 'program' is a custom field in JIRA)
     raw_prog = params.get("program", "").strip().upper()
     if raw_prog:
         if raw_prog in program_map:
@@ -154,11 +138,9 @@ def build_jql(params: Dict[str, Any]) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    # Handle stale tickets (based on your definition)
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
 
-    # Handle keywords for "duplicate" or general search
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
@@ -169,12 +151,10 @@ def build_jql(params: Dict[str, Any]) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
-    # Handle order
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
 
-    # Handle maxResults
     max_results = params.get("maxResults")
     if isinstance(max_results, (int, str)):
         try:
