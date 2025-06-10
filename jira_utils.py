@@ -1,6 +1,7 @@
 import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
+from typing import Tuple
 
 load_dotenv()
 
@@ -32,10 +33,6 @@ def initialize_jira_client():
 def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
-    :param jql_query: The JQL query string.
-    :param client: An initialized JIRA client.
-    :param limit: The maximum number of issues to return. Defaults to 20.
-    :return: A list of dictionaries, each representing a formatted JIRA issue.
     """
     print(f"\nAttempting JIRA search with JQL: {jql_query} | Limit: {limit}")
     try:
@@ -65,32 +62,48 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA search: {e}")
 
-def get_ticket_details(issue_key: str, client: JIRA) -> str:
+def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     """
-    Fetches detailed information for a single JIRA ticket, including comments.
-    :param issue_key: The key of the JIRA issue (e.g., "PLAT-123").
-    :param client: An initialized JIRA client.
-    :return: A formatted string containing the ticket's details.
+    Fetches detailed information for a single JIRA ticket for summarization.
+    Returns a tuple containing (details_as_text, ticket_url).
     """
     print(f"Fetching details for ticket: {issue_key}")
     try:
         issue = client.issue(issue_key, expand="comments")
         details = []
+        ticket_url = f"{JIRA_SERVER_URL}/browse/{issue.key}"
+
+        details.append(f"Project: {issue.fields.project.key}")
+        try:
+            program_field = issue.raw['fields']['Program']
+            details.append(f"Program: {program_field}")
+        except KeyError:
+            details.append("Program: Not found.")
+            
         details.append(f"Title: {issue.fields.summary}")
         details.append(f"Status: {issue.fields.status.name}")
+        
+        resolution = issue.fields.resolution
+        details.append(f"Resolution: {resolution.name if resolution else 'Unresolved'}")
+        
         assignee = issue.fields.assignee
         details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
+        
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
+        
         details.append("\n-- Comments --")
         if issue.fields.comment.comments:
-            for comment in issue.fields.comment.comments:
+            for comment in reversed(issue.fields.comment.comments[-5:]):
                 details.append(f"Comment by {comment.author.displayName} on {comment.created[:10]}:")
                 details.append(comment.body)
                 details.append("-" * 10)
         else:
             details.append("No comments.")
-        return "\n".join(details)
+            
+        details_text = "\n".join(details)
+        return (details_text, ticket_url)
+
     except JIRAError as e:
         if e.status_code == 404:
             raise JiraBotError(f"Ticket '{issue_key}' not found.")
