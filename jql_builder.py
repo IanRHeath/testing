@@ -1,4 +1,3 @@
-# jql_builder.py
 import json
 import os
 from typing import Dict, Any
@@ -149,13 +148,8 @@ def build_jql(params: Dict[str, Any]) -> str:
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
-    
-    # If a number of results is specified, it makes sense to sort by creation date descending
-    # unless another order is specified.
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
-
-
     if not jql_parts:
         jql = "project = 'PLAT'"
     else:
