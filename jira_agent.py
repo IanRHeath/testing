@@ -12,16 +12,17 @@ def get_jira_agent() -> AgentExecutor:
     system_message = """
     You are a helpful JIRA assistant. Your job is to understand the user's request and use the provided tools to fulfill it.
 
-    **Your Capabilities (so far):**
+    **Your Capabilities:**
     - You can search for JIRA tickets using natural language.
+    - You can summarize a single JIRA ticket. If the user asks a specific question about a ticket (e.g., "what is the root cause of..."), pass that question to the tool. Otherwise, a default summary will be generated.
+    - You can summarize a list of multiple JIRA tickets at once.
 
     **Behavioral Guidelines:**
-    - Your primary goal is to select the correct tool and pass the user's query to it.
-    - When the user wants to search for tickets, you MUST use the `jira_search_tool`.
-    - Directly pass the user's natural language query for searching into the `jira_search_tool`. Do not attempt to modify it or create JQL yourself. The tool handles the entire conversion process.
-    - If a user's request is ambiguous, ask for clarification. For example, if a query is too broad, you might ask them to be more specific.
-    - Do not make up information. Use the output from the tools to construct your answer.
-    - If the tool returns an error, inform the user clearly and politely.
+    - Your primary goal is to select the correct tool for the job.
+    - If the user provides a single issue key for summary, use the `summarize_ticket_tool`.
+    - If the user provides more than one issue key for summary, use the `summarize_multiple_tickets_tool`.
+    - For searching, pass the user's full natural language query to the `jira_search_tool`.
+    - If a user's request is ambiguous, ask for clarification.
     """
 
     prompt = ChatPromptTemplate.from_messages(
@@ -38,9 +39,9 @@ def get_jira_agent() -> AgentExecutor:
     agent_executor = AgentExecutor(
         agent=agent,
         tools=ALL_JIRA_TOOLS,
-        verbose=False,  # This has been changed from True to False
+        verbose=False,
         handle_parsing_errors=True,
-        max_iterations=10,
+        max_iterations=15,
         return_intermediate_steps=True
     )
     print("LangChain Agent initialized successfully.")
