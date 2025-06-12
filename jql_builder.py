@@ -109,11 +109,12 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
+    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field.
     - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
-    - If a parameter is not explicitly mentioned, omit it from the JSON.
-    
-    Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
+    - If a parameter is not explicitly mentioned by the user, you MUST omit it from the JSON.
+    - ONLY include a "project" field if the user explicitly names a project in their request.
+
+    Example 1 (Complex Search with Project): "show me the top 5 p2 tickets for STXH in the PLAT project"
     {{
         "intent":"list",
         "priority":"P2",
@@ -122,11 +123,16 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "maxResults":5
     }}
 
-    Example 2 (Keyword Search): "search for issues related to 'memory instability'"
+    Example 2 (Keyword Search without Project): "search for issues related to 'memory instability'"
     {{
         "intent":"list",
-        "project":"PLAT",
         "keywords":"memory instability"
+    }}
+
+    Example 3 (Simple Search without Project): "show me high priority tickets"
+    {{
+        "intent": "list",
+        "priority": "High"
     }}
     """
 
