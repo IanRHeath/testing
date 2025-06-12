@@ -23,6 +23,64 @@ program_map = {
     "FRG": "Fire Range [PRG-000394]",
 }
 
+system_map = {
+    "STX": [
+        "System-Strix1 FP8 APU",
+        "System-Strix1 FP7 APU",
+        "System-Strix1 FP11 APU"
+    ],
+    "STXH": [
+        "System-Strix Halo Reference Board",
+        "System-Strix Halo Customer A Platform"
+    ]
+}
+
+VALID_SILICON_REVISIONS = {
+    "A0", "A0A", "A0B", "A0C", "A0D", "A1", "A1B", "A1C", "A1D", "A1E",
+    "A2", "B0", "B0A", "B0B", "B0C", "B0D", "B1", "B1B", "B1C", "B1E",
+    "B1F", "B1G", "B2", "B2D", "B3", "B3E", "C0", "C1", "C1A", "C1B",
+    "C1C", "C1D", "DP"
+}
+
+VALID_TRIAGE_CATEGORIES = {"APU", "APU/CPU-FW", "CPU", "GPU"}
+
+triage_assignment_map = {
+    "APU": [ "Client- Platform Debug - HW", "Diags-GPU" ],
+    "APU/CPU-FW": [
+        "Firmware - Binary DXIO", "Firmware - Binary EC", "Firmware - Binary IMC", "Firmware - Binary PSP",
+        "Firmware - Binary SMU", "Firmware - Binary XHC", "Firmware - BIOS Verification", "Firmware - IPE AGESA - ABL",
+        "Firmware - IPE AGESA - CPU", "Firmware - IPE AGESA - CPU UCODE INTEGRATION", "Firmware - IPE AGESA - DF",
+        "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - IPE AGESA - MEM",
+        "Firmware - IPE AGESA - Other", "Firmware - IPE AGESA - PROMONTORY", "Firmware - IPE AGESA - PSP",
+        "Firmware - IPE AGESA - UEFI", "Firmware - IPE CBS - CPU", "Firmware - IPE CBS - FCH",
+        "Firmware - IPE CBS - GNB", "Firmware - IPE CBS - MEM", "Firmware - IPE CBS - Other", "Firmware - IPE CPM"
+    ],
+    "CPU": [
+        "3D Graphics", "AAA", "ABL", "ACP", "ACPI", "AGESA", "Analog IO", "APML", "Application Automation", "Atomics",
+        "Austin EMC,/RFI", "Automation Infrastructure", "AVL", "BIOS", "BMC", "Board", "Clarification/Validation",
+        "Clock Characterization", "Coherency", "Core", "CXL", "DDRSSB", "Debug", "DF", "DFD", "DFx", "Diags",
+        "Diags Framework", "Diags Release", "Diags-GPU", "Display", "Documentation", "DPM", "Driver", "DTM/WHQL",
+        "DXIO", "E32PHY", "ESID", "FCH", "FCH Driver", "Firmware", "FPGA", "Fusing", "Gaming", "GFX Driver",
+        "GMI", "GMTP PHY - PCIE", "GPU Compute", "GTMP PHY - XGMI", "HotPlug", "HSP", "Hybrid Graphics", "i2c",
+        "i3c", "IO Compliance", "IO Datapath", "IO System Test", "IPU", "ISP", "Linux", "Linux Driver",
+        "Manufacturing", "MCTP", "Memory (MC/PHY)", "Memory tuning", "MMHUB", "Modern Standby", "MP2", "MTAG",
+        "Multi-GPU/Crossfire", "Multimedia", "N/A(disabled)", "NBIO", "Network", "Non-GFX Driver", "ODM Debug",
+        "ODM Info", "ODM Reset", "Operating System", "OSS", "PCIe", "PEO/HST/SLT", "Performance", "PHY-FW",
+        "PMFW", "PMM", "Power", "Power Express (PX)", "PPA", "PSP", "RAID", "RAS", "Remote Management", "Resets",
+        "RF Mux", "SOi2", "SATA", "SBIOS", "Scan", "SDCI", "SDXI", "Security", "Signal Integrity", "Silicon",
+        "SLT", "SMU", "Socket Issues", "SPI/eSPI", "SSBDCI", "Stability", "System Hang", "SystemInteg",
+        "Test Scripts", "Thermal/Mechanical", "Tools - HW", "Tools - SW", "UMC", "USB 2.0/3.0 ", "USB 3.2",
+        "USB4", "USR",  "UX", "VBIOS", "VCN", "Vendor", "Virtualization", "VPE", "WAFL", "WHQL", "XGMI"
+    ],
+    "GPU": [
+        "Board Engineering", "Diags", "Diags-GPU", "Exercisers", "External IO", "IFWI", "INTERNAL IO", "MTAG",
+        "Perf", "Platform", "SW/MLSE" , "Sys Int", "Sys Mgmt Ras/Security",
+        "Sys Mgmt Ras/Security - Benson Tsang", "Sys Mgmt Virt/IOMMU/DFD/Scan/Fuse/Reset/", "Workloads"
+    ]
+}
+
+VALID_SEVERITY_LEVELS = {"Critical", "High", "Medium", "Low"}
+
 priority_map = {
     "P1": "P1 (Gating)",
     "P2": "P2 (Must Solve)",
@@ -31,7 +89,9 @@ priority_map = {
 }
 
 project_map = {
-    "PLAT": "PLAT"
+    "PLAT": "PLAT",
+    "SWDEV": "SWDEV",
+    "FWDEV": "FWDEV"
 }
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
@@ -40,16 +100,20 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
-    Extract the intent (e.g., "list", "count", "find"), priority, program, project,
-    maximum number of results (maxResults), and order (ASC/DESC) as a JSON object only.
-    If the user asks for "top 5", "latest 10", or "5 most recent", this corresponds to "maxResults".
-    Infer keywords for summary/description search for 'duplicate' or 'similar' intent.
+    Your goal is to create a JSON object based on the user's request.
+
+    Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
     Available projects: {projects_list}
 
-    Example of expected JSON output for the query "show me the top 5 p2 tickets for STXH":
+    **Extraction Rules:**
+    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
+    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - If a parameter is not explicitly mentioned, omit it from the JSON.
+    
+    Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
     {{
         "intent":"list",
         "priority":"P2",
@@ -58,9 +122,12 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "maxResults":5
     }}
 
-    If a parameter is not explicitly mentioned, omit it from the JSON.
-    For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'
-    For 'duplicate' tickets, extract relevant keywords from the user's prompt (e.g., "login errors" -> "login error").
+    Example 2 (Keyword Search): "search for issues related to 'memory instability'"
+    {{
+        "intent":"list",
+        "project":"PLAT",
+        "keywords":"memory instability"
+    }}
     """
 
     formatted_system_prompt = system_prompt.format(
@@ -148,8 +215,11 @@ def build_jql(params: Dict[str, Any]) -> str:
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
+    
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
+
+
     if not jql_parts:
         jql = "project = 'PLAT'"
     else:
@@ -158,6 +228,6 @@ def build_jql(params: Dict[str, Any]) -> str:
     if order_clause:
         jql += order_clause
 
-    print(f"Built JQL: {jql}")
+    print(f"Built JQL: {jql_parts}")
 
     return jql
