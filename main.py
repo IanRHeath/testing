@@ -2,6 +2,7 @@ import sys
 import traceback
 from jira_agent import get_jira_agent
 from jira_utils import JiraBotError
+from langchain_core.messages import HumanMessage, AIMessage
 
 def main():
     print("Welcome to the JiraTriageLLMAgent!")
@@ -16,6 +17,7 @@ def main():
     except Exception as e:
         print(f"FATAL ERROR: Could not initialize agent. Exiting. Details: {e}", file=sys.stderr)
         sys.exit(1)
+
     chat_history = []
 
     while True:
@@ -30,13 +32,17 @@ def main():
 
         try:
             result = agent.invoke({"input": user_input, "chat_history": chat_history})
+        
+            chat_history.append(HumanMessage(content=user_input))
+            chat_history.append(AIMessage(content=result["output"]))
+
 
             issues_found = None
             if result.get('intermediate_steps'):
                 for action, tool_output in result['intermediate_steps']:
                     if action.tool == 'jira_search_tool' and isinstance(tool_output, list):
                         issues_found = tool_output
-                        break 
+                        break
 
             if issues_found is not None:
                 if not issues_found:
@@ -53,7 +59,7 @@ def main():
                         print("-" * 20)
                     if len(issues_found) >= 20:
                         print("Note: Displaying the maximum of 20 results. Refine your query for more specific results.")
-            else:
+            elif "Is this information correct? (yes/no):" not in result.get('output'):
                 final_output = result.get('output')
                 print(f"\nJIRA Bot: {final_output}")
 
