@@ -174,8 +174,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 def build_jql(params: Dict[str, Any]) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
-    If no project is specified, the search will be across all projects,
-    provided other search criteria exist.
     """
     jql_parts = []
     order_clause = ""
@@ -211,11 +209,15 @@ def build_jql(params: Dict[str, Any]) -> str:
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
+        # Split by comma to handle multiple distinct search terms
         for kw_raw in keywords.split(','):
-            kw = kw_raw.strip()
+            # Sanitize each keyword by stripping whitespace and escaping quotes
+            kw = kw_raw.strip().replace('"', '\\"')
             if kw:
-                keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
+                # Each term now searches against the universal 'text' field
+                keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
+            # Join multiple keywords with OR to find tickets matching any of them
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
     order_direction = params.get("order", "").strip().upper()
