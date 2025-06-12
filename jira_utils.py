@@ -1,7 +1,8 @@
+
 import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
-from typing import Tuple
+from typing import Tuple, Optional
 
 load_dotenv()
 
@@ -71,6 +72,7 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     try:
         issue = client.issue(issue_key, expand="comments")
         details = []
+        
         ticket_url = f"{JIRA_SERVER_URL}/browse/{issue.key}"
 
         details.append(f"Project: {issue.fields.project.key}")
@@ -110,3 +112,32 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
         raise JiraBotError(f"Failed to get details for '{issue_key}': {e.text}")
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
+
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
+    """
+    Creates a new issue in Jira.
+    """
+    print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
+    
+    fields = {
+        'project':          {'key': project},
+        'summary':          summary,
+        'issuetype':        {'name': issuetype},
+        'description':      description,
+        'customfield_11607': steps_to_reproduce,
+        'customfield_12610': {'value': severity },
+        'customfield_13002': {'value': program },
+        'customfield_13208': {'value': system },
+        'customfield_14200': bios_version,
+        'customfield_14307': {'value': triage_category},
+        'customfield_14308': {'value': triage_assignment},
+        'customfield_17000': {'value': silicon_revision }
+    }
+
+    try:
+        print("[LIVE MODE] Sending data to Jira API...")
+        new_issue = client.create_issue(fields=fields)
+        return new_issue
+    except JIRAError as e:
+        error_details = f"JIRA API Error on ticket creation: {str(e)}"
+        raise JiraBotError(error_details)
