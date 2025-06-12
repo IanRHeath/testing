@@ -168,6 +168,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 def build_jql(params: Dict[str, Any]) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
+    If no project is specified, the search will be across all projects,
+    provided other search criteria exist.
     """
     jql_parts = []
     order_clause = ""
@@ -178,8 +180,6 @@ def build_jql(params: Dict[str, Any]) -> str:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
-    else:
-        jql_parts.append("project = 'PLAT'")
 
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
@@ -221,13 +221,13 @@ def build_jql(params: Dict[str, Any]) -> str:
 
 
     if not jql_parts:
-        jql = "project = 'PLAT'"
-    else:
-        jql = " AND ".join(jql_parts)
+        raise JiraBotError("Your query is too broad. Please specify a project, keywords, or other criteria to begin a search.")
+    
+    jql = " AND ".join(jql_parts)
 
     if order_clause:
         jql += order_clause
 
-    print(f"Built JQL: {jql_parts}")
+    print(f"Built JQL: {jql}")
 
     return jql
