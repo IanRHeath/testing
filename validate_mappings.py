@@ -2,8 +2,7 @@ import json
 from jira_utils import initialize_jira_client, JiraBotError
 
 # --- CONFIGURATION ---
-# IMPORTANT: You must replace these example values with a real Project Key
-# and Issue Type Name from your Jira instance.
+# Set these to the Project and Issue Type you want to validate
 PROJECT_KEY = 'PLAT'
 ISSUE_TYPE_NAME = 'Issue'
 # --- END CONFIGURATION ---
@@ -29,8 +28,7 @@ FIELDS_TO_VALIDATE = {
 def validate_creation_fields():
     """
     Connects to Jira and validates that the fields required by the
-    create_ticket_tool exist on the target 'Create Issue' screen,
-    using modern API calls compatible with newer Jira versions.
+    create_ticket_tool exist on the target 'Create Issue' screen.
     """
     print("--- Starting Ticket Creation Field Validation ---")
     print(f"Checking configuration for Project='{PROJECT_KEY}' and Issue Type='{ISSUE_TYPE_NAME}'...")
@@ -52,7 +50,7 @@ def validate_creation_fields():
 
         # Step 2: Get the fields for that specific project and issue type
         fields = jira_client.project_issue_fields(PROJECT_KEY, issue_type_id)
-        available_field_ids = {f.key for f in fields}
+        available_field_ids = {f.fieldId for f in fields}
 
         print("--- Validating Fields from 'create_ticket_tool' ---")
         error_found = False
