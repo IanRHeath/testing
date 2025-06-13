@@ -108,8 +108,8 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         return f"The valid options for Issue Type are: {VALID_ISSUE_TYPES}"
     elif "triage category" in field_lower:
         return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
-    elif "silicon revision" in field_lower:
-        return f"The valid options for Silicon Revision are: {list(VALID_SILICON_REVISIONS)}"
+    elif "silicon revision" in field_lower or "iod" in field_lower or "ccd" in field_lower:
+        return f"The valid options for Silicon Revision are: {sorted(list(VALID_SILICON_REVISIONS))}"
     elif "severity" in field_lower:
         return f"The valid options for Severity are: {list(VALID_SEVERITY_LEVELS)}"
     elif "system" in field_lower:
