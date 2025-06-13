@@ -102,7 +102,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, iod_silicon_rev, ccd_silicon_rev.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, silicon_revision, iod_silicon_rev, ccd_silicon_rev.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
@@ -214,8 +214,8 @@ def build_jql(params: Dict[str, Any]) -> str:
         if assignee.upper() == "EMPTY":
             jql_parts.append("assignee is EMPTY")
         else:
-            # Simplified logic: Use the name exactly as provided by the user/LLM.
-            # This relies on the user providing a correct Jira username or full display name.
+            # Use the name exactly as provided. This relies on the user
+            # providing a correct Jira username or full display name.
             jql_parts.append(f'assignee = "{assignee}"')
 
     created_date = params.get("createdDate")
