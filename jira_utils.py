@@ -138,15 +138,15 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
         'issuetype':        {'name': issuetype},
         'description':      description,
         'customfield_11607': steps_to_reproduce,
-        'customfield_12610': {'value': severity},
+        'customfield_12610': {'value': severity},  # This field type requires the 'value' wrapper
         'customfield_13002': program,
         'customfield_13208': system,
         'customfield_14200': bios_version,
         'customfield_14307': triage_category,
         'customfield_14308': triage_assignment,
-        'customfield_17000': {'value': silicon_revision}, # Assuming this might have a different format
-        'customfield_27209': {'value': iod_silicon_rev},
-        'customfield_27210': {'value': ccd_silicon_rev}
+        'customfield_17000': silicon_revision,   # Corrected format
+        'customfield_27209': iod_silicon_rev,    # Corrected format
+        'customfield_27210': ccd_silicon_rev     # Corrected format
     }
     
     if assignee:
