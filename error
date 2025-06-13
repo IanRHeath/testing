@@ -1,4 +1,4 @@
-Your JIRA Query Request: search for regressions created today
+Your JIRA Query Request: give me 10 stale tickets
 
 --- LLM Request Details (for extract_params) ---
 Model: gpt-4.1
@@ -7,7 +7,7 @@ Messages:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee.
 
     Available programs: STX, STXH, GNR, KRK, KRK2E, SHP, FRG
     Available priorities: P1, P2, P3, P4
@@ -16,6 +16,7 @@ Messages:
     **Extraction Rules:**
     - If the user's query contains text to search for, extract the essential words into the "keywords" field.
     - For 'stale' tickets, infer the 'intent' as 'stale'. The system will handle the complex JQL for this.
+    - For queries about unassigned tickets (e.g., "no owner", "unassigned"), set the 'assignee' field to the special value "EMPTY".
     - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
         - "today" -> "startOfDay()"
         - "yesterday" -> "startOfDay(-1)"
@@ -23,23 +24,21 @@ Messages:
         - "this month" -> "startOfMonth()"
         - "this year" -> "startOfYear()"
         - "last 7 days" -> "-7d"
-        - "last 2 weeks" -> "-2w"
-        - "last 3 months" -> "-3M"
-    - If a parameter is not explicitly mentioned by the user, you MUST omit it from the JSON.
+    - If a parameter is not explicitly mentioned, you MUST omit it from the JSON.
     - ONLY include a "project" field if the user explicitly names a project in their request.
 
-    Example 1 (Date Search): "show me tickets created in the last 2 weeks"
+    Example 1 (Assignee Search): "show me unassigned tickets"
     {
         "intent":"list",
-        "createdDate":"-2w"
+        "assignee":"EMPTY"
     }
 
-    Example 2 (Complex Search): "show me p2 tickets for STXH updated this week"
+    Example 2 (Complex Search): "show me p2 tickets for STXH assigned to John Doe"
     {
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
-        "updatedDate":"startOfWeek()"
+        "assignee":"John Doe"
     }
 
     Example 3 (Stale Ticket Search): "find stale tickets"
@@ -47,17 +46,16 @@ Messages:
         "intent":"stale"
     }
 
-  Role: user, Content: regression tickets created today
+  Role: user, Content: 10 stale tickets
 ----------------------------------------------
 
 LLM extracted parameters: {
-    "intent": "list",
-    "keywords": "regression",
-    "createdDate": "startOfDay()"
+    "intent": "stale",
+    "maxResults": 10
 }
-Built JQL: created >= "startOfDay()" AND (text ~ "regression")
+Built JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC
 
-Attempting JIRA search with JQL: created >= "startOfDay()" AND (text ~ "regression") | Limit: 20
+Attempting JIRA search with JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC | Limit: 10
 
-JIRA Bot Error: JIRA search failed for JQL 'created >= "startOfDay()" AND (text ~ "regression")': Date value 'startOfDay()' for field 'created' is invalid. Valid formats include: 'yyyy/MM/dd HH:mm', 'yyyy-MM-dd HH:mm', 'yyyy/MM/dd', 'yyyy-MM-dd', or a period format e.g. '-5d', '4w 2d'.. Status code: 400. Please refine the query.
+JIRA Bot Error: JIRA search failed for JQL 'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC': Error in the JQL Query: 'FOR' is a reserved JQL word. You must surround it in quotation marks to use it in a query. (line 1, character 160). Status code: 400. Please refine the query.
 Please check your JQL query or JIRA connection.
