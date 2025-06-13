@@ -3,8 +3,8 @@ from jql_builder import project_map, priority_map, program_map
 
 def validate_jira_mappings():
     """
-    Connects to Jira and validates the hardcoded maps in the application
-    against the live configuration of the Jira instance.
+    Connects to Jira and validates that the hardcoded map values in the application
+    exist in the live configuration of the Jira instance.
     """
     print("--- Starting Jira Configuration Validation ---")
     
@@ -15,75 +15,47 @@ def validate_jira_mappings():
         print(f"FATAL ERROR: Could not connect to Jira. {e}")
         return
 
-    # --- 1. Validate Projects ---
-    print("\n--- 1. Validating Project Mappings ---")
+    # --- 1. Validate Projects in project_map ---
+    print("\n--- 1. Validating 'project_map' ---")
     try:
         live_projects = jira_client.projects()
-        live_project_keys = {p.key: p.name for p in live_projects}
+        live_project_keys = {p.key for p in live_projects}
         
-        code_project_keys = set(project_map.keys())
-        live_keys_set = set(live_project_keys.keys())
-
-        print(f"Found {len(live_project_keys)} projects in Jira.")
-        
-        # Check for projects in your code that are NOT in Jira
-        missing_from_jira = code_project_keys - live_keys_set
-        if missing_from_jira:
-            print(f"\n[WARNING] The following projects exist in your code but NOT in Jira:")
-            for key in missing_from_jira:
-                print(f"  - {key}")
-        
-        # Check for projects in Jira that are NOT in your code
-        missing_from_code = live_keys_set - code_project_keys
-        if missing_from_code:
-            print(f"\n[INFO] The following projects exist in Jira but are NOT in your 'project_map':")
-            for key in missing_from_code:
-                print(f"  - {key} (Name: {live_project_keys[key]})")
-
-        correct_projects = code_project_keys.intersection(live_keys_set)
-        if correct_projects:
-            print("\n[OK] The following projects are correctly mapped:")
-            for key in correct_projects:
-                print(f"  - {key}")
+        print("Checking if projects in your code exist in Jira...")
+        all_ok = True
+        for key in project_map.keys():
+            if key in live_project_keys:
+                print(f"  - [OK] Project '{key}' found in Jira.")
+            else:
+                print(f"  - [WARNING] Project '{key}' from your map was NOT found in Jira.")
+                all_ok = False
+        if all_ok:
+            print("All projects in your map are valid.")
         
     except Exception as e:
         print(f"\n[ERROR] Could not validate projects. Details: {e}")
 
-    # --- 2. Validate Priorities ---
-    print("\n--- 2. Validating Priority Mappings ---")
+    # --- 2. Validate Priorities in priority_map ---
+    print("\n--- 2. Validating 'priority_map' ---")
     try:
         live_priorities = jira_client.priorities()
         live_priority_names = {p.name for p in live_priorities}
         
-        # Your code maps P1 -> "P1 (Gating)". We need to check against the values.
-        code_priority_values = set(priority_map.values())
-
-        print(f"Found {len(live_priority_names)} priorities in Jira.")
-
-        missing_from_jira = code_priority_values - live_priority_names
-        if missing_from_jira:
-            print("\n[WARNING] The following priorities exist in your code but NOT in Jira:")
-            for name in missing_from_jira:
-                print(f"  - {name}")
-
-        missing_from_code = live_priority_names - code_priority_values
-        if missing_from_code:
-            print("\n[INFO] The following priorities exist in Jira but are NOT in your 'priority_map':")
-            for name in missing_from_code:
-                print(f"  - {name}")
-
-        correct_priorities = code_priority_values.intersection(live_priority_names)
-        if correct_priorities:
-            print("\n[OK] The following priorities are correctly mapped:")
-            for name in correct_priorities:
-                print(f"  - {name}")
+        print("Checking if priorities in your code exist in Jira...")
+        all_ok = True
+        for name in priority_map.values():
+            if name in live_priority_names:
+                print(f"  - [OK] Priority '{name}' found in Jira.")
+            else:
+                print(f"  - [WARNING] Priority '{name}' from your map was NOT found in Jira.")
+                all_ok = False
+        if all_ok:
+            print("All priorities in your map are valid.")
 
     except Exception as e:
         print(f"\n[ERROR] Could not validate priorities. Details: {e}")
 
     # --- 3. Validate Program Custom Field ---
-    # We can't validate the *values* of a custom field easily without knowing its ID,
-    # but we can check if a field named "Program" exists.
     print("\n--- 3. Validating 'Program' Custom Field ---")
     try:
         all_fields = jira_client.fields()
@@ -93,15 +65,14 @@ def validate_jira_mappings():
             program_field = next(field for field in all_fields if field['name'].lower() == 'program')
             print(f"[OK] Found a custom field named 'Program'. Its ID is: {program_field['id']}")
             print("NOTE: This script cannot validate the *values* inside the Program field (e.g., 'Strix1 [PRG-000384]').")
-            print("Please ensure the values in your 'program_map' match the options in Jira for this field.")
         else:
             print("[WARNING] Could not find a custom field named 'Program'. Your program-based searches may fail.")
 
     except Exception as e:
         print(f"\n[ERROR] Could not validate custom fields. Details: {e}")
         
-    # --- 4. List All Statuses ---
-    print("\n--- 4. Listing All Available Statuses ---")
+    # --- 4. List All Statuses (for reference) ---
+    print("\n--- 4. Listing All Available Statuses (for Stale Ticket Logic) ---")
     print("Use this list to ensure your stale ticket logic uses the correct status names.")
     try:
         live_statuses = jira_client.statuses()
