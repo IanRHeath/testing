@@ -212,11 +212,17 @@ def build_jql(params: Dict[str, Any]) -> str:
             
     created_date = params.get("createdDate")
     if created_date:
-        jql_parts.append(f'created >= "{created_date}"')
+        if "()" in created_date:
+            jql_parts.append(f'created >= {created_date}')
+        else:
+            jql_parts.append(f'created >= "{created_date}"')
 
     updated_date = params.get("updatedDate")
     if updated_date:
-        jql_parts.append(f'updated >= "{updated_date}"')
+        if "()" in updated_date:
+            jql_parts.append(f'updated >= {updated_date}')
+        else:
+            jql_parts.append(f'updated >= "{updated_date}"')
 
     if params.get("intent") == "stale":
         stale_conditions = [
