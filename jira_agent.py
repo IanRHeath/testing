@@ -135,7 +135,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
+def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None) -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
     """
@@ -283,7 +283,7 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
 
 
 @tool
-def find_similar_tickets_tool(issue_key: str) -> str:
+def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
     Use this tool to find Jira tickets that are similar to an existing ticket.
     The user must provide a single, valid issue key (e.g., 'PLAT-123').
@@ -291,17 +291,33 @@ def find_similar_tickets_tool(issue_key: str) -> str:
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     
-    # Step 2: Fetch the source ticket's data
+    # Step 1: Fetch the source ticket's data
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
     print(f"--- Analyzing Ticket Data: {source_ticket_data} ---")
 
-    # Step 3: Extract keywords from the ticket's text
+    # Step 2: Extract keywords from the ticket's text using the LLM
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
+    if not text_to_analyze.strip():
+        return [] # Return empty list if no text to analyze
+    
     extracted_keywords = extract_keywords_from_text(text_to_analyze)
     print(f"--- Extracted Keywords: '{extracted_keywords}' ---")
 
-    # In future steps, we will build and run the search.
-    return f"SUCCESS: Extracted keywords for {issue_key}. Check console for details."
+    # Step 3: Build a new search query based on the extracted traits
+    params = {
+        'project': source_ticket_data.get('project'),
+        'keywords': extracted_keywords,
+        'maxResults': 10 # Limit to 10 similar results
+    }
+    
+    # Use the 'exclude_key' parameter to avoid finding the source ticket
+    similar_jql = build_jql(params, exclude_key=issue_key)
+    
+    # Step 4: Execute the search and return the results
+    similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
+    
+    return similar_issues
+
 
 ALL_JIRA_TOOLS = [
     jira_search_tool,
