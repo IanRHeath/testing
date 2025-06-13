@@ -1,42 +1,13 @@
+--- Steps to Reproduce Preview ---
+(Please provide detailed steps to reproduce the issue below this line)
+----------------------------------
+
 Is this information correct? (yes/no): yes
 Attempting to create ticket in project 'PLAT' with summary 'test'...
+[LIVE MODE] Sending data to Jira API...
 
-An unexpected error occurred: name 'assignee' is not defined
---- FULL TRACEBACK ---
-Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/main.py", line 34, in main
-    result = agent.invoke({"input": user_input, "chat_history": chat_history})
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/chains/base.py", line 167, in invoke
-    raise e
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/chains/base.py", line 157, in invoke
-    self._call(inputs, run_manager=run_manager)
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1620, in _call
-    next_step_output = self._take_next_step(
-                       ^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1326, in _take_next_step
-    [
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1411, in _iter_next_step
-    yield self._perform_agent_action(
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1433, in _perform_agent_action
-    observation = tool.run(
-                  ^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 771, in run
-    raise error_to_raise
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 740, in run
-    response = context.run(self._run, *tool_args, **tool_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/structured.py", line 93, in _run
-    return self.func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/jira_agent.py", line 232, in create_ticket_tool
-    new_issue = create_jira_issue(
-                ^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/jira_utils.py", line 142, in create_jira_issue
-    'assignee':         {'name': assignee}, # Assuming assignee is passed as an argument
-                                 ^^^^^^^^
-NameError: name 'assignee' is not defined
-----------------------
+JIRA Bot Error: JIRA API Error on ticket creation: JiraError HTTP 400 url: https://ontrack-internal.amd.com/rest/api/2/issue
 
-Please try rephrasing your request or contact support if the issue persists.
+        response headers = {'X-AREQUESTID': '61x64579946x17', 'X-ASESSIONID': 'oao1lj', 'X-ANODEID': 'node4', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Fri, 13 Jun 2025 05:01:50 GMT', 'Connection': 'close'}
+        response text = {"errorMessages":[],"errors":{"customfield_14308":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13002":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13208":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_14307":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_17000":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])"}}
+Please check your JQL query or JIRA connection.
