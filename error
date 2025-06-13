@@ -1,1 +1,62 @@
- There is no explicit information available about the creation date of NDADPP-10330 in the details I have access to. To find the exact creation date, please refer directly to the ticket in your JIRA system, where the creation timestamp is usually shown. If you need assistance with anything else or want a summary of this ticket, just let me know!
+Your JIRA Query Request: show me tickets about memory instability
+
+--- LLM Request Details (for extract_params) ---
+Model: gpt-4.1
+Messages:
+  Role: system, Content:
+    You are an expert in extracting JIRA query parameters from natural language prompts.
+    Your goal is to create a JSON object based on the user's request.
+
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate.
+
+    Available programs: STX, STXH, GNR, KRK, KRK2E, SHP, FRG
+    Available priorities: P1, P2, P3, P4
+    Available projects: PLAT, SWDEV, FWDEV
+
+    **Extraction Rules:**
+    - If the user's query contains text to search for, extract the essential words into the "keywords" field.
+    - For 'stale' tickets, infer the 'intent' as 'stale'. The system will handle the complex JQL for this.
+    - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
+        - "today" -> "startOfDay()"
+        - "yesterday" -> "startOfDay(-1)"
+        - "this week" -> "startOfWeek()"
+        - "this month" -> "startOfMonth()"
+        - "this year" -> "startOfYear()"
+        - "last 7 days" -> "-7d"
+        - "last 2 weeks" -> "-2w"
+        - "last 3 months" -> "-3M"
+    - If a parameter is not explicitly mentioned by the user, you MUST omit it from the JSON.
+    - ONLY include a "project" field if the user explicitly names a project in their request.
+
+    Example 1 (Date Search): "show me tickets created in the last 2 weeks"
+    {
+        "intent":"list",
+        "createdDate":"-2w"
+    }
+
+    Example 2 (Complex Search): "show me p2 tickets for STXH updated this week"
+    {
+        "intent":"list",
+        "priority":"P2",
+        "program":"STXH",
+        "updatedDate":"startOfWeek()"
+    }
+
+    Example 3 (Stale Ticket Search): "find stale tickets"
+    {
+        "intent":"stale"
+    }
+
+  Role: user, Content: memory instability
+----------------------------------------------
+
+LLM extracted parameters: {
+    "intent": "list",
+    "keywords": "memory instability"
+}
+Built JQL: (text ~ "memory instability")
+
+Attempting JIRA search with JQL: (text ~ "memory instability") | Limit: 20
+
+JIRA Bot Error: An unexpected error occurred during JIRA search: 'PropertyHolder' object has no attribute 'priority'
+Please check your JQL query or JIRA connection.
