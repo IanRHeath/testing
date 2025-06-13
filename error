@@ -1,12 +1,21 @@
---- Field Object Introspection Report ---
-Inspecting the first available field object to determine its structure.
-Object Type: <class 'jira.resources.Field'>
+Checking configuration for Project='PLAT' and Issue Type='Issue'...
+JIRA client initialized successfully with basic_auth (username/password).
+Successfully connected to Jira.
 
---- Available Attributes and Methods (from dir()) ---
-['JIRA_BASE_URL', '_HASH_IDS', '_READABLE_IDS', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_base_url', '_default_headers', '_find_by_url', '_get_url', '_load', '_options', '_parse_raw', '_resource', '_session', 'autoCompleteUrl', 'delete', 'fieldId', 'find', 'hasDefaultValue', 'name', 'operations', 'raw', 'required', 'schema', 'update']
+--- Validating Fields from 'create_ticket_tool' ---
+  - [ERROR] Field 'Project' (ID: project) is NOT available on the create screen.
+  - [ERROR] Field 'Summary' (ID: summary) is NOT available on the create screen.
+  - [OK] Field 'Issue Type' (ID: issuetype) is available on the create screen.
+  - [OK] Field 'Description' (ID: description) is available on the create screen.
+  - [OK] Field 'Steps to Reproduce' (ID: customfield_11607) is available on the create screen.
+  - [OK] Field 'Severity' (ID: customfield_12610) is available on the create screen.
+  - [OK] Field 'Program' (ID: customfield_13002) is available on the create screen.
+  - [OK] Field 'System' (ID: customfield_13208) is available on the create screen.
+  - [OK] Field 'BIOS Version' (ID: customfield_14200) is available on the create screen.
+  - [OK] Field 'Triage Category' (ID: customfield_14307) is available on the create screen.
+  - [OK] Field 'Triage Assignment' (ID: customfield_14308) is available on the create screen.
+  - [OK] Field 'Silicon Revision' (ID: customfield_17000) is available on the create screen.
 
---- Raw Object Data (from __dict__, if available) ---
-{'_resource': 'field/{0}', '_options': {'server': 'https://ontrack-internal.amd.com', 'auth_url': '/rest/auth/1/session', 'context_path': '/', 'rest_path': 'api', 'rest_api_version': '2', 'agile_rest_path': 'agile', 'agile_rest_api_version': '1.0', 'verify': True, 'resilient': True, 'async': False, 'async_workers': 5, 'client_cert': None, 'check_update': False, 'delay_reload': 0, 'headers': {'Cache-Control': 'no-cache', 'Content-Type': 'application/json', 'X-Atlassian-Token': 'no-check'}, 'default_batch_size': {<class 'jira.resources.Resource'>: 100}}, '_session': <jira.resilientsession.ResilientSession object at 0x76d7203fecc0>, '_base_url': '{server}/rest/{rest_path}/{rest_api_version}/{path}', 'raw': {'required': False, 'schema': {'type': 'user', 'system': 'assignee'}, 'name': 'Assignee', 'fieldId': 'assignee', 'autoCompleteUrl': 'https://ontrack-internal.amd.com/rest/api/latest/user/assignable/search?issueKey=null&username=', 'hasDefaultValue': False, 'operations': ['set']}, 'required': False, 'schema': <jira.resources.PropertyHolder object at 0x76d71ebcd190>, 'name': 'Assignee', 'fieldId': 'assignee', 'autoCompleteUrl': 'https://ontrack-internal.amd.com/rest/api/latest/user/assignable/search?issueKey=null&username=', 'hasDefaultValue': False, 'operations': ['set']}
-
---- Inspection Complete ---
-Please send the entire output above to resolve the issue.
+--- Validation Summary ---
+Action Required: The fields marked [ERROR] are causing the '400 Bad Request' error.
+We must update the 'create_jira_issue' function in 'jira_utils.py' to remove or replace these fields.
