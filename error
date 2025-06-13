@@ -1,4 +1,4 @@
-Your JIRA Query Request: search for UI bugs in the SWDEV project
+Your JIRA Query Request: search for regressions created today
 
 --- LLM Request Details (for extract_params) ---
 Model: gpt-4.1
@@ -47,14 +47,17 @@ Messages:
         "intent":"stale"
     }
 
-  Role: user, Content: UI bugs in SWDEV project
+  Role: user, Content: regression tickets created today
 ----------------------------------------------
 
 LLM extracted parameters: {
     "intent": "list",
-    "project": "SWDEV",
-    "keywords": ["UI", "bugs"]
+    "keywords": "regression",
+    "createdDate": "startOfDay()"
 }
+Built JQL: created >= "startOfDay()" AND (text ~ "regression")
 
-JIRA Bot Error: An unexpected error occurred in jira_search_tool: 'list' object has no attribute 'split'
+Attempting JIRA search with JQL: created >= "startOfDay()" AND (text ~ "regression") | Limit: 20
+
+JIRA Bot Error: JIRA search failed for JQL 'created >= "startOfDay()" AND (text ~ "regression")': Date value 'startOfDay()' for field 'created' is invalid. Valid formats include: 'yyyy/MM/dd HH:mm', 'yyyy-MM-dd HH:mm', 'yyyy/MM/dd', 'yyyy-MM-dd', or a period format e.g. '-5d', '4w 2d'.. Status code: 400. Please refine the query.
 Please check your JQL query or JIRA connection.
