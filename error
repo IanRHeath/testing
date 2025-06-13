@@ -1,6 +1,12 @@
---- Starting Ticket Creation Field Validation ---
-Checking configuration for Project='PLAT' and Issue Type='Issue'...
-JIRA client initialized successfully with basic_auth (username/password).
-Successfully connected to Jira.
+--- Field Object Introspection Report ---
+Inspecting the first available field object to determine its structure.
+Object Type: <class 'jira.resources.Field'>
 
-An unexpected error occurred: <class 'jira.resources.Field'> object has no attribute 'key' ('Field' object is not subscriptable)
+--- Available Attributes and Methods (from dir()) ---
+['JIRA_BASE_URL', '_HASH_IDS', '_READABLE_IDS', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_base_url', '_default_headers', '_find_by_url', '_get_url', '_load', '_options', '_parse_raw', '_resource', '_session', 'autoCompleteUrl', 'delete', 'fieldId', 'find', 'hasDefaultValue', 'name', 'operations', 'raw', 'required', 'schema', 'update']
+
+--- Raw Object Data (from __dict__, if available) ---
+{'_resource': 'field/{0}', '_options': {'server': 'https://ontrack-internal.amd.com', 'auth_url': '/rest/auth/1/session', 'context_path': '/', 'rest_path': 'api', 'rest_api_version': '2', 'agile_rest_path': 'agile', 'agile_rest_api_version': '1.0', 'verify': True, 'resilient': True, 'async': False, 'async_workers': 5, 'client_cert': None, 'check_update': False, 'delay_reload': 0, 'headers': {'Cache-Control': 'no-cache', 'Content-Type': 'application/json', 'X-Atlassian-Token': 'no-check'}, 'default_batch_size': {<class 'jira.resources.Resource'>: 100}}, '_session': <jira.resilientsession.ResilientSession object at 0x76d7203fecc0>, '_base_url': '{server}/rest/{rest_path}/{rest_api_version}/{path}', 'raw': {'required': False, 'schema': {'type': 'user', 'system': 'assignee'}, 'name': 'Assignee', 'fieldId': 'assignee', 'autoCompleteUrl': 'https://ontrack-internal.amd.com/rest/api/latest/user/assignable/search?issueKey=null&username=', 'hasDefaultValue': False, 'operations': ['set']}, 'required': False, 'schema': <jira.resources.PropertyHolder object at 0x76d71ebcd190>, 'name': 'Assignee', 'fieldId': 'assignee', 'autoCompleteUrl': 'https://ontrack-internal.amd.com/rest/api/latest/user/assignable/search?issueKey=null&username=', 'hasDefaultValue': False, 'operations': ['set']}
+
+--- Inspection Complete ---
+Please send the entire output above to resolve the issue.
