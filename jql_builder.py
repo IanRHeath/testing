@@ -50,7 +50,7 @@ triage_assignment_map = {
         "Firmware - Binary DXIO", "Firmware - Binary EC", "Firmware - Binary IMC", "Firmware - Binary PSP",
         "Firmware - Binary SMU", "Firmware - Binary XHC", "Firmware - BIOS Verification", "Firmware - IPE AGESA - ABL",
         "Firmware - IPE AGESA - CPU", "Firmware - IPE AGESA - CPU UCODE INTEGRATION", "Firmware - IPE AGESA - DF",
-        "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - Ipe AGESA - MEM",
+        "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - IPE AGESA - MEM",
         "Firmware - IPE AGESA - Other", "Firmware - IPE AGESA - PROMONTORY", "Firmware - IPE AGESA - PSP",
         "Firmware - IPE AGESA - UEFI", "Firmware - IPE CBS - CPU", "Firmware - IPE CBS - FCH",
         "Firmware - IPE CBS - GNB", "Firmware - IPE CBS - MEM", "Firmware - IPE CBS - Other", "Firmware - IPE CPM"
@@ -102,7 +102,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, iod_silicon_rev, ccd_silicon_rev.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
@@ -214,20 +214,9 @@ def build_jql(params: Dict[str, Any]) -> str:
         if assignee.upper() == "EMPTY":
             jql_parts.append("assignee is EMPTY")
         else:
-            # Check if the name seems to be in "Last, First" format already
-            if "," in assignee:
-                jql_parts.append(f'assignee = "{assignee}"')
-            else:
-                # Otherwise, attempt to reformat from "First Last" to "Last, First"
-                name_parts = assignee.split()
-                if len(name_parts) > 1:
-                    last_name = name_parts[-1]
-                    first_name = " ".join(name_parts[:-1])
-                    formatted_name = f"{last_name}, {first_name}"
-                    jql_parts.append(f'assignee = "{formatted_name}"')
-                else:
-                    # Handle single names (like usernames)
-                    jql_parts.append(f'assignee = "{assignee}"')
+            # Simplified logic: Use the name exactly as provided by the user/LLM.
+            # This relies on the user providing a correct Jira username or full display name.
+            jql_parts.append(f'assignee = "{assignee}"')
 
     created_date = params.get("createdDate")
     if created_date:
