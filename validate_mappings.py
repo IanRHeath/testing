@@ -52,7 +52,7 @@ def validate_creation_fields():
 
         # Step 2: Get the fields for that specific project and issue type
         fields = jira_client.project_issue_fields(PROJECT_KEY, issue_type_id)
-        available_field_ids = {f['id'] for f in fields}
+        available_field_ids = {f.id for f in fields}
 
         print("--- Validating Fields from 'create_ticket_tool' ---")
         error_found = False
