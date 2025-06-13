@@ -2,10 +2,10 @@ import json
 from jira_utils import initialize_jira_client, JiraBotError
 
 # --- CONFIGURATION ---
-# Replace with the project key and issue type name you want to check.
-# The issue type name must be an exact match to the one in Jira (e.g., "Bug", "Story", "Task").
-PROJECT_KEY = 'YOUR_PROJECT_KEY'
-ISSUE_TYPE_NAME = 'Your Issue Type Name'
+# IMPORTANT: You must replace these example values with a real Project Key
+# and Issue Type Name from your Jira instance.
+PROJECT_KEY = 'PLAT'  # <--- REPLACE 'PLAT' with your target project key
+ISSUE_TYPE_NAME = 'Bug' # <--- REPLACE 'Bug' with the issue type you want to create
 # --- END CONFIGURATION ---
 
 # These are the fields our create_ticket_tool tries to send.
