@@ -293,8 +293,7 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     
     # Step 1: Fetch the source ticket's data
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
-    print(f"--- Analyzing Ticket Data: {source_ticket_data} ---")
-
+    
     # Step 2: Extract keywords from the ticket's text using the LLM
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
     if not text_to_analyze.strip():
