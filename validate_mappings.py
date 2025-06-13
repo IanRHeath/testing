@@ -1,88 +1,80 @@
+import json
 from jira_utils import initialize_jira_client, JiraBotError
-from jql_builder import project_map, priority_map, program_map
 
-def validate_jira_mappings():
+# --- CONFIGURATION ---
+# Replace with the project key and issue type name you want to check.
+# The issue type name must be an exact match to the one in Jira (e.g., "Bug", "Story", "Task").
+PROJECT_KEY = 'YOUR_PROJECT_KEY'
+ISSUE_TYPE_NAME = 'Your Issue Type Name'
+# --- END CONFIGURATION ---
+
+# These are the fields our create_ticket_tool tries to send.
+# The script will validate each one.
+FIELDS_TO_VALIDATE = {
+    'project': 'Project',
+    'summary': 'Summary',
+    'issuetype': 'Issue Type',
+    'description': 'Description',
+    'customfield_11607': 'Steps to Reproduce',
+    'customfield_12610': 'Severity',
+    'customfield_13002': 'Program',
+    'customfield_13208': 'System',
+    'customfield_14200': 'BIOS Version',
+    'customfield_14307': 'Triage Category',
+    'customfield_14308': 'Triage Assignment',
+    'customfield_17000': 'Silicon Revision'
+}
+
+
+def validate_creation_fields():
     """
-    Connects to Jira and validates that the hardcoded map values in the application
-    exist in the live configuration of the Jira instance.
+    Connects to Jira and validates that the fields required by the
+    create_ticket_tool exist on the target 'Create Issue' screen,
+    using modern API calls compatible with newer Jira versions.
     """
-    print("--- Starting Jira Configuration Validation ---")
-    
+    print("--- Starting Ticket Creation Field Validation ---")
+    print(f"Checking configuration for Project='{PROJECT_KEY}' and Issue Type='{ISSUE_TYPE_NAME}'...")
+
     try:
         jira_client = initialize_jira_client()
-        print("\nSuccessfully connected to Jira.")
-    except JiraBotError as e:
-        print(f"FATAL ERROR: Could not connect to Jira. {e}")
-        return
+        print("Successfully connected to Jira.\n")
 
-    # --- 1. Validate Projects in project_map ---
-    print("\n--- 1. Validating 'project_map' ---")
-    try:
-        live_projects = jira_client.projects()
-        live_project_keys = {p.key for p in live_projects}
-        
-        print("Checking if projects in your code exist in Jira...")
-        all_ok = True
-        for key in project_map.keys():
-            if key in live_project_keys:
-                print(f"  - [OK] Project '{key}' found in Jira.")
+        # Step 1: Get all available issue types for the project
+        issue_types = jira_client.project_issue_types(PROJECT_KEY)
+        issue_type_map = {it.name: it.id for it in issue_types}
+
+        if ISSUE_TYPE_NAME not in issue_type_map:
+            print(f"[FATAL] The issue type '{ISSUE_TYPE_NAME}' is not valid for project '{PROJECT_KEY}'.")
+            print("Available issue types are:", list(issue_type_map.keys()))
+            return
+            
+        issue_type_id = issue_type_map[ISSUE_TYPE_NAME]
+
+        # Step 2: Get the fields for that specific project and issue type
+        fields = jira_client.project_issue_fields(PROJECT_KEY, issue_type_id)
+        available_field_ids = {f['id'] for f in fields}
+
+        print("--- Validating Fields from 'create_ticket_tool' ---")
+        error_found = False
+        for field_id, field_name in FIELDS_TO_VALIDATE.items():
+            if field_id in available_field_ids:
+                print(f"  - [OK] Field '{field_name}' (ID: {field_id}) is available on the create screen.")
             else:
-                print(f"  - [WARNING] Project '{key}' from your map was NOT found in Jira.")
-                all_ok = False
-        if all_ok:
-            print("All projects in your map are valid.")
+                print(f"  - [ERROR] Field '{field_name}' (ID: {field_id}) is NOT available on the create screen.")
+                error_found = True
         
-    except Exception as e:
-        print(f"\n[ERROR] Could not validate projects. Details: {e}")
-
-    # --- 2. Validate Priorities in priority_map ---
-    print("\n--- 2. Validating 'priority_map' ---")
-    try:
-        live_priorities = jira_client.priorities()
-        live_priority_names = {p.name for p in live_priorities}
-        
-        print("Checking if priorities in your code exist in Jira...")
-        all_ok = True
-        for name in priority_map.values():
-            if name in live_priority_names:
-                print(f"  - [OK] Priority '{name}' found in Jira.")
-            else:
-                print(f"  - [WARNING] Priority '{name}' from your map was NOT found in Jira.")
-                all_ok = False
-        if all_ok:
-            print("All priorities in your map are valid.")
-
-    except Exception as e:
-        print(f"\n[ERROR] Could not validate priorities. Details: {e}")
-
-    # --- 3. Validate Program Custom Field ---
-    print("\n--- 3. Validating 'Program' Custom Field ---")
-    try:
-        all_fields = jira_client.fields()
-        program_field_found = any(field['name'].lower() == 'program' for field in all_fields)
-        
-        if program_field_found:
-            program_field = next(field for field in all_fields if field['name'].lower() == 'program')
-            print(f"[OK] Found a custom field named 'Program'. Its ID is: {program_field['id']}")
-            print("NOTE: This script cannot validate the *values* inside the Program field (e.g., 'Strix1 [PRG-000384]').")
+        print("\n--- Validation Summary ---")
+        if error_found:
+            print("Action Required: The fields marked [ERROR] are causing the '400 Bad Request' error.")
+            print("We must update the 'create_jira_issue' function in 'jira_utils.py' to remove or replace these fields.")
         else:
-            print("[WARNING] Could not find a custom field named 'Program'. Your program-based searches may fail.")
+            print("Success! All fields required by the bot are present on the Jira create screen.")
 
+    except JiraBotError as e:
+        print(f"A JIRA Bot Error occurred: {e}")
     except Exception as e:
-        print(f"\n[ERROR] Could not validate custom fields. Details: {e}")
-        
-    # --- 4. List All Statuses (for reference) ---
-    print("\n--- 4. Listing All Available Statuses (for Stale Ticket Logic) ---")
-    print("Use this list to ensure your stale ticket logic uses the correct status names.")
-    try:
-        live_statuses = jira_client.statuses()
-        for status in sorted(live_statuses, key=lambda x: x.name):
-            print(f"  - \"{status.name}\"")
-    except Exception as e:
-        print(f"\n[ERROR] Could not retrieve statuses. Details: {e}")
-        
-    print("\n--- Validation Complete ---")
+        print(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":
-    validate_jira_mappings()
+    validate_creation_fields()
