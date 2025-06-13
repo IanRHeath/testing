@@ -92,6 +92,9 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
         assignee = issue.fields.assignee
         details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
         
+        details.append(f"Created: {issue.fields.created[:10]}")
+        details.append(f"Updated: {issue.fields.updated[:10]}")
+
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
         
