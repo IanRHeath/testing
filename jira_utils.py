@@ -43,9 +43,18 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
 
         formatted_issues = []
         for issue in issues:
-            assignee_name = issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned"
-            status_name = issue.fields.status.name if issue.fields.status else "Unknown"
-            priority_name = issue.fields.priority.name if issue.fields.priority else "Unknown"
+            # Safer way to access potentially missing fields
+            assignee_name = "Unassigned"
+            if hasattr(issue.fields, 'assignee') and issue.fields.assignee:
+                assignee_name = issue.fields.assignee.displayName
+
+            status_name = "Unknown"
+            if hasattr(issue.fields, 'status') and issue.fields.status:
+                status_name = issue.fields.status.name
+
+            priority_name = "Unknown"
+            if hasattr(issue.fields, 'priority') and issue.fields.priority:
+                priority_name = issue.fields.priority.name
 
             formatted_issues.append({
                 "key": issue.key,
