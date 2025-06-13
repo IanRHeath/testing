@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional # Import Optional
 import openai
 from jira import JIRA
 
@@ -14,7 +14,6 @@ except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
 # ... (program_map, system_map, and other maps remain the same) ...
-
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -213,9 +212,10 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-def build_jql(params: Dict[str, Any]) -> str:
+def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
+    Can optionally exclude a specific issue key from the results.
     """
     jql_parts = []
     order_clause = ""
@@ -288,7 +288,7 @@ def build_jql(params: Dict[str, Any]) -> str:
     if keywords:
         keyword_list = []
         if isinstance(keywords, str):
-            keyword_list = keywords.split(',')
+            keyword_list = keywords.split(' ') # Split by space for keywords from text analysis
         elif isinstance(keywords, list):
             keyword_list = keywords
 
@@ -298,7 +298,12 @@ def build_jql(params: Dict[str, Any]) -> str:
             if kw:
                 keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
-            jql_parts.append(f"({' OR '.join(keyword_parts)})")
+            # For keyword-based similarity, we join with AND to make the search more precise
+            jql_parts.append(f"({' AND '.join(keyword_parts)})")
+
+    # Add the exclusion clause if a key is provided
+    if exclude_key:
+        jql_parts.append(f'key != "{exclude_key}"')
 
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
