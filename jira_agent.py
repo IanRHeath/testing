@@ -127,14 +127,14 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
+def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLAT", issuetype: str = "Draft") -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
-    valid_issue_types = ['Issue', 'enhancement', 'draft']
+    valid_issue_types = ['Issue', 'enhancement', 'draft', 'Task', 'Sub-task']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
     program_code = program.upper()
