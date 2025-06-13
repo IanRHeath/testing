@@ -1,21 +1,39 @@
 from jira_utils import initialize_jira_client, JiraBotError
-from jql_builder import VALID_SEVERITY_LEVELS
+from jql_builder import (
+    VALID_SEVERITY_LEVELS, VALID_SILICON_REVISIONS, program_map, system_map,
+    VALID_TRIAGE_CATEGORIES, triage_assignment_map
+)
 
 # --- CONFIGURATION ---
-# We will use the Project and Issue Type we discovered works for creation.
+# 1. Set the Project and Issue Type for the 'Create' screen you want to inspect.
 PROJECT_KEY = 'PLAT'
 ISSUE_TYPE_NAME = 'Draft'
-# The known ID for the "Severity" custom field.
-SEVERITY_FIELD_ID = 'customfield_12610'
+
+# 2. Set the details of the custom field you want to validate.
+#    - FIELD_NAME_FOR_REPORTING is just for clean print outputs.
+#    - FIELD_ID_TO_VALIDATE is the actual custom field ID from Jira.
+#    - LOCAL_OPTIONS_TO_VALIDATE is the corresponding set/list/dict from your code.
+
+# Example for 'Severity':
+FIELD_NAME_FOR_REPORTING = 'Severity'
+FIELD_ID_TO_VALIDATE = 'customfield_12610'
+LOCAL_OPTIONS_TO_VALIDATE = VALID_SEVERITY_LEVELS
+
+# To check a different field, comment out the lines above and uncomment another block.
+# Example for 'Silicon Revision':
+# FIELD_NAME_FOR_REPORTING = 'Silicon Revision'
+# FIELD_ID_TO_VALIDATE = 'customfield_17000'
+# LOCAL_OPTIONS_TO_VALIDATE = VALID_SILICON_REVISIONS
+
 # --- END CONFIGURATION ---
 
-def validate_severity():
+def validate_field():
     """
-    Connects to Jira and validates that the hardcoded VALID_SEVERITY_LEVELS
-    matches the available options in the live Jira instance.
+    Connects to Jira and validates that a specified set of local options
+    matches the available options for a custom field in the live Jira instance.
     """
-    print("--- Starting Severity Field Validation ---")
-    print(f"Checking Severity options for Project='{PROJECT_KEY}' and Issue Type='{ISSUE_TYPE_NAME}'...")
+    print(f"--- Starting Validation for '{FIELD_NAME_FOR_REPORTING}' Field ---")
+    print(f"Checking on Project='{PROJECT_KEY}' and Issue Type='{ISSUE_TYPE_NAME}'...")
 
     try:
         jira_client = initialize_jira_client()
@@ -24,47 +42,49 @@ def validate_severity():
         # Get all the fields for the specific create screen
         fields = jira_client.project_issue_fields(PROJECT_KEY, jira_client.project_issue_types(PROJECT_KEY, ISSUE_TYPE_NAME)[0].id)
         
-        severity_field_info = None
+        target_field_info = None
         for f in fields:
-            if f.fieldId == SEVERITY_FIELD_ID:
-                severity_field_info = f
+            if f.fieldId == FIELD_ID_TO_VALIDATE:
+                target_field_info = f
                 break
         
-        if not severity_field_info:
-            print(f"[FATAL] The Severity field (ID: {SEVERITY_FIELD_ID}) was not found on this create screen.")
+        if not target_field_info:
+            print(f"[FATAL] The field '{FIELD_NAME_FOR_REPORTING}' (ID: {FIELD_ID_TO_VALIDATE}) was not found on this create screen.")
             return
 
-        # Extract the names from the 'allowedValues' property
-        live_severity_options = {val.value for val in severity_field_info.allowedValues}
-        
-        # The set of severities hardcoded in jql_builder.py
-        code_severity_options = VALID_SEVERITY_LEVELS
+        # Extract the names from the 'allowedValues' property, which contains the dropdown options
+        if not hasattr(target_field_info, 'allowedValues'):
+             print(f"[ERROR] Field '{FIELD_NAME_FOR_REPORTING}' does not appear to be a dropdown field (it has no 'allowedValues').")
+             return
 
-        print(f"Found {len(live_severity_options)} Severity options in Jira.")
+        live_options = {val.value for val in target_field_info.allowedValues}
+        code_options = set(LOCAL_OPTIONS_TO_VALIDATE) # Ensure it's a set for comparison
+
+        print(f"Found {len(live_options)} options for '{FIELD_NAME_FOR_REPORTING}' in Jira.")
         print("-" * 50)
 
         # --- Comparison Report ---
-        correctly_mapped = code_severity_options.intersection(live_severity_options)
-        missing_from_code = live_severity_options - code_severity_options
-        missing_from_jira = code_severity_options - live_severity_options
+        correctly_mapped = code_options.intersection(live_options)
+        missing_from_code = live_options - code_options
+        missing_from_jira = code_options - live_options
 
         if correctly_mapped:
-            print("\n[OK] The following severities are correctly mapped in your code:")
+            print(f"\n[OK] The following options for '{FIELD_NAME_FOR_REPORTING}' are correctly mapped in your code:")
             for item in sorted(list(correctly_mapped)):
                 print(f"  - {item}")
         
         if missing_from_code:
-            print("\n[INFO] The following severities exist in Jira but are NOT in your code's VALID_SEVERITY_LEVELS list:")
+            print(f"\n[INFO] The following options exist in Jira but are NOT in your code's list:")
             for item in sorted(list(missing_from_code)):
                 print(f"  - {item}")
         
         if missing_from_jira:
-            print("\n[WARNING] The following severities exist in your code but NOT in Jira and should be removed:")
+            print(f"\n[WARNING] The following options exist in your code but NOT in Jira and should be removed:")
             for item in sorted(list(missing_from_jira)):
                 print(f"  - {item}")
 
         if not missing_from_code and not missing_from_jira:
-            print("\nSuccess! Your `VALID_SEVERITY_LEVELS` list is perfectly in sync with Jira.")
+            print(f"\nSuccess! Your list for '{FIELD_NAME_FOR_REPORTING}' is perfectly in sync with Jira.")
 
     except JiraBotError as e:
         print(f"A JIRA Bot Error occurred: {e}")
@@ -73,4 +93,4 @@ def validate_severity():
 
 
 if __name__ == "__main__":
-    validate_severity()
+    validate_field()
