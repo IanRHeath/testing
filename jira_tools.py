@@ -1,4 +1,14 @@
-# This logic is contained within jira_agent.py
+import os
+from langchain.tools import tool
+from typing import List, Dict, Any, Optional
+from jira import JIRA
+from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError
+from jql_builder import (
+    extract_params, build_jql, program_map, system_map,
+    VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
+    VALID_SEVERITY_LEVELS
+)
+from llm_config import get_llm
 
 JIRA_CLIENT_INSTANCE = None
 try:
@@ -39,7 +49,7 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
     """
-    Use this tool when the user asks for the available or valid options for a specific ticket field, like 'Program' or 'Triage Assignment'. For 'Triage Assignment', the user must also provide a 'Triage Category' that it depends on.
+    Use this tool when the user asks for the available or valid options for a specific ticket field...
     """
     field_lower = field_name.lower()
 
@@ -61,8 +71,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
             return f"Could not find a Program with the code '{depends_on.upper()}'."
     elif "triage assignment" in field_lower:
         if not depends_on:
-            available_categories = ", ".join(triage_assignment_map.keys())
-            return f"To list the Triage Assignments, you must first provide a Triage Category. Available categories are: {available_categories}"
+            return "To list the Triage Assignments, you must first provide a Triage Category."
         options = triage_assignment_map.get(depends_on.upper())
         if options:
             return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
@@ -73,14 +82,14 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
+def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
     """
-    Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
+    Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
-    valid_issue_types = ['Issue', 'enhancement', 'draft', 'Task', 'Sub-task']
+    valid_issue_types = ['Issue', 'enhancement', 'draft']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
     program_code = program.upper()
@@ -177,12 +186,9 @@ All Scandump Links:
 
     new_issue = create_jira_issue(
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
-        issuetype=issuetype, program=program_full_name, system=system, 
-        silicon_revision=silicon_revision.upper(),
-        iod_silicon_rev=iod_silicon_rev,
-        ccd_silicon_rev=ccd_silicon_rev,
+        issuetype=issuetype, program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
         bios_version=bios_version, triage_category=triage_cat_upper, triage_assignment=triage_assignment,
-        severity=severity_title, steps_to_reproduce=final_steps, assignee=assignee
+        severity=severity_title, steps_to_reproduce=final_steps
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
 
