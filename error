@@ -3,5 +3,7 @@ Checking configuration for Project='YOUR_PROJECT_KEY' and Issue Type='Your Issue
 JIRA client initialized successfully with basic_auth (username/password).
 Successfully connected to Jira.
 
-An unexpected error occurred: JiraError HTTP None
-        text: Unsupported JIRA version: (9, 4, 2). Use 'project_issue_types' and 'project_issue_fields' instead.
+An unexpected error occurred: JiraError HTTP 400 url: https://ontrack-internal.amd.com/rest/api/2/issue/createmeta/YOUR_PROJECT_KEY/issuetypes?maxResults=50
+
+        response headers = {'X-AREQUESTID': '18x62395056x17', 'X-ASESSIONID': '13cvzdt', 'X-ANODEID': 'node3', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Fri, 13 Jun 2025 04:18:47 GMT', 'Connection': 'close'}
+        response text =
