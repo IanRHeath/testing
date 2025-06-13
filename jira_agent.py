@@ -128,7 +128,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
+def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
     """
@@ -234,7 +234,8 @@ All Scandump Links:
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
         issuetype=issuetype, program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
         bios_version=bios_version, triage_category=triage_cat_upper, triage_assignment=triage_assignment,
-        severity=severity_title, steps_to_reproduce=final_steps, assignee=assignee
+        severity=severity_title, steps_to_reproduce=final_steps, assignee=assignee,
+        iod_silicon_rev=iod_silicon_rev, ccd_silicon_rev=ccd_silicon_rev
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
 
