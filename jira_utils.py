@@ -126,20 +126,17 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, assignee: Optional[str] = None) -> JIRA.issue:
     """
     Creates a new issue in Jira.
     """
     print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
     
-    # This dictionary now contains ALL fields that were reported as valid
-    # for the 'Draft' issue type in the discovery script output.
     fields = {
         'project':          {'key': project},
         'summary':          summary,
         'issuetype':        {'name': issuetype},
         'description':      description,
-        'assignee':         {'name': assignee}, # Assuming assignee is passed as an argument
         'customfield_11607': steps_to_reproduce,
         'customfield_12610': {'value': severity },
         'customfield_13002': {'value': program },
@@ -148,9 +145,10 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
         'customfield_14307': {'value': triage_category},
         'customfield_14308': {'value': triage_assignment},
         'customfield_17000': {'value': silicon_revision }
-        # Note: Other custom fields from the output are not included
-        # as the bot does not currently collect that information.
     }
+    
+    if assignee:
+        fields['assignee'] = {'name': assignee}
 
     try:
         print("[LIVE MODE] Sending data to Jira API...")
