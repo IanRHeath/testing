@@ -23,6 +23,7 @@ def get_jira_agent() -> AgentExecutor:
     - You can search for JIRA tickets using natural language.
     - You can summarize a single JIRA ticket. If the user asks a specific question about a ticket (e.g., "what is the root cause of..."), pass that question to the tool. Otherwise, a default summary will be generated.
     - You can summarize a list of multiple JIRA tickets at once.
+    - You can find tickets that are similar to an existing ticket.
 
     **Behavioral Guidelines:**
     - Your primary goal is to select the correct tool for the job.
@@ -104,6 +105,8 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         return f"The valid options for Program are: {list(program_map.keys())}"
     elif "project" in field_lower:
         return f"The valid options for Project are: {list(project_map.keys())}"
+    elif "issue type" in field_lower or "issuetype" in field_lower:
+        return f"The valid options for Issue Type are: {VALID_ISSUE_TYPES}"
     elif "triage category" in field_lower:
         return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
     elif "silicon revision" in field_lower or "iod" in field_lower or "ccd" in field_lower:
@@ -132,13 +135,15 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None) -> str:
+def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
+    if issuetype.lower() not in [t.lower() for t in VALID_ISSUE_TYPES]:
+        return f"Error: Invalid issue type '{issuetype}'. It must be one of {VALID_ISSUE_TYPES}."
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. It must be one of {list(program_map.keys())}."
@@ -248,6 +253,7 @@ def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a f
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL."""
     return _get_single_ticket_summary(issue_key, question)
 
+
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
     """Use this tool when the user asks to summarize MORE THAN ONE JIRA ticket."""
@@ -259,6 +265,7 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
         except JiraBotError as e:
             summaries.append(f"Could not generate summary for {key}: {e}")
     return "\n\n---\n\n".join(summaries)
+
 
 @tool
 def jira_search_tool(query: str) -> List[Dict[str, Any]]:
@@ -274,10 +281,23 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
 
+
+@tool
+def find_similar_tickets_tool(issue_key: str) -> str:
+    """
+    Use this tool to find Jira tickets that are similar to an existing ticket.
+    The user must provide a single, valid issue key (e.g., 'PLAT-123').
+    """
+    print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
+    print(f"--- Received issue_key: {issue_key} ---")
+    # In future steps, we will add logic here to fetch, analyze, and search.
+    return f"SUCCESS: The 'find_similar_tickets_tool' was called for {issue_key}. Feature is under construction."
+
 ALL_JIRA_TOOLS = [
     jira_search_tool,
     summarize_ticket_tool,
     summarize_multiple_tickets_tool,
     create_ticket_tool,
-    get_field_options_tool
+    get_field_options_tool,
+    find_similar_tickets_tool
 ]
