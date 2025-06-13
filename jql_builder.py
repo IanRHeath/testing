@@ -247,7 +247,7 @@ def build_jql(params: Dict[str, Any]) -> str:
         stale_conditions = [
             'updated < "-30d"',
             '(assignee is EMPTY AND created < "-7d")',
-            'status WAS "In Progress" FOR "60d"'
+            'status WAS "In Progress" "FOR" "60d"'
         ]
         jql_parts.append(f"status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND ({' OR '.join(stale_conditions)})")
 
