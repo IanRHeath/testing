@@ -132,19 +132,21 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
     """
     print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
     
+    # Corrected the format for several custom fields based on the API error.
+    # Instead of {'value': x}, we now pass the direct string value.
     fields = {
         'project':          {'key': project},
         'summary':          summary,
         'issuetype':        {'name': issuetype},
         'description':      description,
         'customfield_11607': steps_to_reproduce,
-        'customfield_12610': {'value': severity },
-        'customfield_13002': {'value': program },
-        'customfield_13208': {'value': system },
+        'customfield_12610': {'value': severity},  # This field did NOT error, so we leave it as-is.
+        'customfield_13002': program,
+        'customfield_13208': system,
         'customfield_14200': bios_version,
-        'customfield_14307': {'value': triage_category},
-        'customfield_14308': {'value': triage_assignment},
-        'customfield_17000': {'value': silicon_revision }
+        'customfield_14307': triage_category,
+        'customfield_14308': triage_assignment,
+        'customfield_17000': silicon_revision
     }
     
     if assignee:
