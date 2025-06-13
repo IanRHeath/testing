@@ -102,7 +102,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
@@ -111,6 +111,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     **Extraction Rules:**
     - If the user's query contains text to search for, extract the essential words into the "keywords" field.
     - For 'stale' tickets, infer the 'intent' as 'stale'. The system will handle the complex JQL for this.
+    - For queries about unassigned tickets (e.g., "no owner", "unassigned"), set the 'assignee' field to the special value "EMPTY".
     - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
         - "today" -> "startOfDay()"
         - "yesterday" -> "startOfDay(-1)"
@@ -118,23 +119,21 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         - "this month" -> "startOfMonth()"
         - "this year" -> "startOfYear()"
         - "last 7 days" -> "-7d"
-        - "last 2 weeks" -> "-2w"
-        - "last 3 months" -> "-3M"
-    - If a parameter is not explicitly mentioned by the user, you MUST omit it from the JSON.
+    - If a parameter is not explicitly mentioned, you MUST omit it from the JSON.
     - ONLY include a "project" field if the user explicitly names a project in their request.
 
-    Example 1 (Date Search): "show me tickets created in the last 2 weeks"
+    Example 1 (Assignee Search): "show me unassigned tickets"
     {{
         "intent":"list",
-        "createdDate":"-2w"
+        "assignee":"EMPTY"
     }}
 
-    Example 2 (Complex Search): "show me p2 tickets for STXH updated this week"
+    Example 2 (Complex Search): "show me p2 tickets for STXH assigned to John Doe"
     {{
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
-        "updatedDate":"startOfWeek()"
+        "assignee":"John Doe"
     }}
 
     Example 3 (Stale Ticket Search): "find stale tickets"
@@ -209,7 +208,14 @@ def build_jql(params: Dict[str, Any]) -> str:
             jql_parts.append(f"program = '{raw_prog}'")
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
-            
+    
+    assignee = params.get("assignee")
+    if assignee:
+        if assignee.upper() == "EMPTY":
+            jql_parts.append("assignee is EMPTY")
+        else:
+            jql_parts.append(f'assignee = "{assignee}"')
+
     created_date = params.get("createdDate")
     if created_date:
         if "()" in created_date:
