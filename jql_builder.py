@@ -227,9 +227,15 @@ def build_jql(params: Dict[str, Any]) -> str:
 
     keywords = params.get("keywords")
     if keywords:
+        keyword_list = []
+        if isinstance(keywords, str):
+            keyword_list = keywords.split(',')
+        elif isinstance(keywords, list):
+            keyword_list = keywords
+
         keyword_parts = []
-        for kw_raw in keywords.split(','):
-            kw = kw_raw.strip().replace('"', '\\"')
+        for kw_raw in keyword_list:
+            kw = str(kw_raw).strip().replace('"', '\\"')
             if kw:
                 keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
