@@ -104,8 +104,6 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         return f"The valid options for Program are: {list(program_map.keys())}"
     elif "project" in field_lower:
         return f"The valid options for Project are: {list(project_map.keys())}"
-    elif "issue type" in field_lower or "issuetype" in field_lower:
-        return f"The valid options for Issue Type are: {VALID_ISSUE_TYPES}"
     elif "triage category" in field_lower:
         return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
     elif "silicon revision" in field_lower or "iod" in field_lower or "ccd" in field_lower:
@@ -134,15 +132,13 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None, issuetype: str = "Draft") -> str:
+def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, iod_silicon_rev: str, ccd_silicon_rev: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, assignee: Optional[str] = None) -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
-    if issuetype.lower() not in [t.lower() for t in VALID_ISSUE_TYPES]:
-        return f"Error: Invalid issue type '{issuetype}'. It must be one of {VALID_ISSUE_TYPES}."
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. It must be one of {list(program_map.keys())}."
@@ -237,7 +233,7 @@ All Scandump Links:
 
     new_issue = create_jira_issue(
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
-        issuetype=issuetype, program=program_full_name, system=system, 
+        program=program_full_name, system=system, 
         silicon_revision=silicon_revision.upper(),
         iod_silicon_rev=iod_silicon_rev,
         ccd_silicon_rev=ccd_silicon_rev,
