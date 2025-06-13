@@ -50,7 +50,7 @@ triage_assignment_map = {
         "Firmware - Binary DXIO", "Firmware - Binary EC", "Firmware - Binary IMC", "Firmware - Binary PSP",
         "Firmware - Binary SMU", "Firmware - Binary XHC", "Firmware - BIOS Verification", "Firmware - IPE AGESA - ABL",
         "Firmware - IPE AGESA - CPU", "Firmware - IPE AGESA - CPU UCODE INTEGRATION", "Firmware - IPE AGESA - DF",
-        "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - IPE AGESA - MEM",
+        "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - Ipe AGESA - MEM",
         "Firmware - IPE AGESA - Other", "Firmware - IPE AGESA - PROMONTORY", "Firmware - IPE AGESA - PSP",
         "Firmware - IPE AGESA - UEFI", "Firmware - IPE CBS - CPU", "Firmware - IPE CBS - FCH",
         "Firmware - IPE CBS - GNB", "Firmware - IPE CBS - MEM", "Firmware - IPE CBS - Other", "Firmware - IPE CPM"
@@ -247,9 +247,17 @@ def build_jql(params: Dict[str, Any]) -> str:
         stale_conditions = [
             'updated < "-30d"',
             '(assignee is EMPTY AND created < "-7d")',
-            '(status = "In Progress" AND NOT status CHANGED AFTER -60d)'
+            '(status in ("In Progress", "In Development", "Development") AND NOT status CHANGED AFTER -60d)',
+            '(status in ("In Review", "In QA") AND NOT status CHANGED AFTER -7d)',
+            '(status in ("Blocked", "Waiting for Customer") AND NOT status CHANGED AFTER -15d)'
         ]
-        jql_parts.append(f"status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND ({' OR '.join(stale_conditions)})")
+        
+        open_statuses = [
+            "Open", "To Do", "In Progress", "Reopened", "Blocked", 
+            "In Development", "Development", "In Review", "In QA", "Waiting for Customer"
+        ]
+        
+        jql_parts.append(f"status in ({', '.join([f'\"{s}\"' for s in open_statuses])}) AND ({' OR '.join(stale_conditions)})")
 
     keywords = params.get("keywords")
     if keywords:
