@@ -55,6 +55,8 @@ def main():
                         print(f"   Status: {issue['status']}")
                         print(f"   Assignee: {issue['assignee']}")
                         print(f"   Priority: {issue['priority']}")
+                        print(f"   Created: {issue['created']}")
+                        print(f"   Updated: {issue['updated']}")
                         print(f"   URL: {issue['url']}")
                         print("-" * 20)
                     if len(issues_found) >= 20:
