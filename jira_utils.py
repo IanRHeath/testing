@@ -30,6 +30,33 @@ def initialize_jira_client():
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA client initialization: {e}")
 
+def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
+    """
+    Fetches the key data from a single JIRA ticket for analysis.
+    Returns a dictionary of the raw field data.
+    """
+    print(f"Fetching data for ticket {issue_key} for analysis...")
+    try:
+        issue = client.issue(issue_key)
+        data = {
+            "key": issue.key,
+            "summary": issue.fields.summary,
+            "description": issue.fields.description or "",
+            "project": issue.fields.project.key
+        }
+        # Safely get the program field if it exists
+        if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
+             data['program'] = getattr(issue.fields, 'customfield_13002')
+
+        return data
+    except JIRAError as e:
+        if e.status_code == 404:
+            raise JiraBotError(f"Ticket '{issue_key}' not found.")
+        raise JiraBotError(f"Failed to get data for '{issue_key}': {e.text}")
+    except Exception as e:
+        raise JiraBotError(f"An unexpected error occurred while fetching ticket data: {e}")
+
+
 def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
@@ -126,7 +153,7 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None) -> JIRA.issue:
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None) -> JIRA.issue:
     """
     Creates a new issue in Jira.
     """
@@ -135,7 +162,7 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
     fields = {
         'project':          {'key': project},
         'summary':          summary,
-        'issuetype':        {'name': 'Draft'},
+        'issuetype':        {'name': issuetype},
         'description':      description,
         'customfield_11607': steps_to_reproduce,
         'customfield_12610': {'value': severity},
