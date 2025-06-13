@@ -30,7 +30,6 @@ system_map = {
         "System-Strix1 FP11 APU"
     ],
     "STXH": [
-        "System-Strix Halo Reference Board",
         "System-Strix Halo Customer A Platform"
     ]
 }
@@ -102,37 +101,46 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field.
+    - If the user's query contains text to search for, extract the essential words into the "keywords" field.
     - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
+        - "today" -> "startOfDay()"
+        - "yesterday" -> "startOfDay(-1)"
+        - "this week" -> "startOfWeek()"
+        - "this month" -> "startOfMonth()"
+        - "this year" -> "startOfYear()"
+        - "last 7 days" -> "-7d"
+        - "last 2 weeks" -> "-2w"
+        - "last 3 months" -> "-3M"
     - If a parameter is not explicitly mentioned by the user, you MUST omit it from the JSON.
     - ONLY include a "project" field if the user explicitly names a project in their request.
 
-    Example 1 (Complex Search with Project): "show me the top 5 p2 tickets for STXH in the PLAT project"
+    Example 1 (Date Search): "show me tickets created in the last 2 weeks"
+    {{
+        "intent":"list",
+        "createdDate":"-2w"
+    }}
+
+    Example 2 (Complex Search): "show me p2 tickets for STXH updated this week"
     {{
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
-        "project":"PLAT",
-        "maxResults":5
+        "updatedDate":"startOfWeek()"
     }}
 
-    Example 2 (Keyword Search without Project): "search for issues related to 'memory instability'"
+    Example 3 (Keyword Search): "search for issues related to 'memory instability' created today"
     {{
         "intent":"list",
-        "keywords":"memory instability"
-    }}
-
-    Example 3 (Simple Search without Project): "show me high priority tickets"
-    {{
-        "intent": "list",
-        "priority": "High"
+        "keywords":"memory instability",
+        "createdDate":"startOfDay()"
     }}
     """
 
@@ -202,6 +210,14 @@ def build_jql(params: Dict[str, Any]) -> str:
             jql_parts.append(f"program = '{raw_prog}'")
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
+            
+    created_date = params.get("createdDate")
+    if created_date:
+        jql_parts.append(f'created >= "{created_date}"')
+
+    updated_date = params.get("updatedDate")
+    if updated_date:
+        jql_parts.append(f'updated >= "{updated_date}"')
 
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
