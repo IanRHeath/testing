@@ -13,6 +13,8 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
+# ... (program_map, system_map, and other maps remain the same) ...
+
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -94,6 +96,40 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
+def extract_keywords_from_text(text_to_analyze: str) -> str:
+    """Uses the LLM to extract key technical terms from a block of text."""
+    if RAW_AZURE_OPENAI_CLIENT is None:
+        raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
+        
+    system_prompt = """
+    You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 to 5 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
+    
+    Combine the keywords into a single, space-separated string.
+    
+    Example:
+    Text: "The login button is broken on the main branch. When a user clicks it, the screen goes white and the application crashes with a memory allocation error in the new authentication module."
+    Result: "login button crash memory authentication"
+    
+    Output only the keywords and nothing else.
+    """
+    
+    messages_to_send = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": text_to_analyze}
+    ]
+
+    try:
+        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
+            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
+            messages=messages_to_send,
+            max_tokens=50,
+        )
+        keywords = resp.choices[0].message.content.strip()
+        return keywords
+    except Exception as e:
+        raise JiraBotError(f"Error during keyword extraction from text: {e}")
+
+
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
@@ -102,7 +138,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, silicon_revision, iod_silicon_rev, ccd_silicon_rev.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, iod_silicon_rev, ccd_silicon_rev.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
