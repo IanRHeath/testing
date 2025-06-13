@@ -214,7 +214,14 @@ def build_jql(params: Dict[str, Any]) -> str:
         if assignee.upper() == "EMPTY":
             jql_parts.append("assignee is EMPTY")
         else:
-            jql_parts.append(f'assignee = "{assignee}"')
+            name_parts = assignee.split()
+            if len(name_parts) > 1:
+                last_name = name_parts[-1]
+                first_name = " ".join(name_parts[:-1])
+                formatted_name = f"{last_name}, {first_name}"
+                jql_parts.append(f'assignee = "{formatted_name}"')
+            else:
+                jql_parts.append(f'assignee = "{assignee}"')
 
     created_date = params.get("createdDate")
     if created_date:
@@ -255,7 +262,7 @@ def build_jql(params: Dict[str, Any]) -> str:
 
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
-        order_clause = f" ORDER BY created {order_direction}"
+        order_clause = f" ORDER BY created {direction}"
     
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
