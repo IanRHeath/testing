@@ -30,6 +30,7 @@ system_map = {
         "System-Strix1 FP11 APU"
     ],
     "STXH": [
+        "System-Strix Halo Reference Board",
         "System-Strix Halo Customer A Platform"
     ]
 }
@@ -109,7 +110,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
     **Extraction Rules:**
     - If the user's query contains text to search for, extract the essential words into the "keywords" field.
-    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - For 'stale' tickets, infer the 'intent' as 'stale'. The system will handle the complex JQL for this.
     - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
         - "today" -> "startOfDay()"
         - "yesterday" -> "startOfDay(-1)"
@@ -136,11 +137,9 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "updatedDate":"startOfWeek()"
     }}
 
-    Example 3 (Keyword Search): "search for issues related to 'memory instability' created today"
+    Example 3 (Stale Ticket Search): "find stale tickets"
     {{
-        "intent":"list",
-        "keywords":"memory instability",
-        "createdDate":"startOfDay()"
+        "intent":"stale"
     }}
     """
 
@@ -220,20 +219,20 @@ def build_jql(params: Dict[str, Any]) -> str:
         jql_parts.append(f'updated >= "{updated_date}"')
 
     if params.get("intent") == "stale":
-        jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
+        stale_conditions = [
+            'updated < "-30d"',
+            '(assignee is EMPTY AND created < "-7d")'
+        ]
+        jql_parts.append(f"status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND ({' OR '.join(stale_conditions)})")
 
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
-        # Split by comma to handle multiple distinct search terms
         for kw_raw in keywords.split(','):
-            # Sanitize each keyword by stripping whitespace and escaping quotes
             kw = kw_raw.strip().replace('"', '\\"')
             if kw:
-                # Each term now searches against the universal 'text' field
                 keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
-            # Join multiple keywords with OR to find tickets matching any of them
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
     order_direction = params.get("order", "").strip().upper()
