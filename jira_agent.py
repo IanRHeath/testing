@@ -94,7 +94,7 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
     """
-    Use this tool when the user asks for the available or valid options for a specific ticket field...
+    Use this tool when the user asks for the available or valid options for a specific ticket field, like 'Program' or 'Triage Assignment'. For 'Triage Assignment', the user must also provide a 'Triage Category' that it depends on.
     """
     field_lower = field_name.lower()
 
@@ -116,7 +116,8 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
             return f"Could not find a Program with the code '{depends_on.upper()}'."
     elif "triage assignment" in field_lower:
         if not depends_on:
-            return "To list the Triage Assignments, you must first provide a Triage Category."
+            available_categories = ", ".join(triage_assignment_map.keys())
+            return f"To list the Triage Assignments, you must first provide a Triage Category. Available categories are: {available_categories}"
         options = triage_assignment_map.get(depends_on.upper())
         if options:
             return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
@@ -127,9 +128,9 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLAT", issuetype: str = "Draft") -> str:
+def create_ticket_tool(project: str, summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, issuetype: str = "Draft") -> str:
     """
-    Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
+    Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce. The user MUST specify a project.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
