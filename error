@@ -1,7 +1,6 @@
 --- Starting Ticket Creation Field Validation ---
-Checking configuration for Project='PLAT' and Issue Type='Bug'...
+Checking configuration for Project='PLAT' and Issue Type='Issue'...
 JIRA client initialized successfully with basic_auth (username/password).
 Successfully connected to Jira.
 
-[FATAL] The issue type 'Bug' is not valid for project 'PLAT'.
-Available issue types are: ['Draft', 'Issue', 'Task', 'Sub-task', 'Enhancement']
+An unexpected error occurred: <class 'jira.resources.Field'> object has no attribute 'key' ('Field' object is not subscriptable)
