@@ -9,7 +9,7 @@ from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_c
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS
+    VALID_SEVERITY_LEVELS, project_map
 )
 from llm_config import get_llm
 
@@ -100,6 +100,8 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
     if "program" in field_lower:
         return f"The valid options for Program are: {list(program_map.keys())}"
+    elif "project" in field_lower:
+        return f"The valid options for Project are: {list(project_map.keys())}"
     elif "triage category" in field_lower:
         return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
     elif "silicon revision" in field_lower:
