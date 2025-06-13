@@ -1,4 +1,4 @@
-Your JIRA Query Request: give me 10 stale tickets
+Your JIRA Query Request: show me 10 stale tickets
 
 --- LLM Request Details (for extract_params) ---
 Model: gpt-4.1
@@ -46,16 +46,16 @@ Messages:
         "intent":"stale"
     }
 
-  Role: user, Content: 10 stale tickets
+  Role: user, Content: show 10 stale tickets
 ----------------------------------------------
 
 LLM extracted parameters: {
     "intent": "stale",
     "maxResults": 10
 }
-Built JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC
+Built JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" "FOR" "60d") ORDER BY created DESC
 
-Attempting JIRA search with JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC | Limit: 10
+Attempting JIRA search with JQL: status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" "FOR" "60d") ORDER BY created DESC | Limit: 10
 
-JIRA Bot Error: JIRA search failed for JQL 'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" FOR "60d") ORDER BY created DESC': Error in the JQL Query: 'FOR' is a reserved JQL word. You must surround it in quotation marks to use it in a query. (line 1, character 160). Status code: 400. Please refine the query.
+JIRA Bot Error: JIRA search failed for JQL 'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND (updated < "-30d" OR (assignee is EMPTY AND created < "-7d") OR status WAS "In Progress" "FOR" "60d") ORDER BY created DESC': Error in the JQL Query: Expecting either 'OR' or 'AND' but got 'FOR'. (line 1, character 160). Status code: 400. Please refine the query.
 Please check your JQL query or JIRA connection.
