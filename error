@@ -1,287 +1,42 @@
---- Starting Screen Configuration Discovery ---
-Investigating all issue types for Project='PLAT'...
-JIRA client initialized successfully with basic_auth (username/password).
-Successfully connected to Jira.
+Is this information correct? (yes/no): yes
+Attempting to create ticket in project 'PLAT' with summary 'test'...
 
-Found 5 issue types. Checking fields for each...
+An unexpected error occurred: name 'assignee' is not defined
+--- FULL TRACEBACK ---
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/main.py", line 34, in main
+    result = agent.invoke({"input": user_input, "chat_history": chat_history})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/chains/base.py", line 167, in invoke
+    raise e
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/chains/base.py", line 157, in invoke
+    self._call(inputs, run_manager=run_manager)
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1620, in _call
+    next_step_output = self._take_next_step(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1326, in _take_next_step
+    [
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1411, in _iter_next_step
+    yield self._perform_agent_action(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1433, in _perform_agent_action
+    observation = tool.run(
+                  ^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 771, in run
+    raise error_to_raise
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 740, in run
+    response = context.run(self._run, *tool_args, **tool_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/myvenv/lib/python3.12/site-packages/langchain_core/tools/structured.py", line 93, in _run
+    return self.func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/jira_agent.py", line 232, in create_ticket_tool
+    new_issue = create_jira_issue(
+                ^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage/jira_utils.py", line 142, in create_jira_issue
+    'assignee':         {'name': assignee}, # Assuming assignee is passed as an argument
+                                 ^^^^^^^^
+NameError: name 'assignee' is not defined
+----------------------
 
-==================================================
-Issue Type: 'Draft'
-==================================================
-  - Contains 'summary' field: True
-  - Contains 'project' field: True
-
-  --- All available fields for this issue type ---
-    - assignee
-    - customfield_11607
-    - customfield_11618
-    - customfield_12610
-    - customfield_13002
-    - customfield_13010
-    - customfield_13027
-    - customfield_13208
-    - customfield_13209
-    - customfield_13210
-    - customfield_13211
-    - customfield_13212
-    - customfield_13400
-    - customfield_13602
-    - customfield_13603
-    - customfield_13605
-    - customfield_14007
-    - customfield_14200
-    - customfield_14307
-    - customfield_14308
-    - customfield_14600
-    - customfield_14601
-    - customfield_14902
-    - customfield_14903
-    - customfield_15105
-    - customfield_16324
-    - customfield_16401
-    - customfield_16422
-    - customfield_17000
-    - customfield_17507
-    - customfield_17508
-    - customfield_23300
-    - customfield_27209
-    - customfield_27210
-    - description
-    - issuetype
-    - project
-    - summary
-
-==================================================
-Issue Type: 'Issue'
-==================================================
-  - Contains 'summary' field: False
-  - Contains 'project' field: False
-
-  --- All available fields for this issue type ---
-    - assignee
-    - attachment
-    - customfield_11607
-    - customfield_11618
-    - customfield_12610
-    - customfield_13002
-    - customfield_13010
-    - customfield_13026
-    - customfield_13027
-    - customfield_13208
-    - customfield_13209
-    - customfield_13210
-    - customfield_13211
-    - customfield_13212
-    - customfield_13400
-    - customfield_13601
-    - customfield_13602
-    - customfield_13603
-    - customfield_13605
-    - customfield_14007
-    - customfield_14200
-    - customfield_14307
-    - customfield_14308
-    - customfield_14600
-    - customfield_14601
-    - customfield_14902
-    - customfield_14903
-    - customfield_15105
-    - customfield_15421
-    - customfield_16324
-    - customfield_16326
-    - customfield_16401
-    - customfield_16408
-    - customfield_16422
-    - customfield_17000
-    - customfield_17403
-    - customfield_17507
-    - customfield_17508
-    - customfield_18207
-    - customfield_23300
-    - customfield_23400
-    - customfield_23501
-    - customfield_23502
-    - customfield_23503
-    - customfield_27209
-    - customfield_27210
-    - description
-    - fixVersions
-    - issuelinks
-    - issuetype
-
-==================================================
-Issue Type: 'Task'
-==================================================
-  - Contains 'summary' field: False
-  - Contains 'project' field: False
-
-  --- All available fields for this issue type ---
-    - assignee
-    - attachment
-    - customfield_11607
-    - customfield_11618
-    - customfield_12610
-    - customfield_13002
-    - customfield_13010
-    - customfield_13026
-    - customfield_13027
-    - customfield_13208
-    - customfield_13209
-    - customfield_13210
-    - customfield_13211
-    - customfield_13212
-    - customfield_13400
-    - customfield_13601
-    - customfield_13602
-    - customfield_13603
-    - customfield_13605
-    - customfield_14007
-    - customfield_14200
-    - customfield_14307
-    - customfield_14308
-    - customfield_14600
-    - customfield_14601
-    - customfield_14902
-    - customfield_14903
-    - customfield_15105
-    - customfield_15421
-    - customfield_16324
-    - customfield_16326
-    - customfield_16401
-    - customfield_16408
-    - customfield_16422
-    - customfield_17000
-    - customfield_17403
-    - customfield_17507
-    - customfield_17508
-    - customfield_18207
-    - customfield_23300
-    - customfield_23400
-    - customfield_23501
-    - customfield_23502
-    - customfield_23503
-    - customfield_27209
-    - customfield_27210
-    - description
-    - fixVersions
-    - issuelinks
-    - issuetype
-
-==================================================
-Issue Type: 'Sub-task'
-==================================================
-  - Contains 'summary' field: False
-  - Contains 'project' field: False
-
-  --- All available fields for this issue type ---
-    - assignee
-    - attachment
-    - customfield_11607
-    - customfield_11618
-    - customfield_12610
-    - customfield_13002
-    - customfield_13010
-    - customfield_13026
-    - customfield_13027
-    - customfield_13208
-    - customfield_13209
-    - customfield_13210
-    - customfield_13211
-    - customfield_13212
-    - customfield_13400
-    - customfield_13601
-    - customfield_13602
-    - customfield_13603
-    - customfield_13605
-    - customfield_14007
-    - customfield_14200
-    - customfield_14307
-    - customfield_14308
-    - customfield_14600
-    - customfield_14601
-    - customfield_14902
-    - customfield_14903
-    - customfield_15105
-    - customfield_15421
-    - customfield_16324
-    - customfield_16326
-    - customfield_16401
-    - customfield_16408
-    - customfield_16422
-    - customfield_17000
-    - customfield_17403
-    - customfield_17507
-    - customfield_17508
-    - customfield_18207
-    - customfield_23300
-    - customfield_23400
-    - customfield_23501
-    - customfield_23502
-    - customfield_23503
-    - customfield_27209
-    - customfield_27210
-    - description
-    - fixVersions
-    - issuelinks
-    - issuetype
-
-==================================================
-Issue Type: 'Enhancement'
-==================================================
-  - Contains 'summary' field: False
-  - Contains 'project' field: False
-
-  --- All available fields for this issue type ---
-    - assignee
-    - attachment
-    - customfield_11607
-    - customfield_11618
-    - customfield_12610
-    - customfield_13002
-    - customfield_13010
-    - customfield_13026
-    - customfield_13027
-    - customfield_13208
-    - customfield_13209
-    - customfield_13210
-    - customfield_13211
-    - customfield_13212
-    - customfield_13400
-    - customfield_13601
-    - customfield_13602
-    - customfield_13603
-    - customfield_13605
-    - customfield_14007
-    - customfield_14200
-    - customfield_14307
-    - customfield_14308
-    - customfield_14600
-    - customfield_14601
-    - customfield_14902
-    - customfield_14903
-    - customfield_15105
-    - customfield_15421
-    - customfield_16324
-    - customfield_16326
-    - customfield_16401
-    - customfield_16408
-    - customfield_16422
-    - customfield_17000
-    - customfield_17403
-    - customfield_17507
-    - customfield_17508
-    - customfield_18207
-    - customfield_23300
-    - customfield_23400
-    - customfield_23501
-    - customfield_23502
-    - customfield_23503
-    - customfield_27209
-    - customfield_27210
-    - description
-    - fixVersions
-    - issuelinks
-    - issuetype
-
---- Discovery Complete ---
-Please review the output above to find an issue type that contains both 'summary' and 'project'.
+Please try rephrasing your request or contact support if the issue persists.
