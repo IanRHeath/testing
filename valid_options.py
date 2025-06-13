@@ -19,12 +19,6 @@ FIELD_NAME_FOR_REPORTING = 'Severity'
 FIELD_ID_TO_VALIDATE = 'customfield_12610'
 LOCAL_OPTIONS_TO_VALIDATE = VALID_SEVERITY_LEVELS
 
-# To check a different field, comment out the lines above and uncomment another block.
-# Example for 'Silicon Revision':
-# FIELD_NAME_FOR_REPORTING = 'Silicon Revision'
-# FIELD_ID_TO_VALIDATE = 'customfield_17000'
-# LOCAL_OPTIONS_TO_VALIDATE = VALID_SILICON_REVISIONS
-
 # --- END CONFIGURATION ---
 
 def validate_field():
@@ -39,8 +33,19 @@ def validate_field():
         jira_client = initialize_jira_client()
         print("Successfully connected to Jira.\n")
 
-        # Get all the fields for the specific create screen
-        fields = jira_client.project_issue_fields(PROJECT_KEY, jira_client.project_issue_types(PROJECT_KEY, ISSUE_TYPE_NAME)[0].id)
+        # Step 1: Get all available issue types for the project
+        all_issue_types = jira_client.project_issue_types(PROJECT_KEY)
+        issue_type_map = {it.name: it.id for it in all_issue_types}
+
+        if ISSUE_TYPE_NAME not in issue_type_map:
+            print(f"[FATAL] The issue type '{ISSUE_TYPE_NAME}' is not valid for project '{PROJECT_KEY}'.")
+            print("Available issue types are:", list(issue_type_map.keys()))
+            return
+
+        issue_type_id = issue_type_map[ISSUE_TYPE_NAME]
+
+        # Step 2: Get all the fields for that specific project and issue type
+        fields = jira_client.project_issue_fields(PROJECT_KEY, issue_type_id)
         
         target_field_info = None
         for f in fields:
@@ -52,13 +57,13 @@ def validate_field():
             print(f"[FATAL] The field '{FIELD_NAME_FOR_REPORTING}' (ID: {FIELD_ID_TO_VALIDATE}) was not found on this create screen.")
             return
 
-        # Extract the names from the 'allowedValues' property, which contains the dropdown options
+        # Step 3: Extract the allowed values for the target field
         if not hasattr(target_field_info, 'allowedValues'):
              print(f"[ERROR] Field '{FIELD_NAME_FOR_REPORTING}' does not appear to be a dropdown field (it has no 'allowedValues').")
              return
 
         live_options = {val.value for val in target_field_info.allowedValues}
-        code_options = set(LOCAL_OPTIONS_TO_VALIDATE) # Ensure it's a set for comparison
+        code_options = set(LOCAL_OPTIONS_TO_VALIDATE)
 
         print(f"Found {len(live_options)} options for '{FIELD_NAME_FOR_REPORTING}' in Jira.")
         print("-" * 50)
