@@ -1,4 +1,3 @@
-
 import os
 from jira import JIRA, JIRAError
 from dotenv import load_dotenv
@@ -54,7 +53,9 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
                 "status": status_name,
                 "assignee": assignee_name,
                 "priority": priority_name,
-                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}"
+                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}",
+                "created": issue.fields.created[:10],
+                "updated": issue.fields.updated[:10]
             })
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
