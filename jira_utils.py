@@ -132,11 +132,14 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
     """
     print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
     
+    # This dictionary now contains ALL fields that were reported as valid
+    # for the 'Draft' issue type in the discovery script output.
     fields = {
         'project':          {'key': project},
         'summary':          summary,
         'issuetype':        {'name': issuetype},
         'description':      description,
+        'assignee':         {'name': assignee}, # Assuming assignee is passed as an argument
         'customfield_11607': steps_to_reproduce,
         'customfield_12610': {'value': severity },
         'customfield_13002': {'value': program },
@@ -145,6 +148,8 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
         'customfield_14307': {'value': triage_category},
         'customfield_14308': {'value': triage_assignment},
         'customfield_17000': {'value': silicon_revision }
+        # Note: Other custom fields from the output are not included
+        # as the bot does not currently collect that information.
     }
 
     try:
