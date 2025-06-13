@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any, Optional # Import Optional
+from typing import Dict, Any, Optional
 import openai
 from jira import JIRA
 
@@ -101,13 +101,13 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
         
     system_prompt = """
-    You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 to 5 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
+    You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
     
     Combine the keywords into a single, space-separated string.
     
     Example:
     Text: "The login button is broken on the main branch. When a user clicks it, the screen goes white and the application crashes with a memory allocation error in the new authentication module."
-    Result: "login button crash memory authentication"
+    Result: "login button crash"
     
     Output only the keywords and nothing else.
     """
@@ -288,7 +288,7 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
     if keywords:
         keyword_list = []
         if isinstance(keywords, str):
-            keyword_list = keywords.split(' ') # Split by space for keywords from text analysis
+            keyword_list = keywords.split(' ')
         elif isinstance(keywords, list):
             keyword_list = keywords
 
@@ -298,7 +298,6 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
             if kw:
                 keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
-            # For keyword-based similarity, we join with AND to make the search more precise
             jql_parts.append(f"({' AND '.join(keyword_parts)})")
 
     # Add the exclusion clause if a key is provided
