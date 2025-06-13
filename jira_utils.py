@@ -144,9 +144,9 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
         'customfield_14200': bios_version,
         'customfield_14307': triage_category,
         'customfield_14308': triage_assignment,
-        'customfield_17000': silicon_revision,
-        'customfield_27209': iod_silicon_rev, # Added required field
-        'customfield_27210': ccd_silicon_rev  # Added required field
+        'customfield_17000': {'value': silicon_revision}, # Assuming this might have a different format
+        'customfield_27209': {'value': iod_silicon_rev},
+        'customfield_27210': {'value': ccd_silicon_rev}
     }
     
     if assignee:
