@@ -18,10 +18,11 @@ def initialize_jira_client():
     if not all([JIRA_SERVER_URL, JIRA_USERNAME, JIRA_PASSWORD]):
         raise JiraBotError("JIRA environment variables (URL, USERNAME, PASSWORD) are not set. Please check .env file.")
     try:
+        # Increased timeout from 10 to 30 seconds for complex queries
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
             basic_auth=(JIRA_USERNAME, JIRA_PASSWORD),
-            timeout=10
+            timeout=30
         )
         print("JIRA client initialized successfully with basic_auth (username/password).")
         return jira_client
