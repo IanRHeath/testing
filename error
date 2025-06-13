@@ -1,4 +1,4 @@
-Your JIRA Query Request: show me tickets about memory instability
+Your JIRA Query Request: search for UI bugs in the SWDEV project
 
 --- LLM Request Details (for extract_params) ---
 Model: gpt-4.1
@@ -47,16 +47,14 @@ Messages:
         "intent":"stale"
     }
 
-  Role: user, Content: memory instability
+  Role: user, Content: UI bugs in SWDEV project
 ----------------------------------------------
 
 LLM extracted parameters: {
     "intent": "list",
-    "keywords": "memory instability"
+    "project": "SWDEV",
+    "keywords": ["UI", "bugs"]
 }
-Built JQL: (text ~ "memory instability")
 
-Attempting JIRA search with JQL: (text ~ "memory instability") | Limit: 20
-
-JIRA Bot Error: An unexpected error occurred during JIRA search: 'PropertyHolder' object has no attribute 'priority'
+JIRA Bot Error: An unexpected error occurred in jira_search_tool: 'list' object has no attribute 'split'
 Please check your JQL query or JIRA connection.
