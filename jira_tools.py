@@ -223,6 +223,17 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
         raise e
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
+    
+@tool
+def find_duplicate_tickets_tool(summary: str, poject: str, program: str) -> List[Dict[str, Any]]:
+    """
+    Use this tool to find potential duplcate JIRA tickets before creating a new one. 
+    You must provide a summary, project, and program for the new ticket
+    """
+    print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
+    print(f"--- Checking for duplicates of summary: '{summary}" in Project ={project}, Program={program}")
+    #In future steps, we will add the full logic here.
+    return []
 
 ALL_JIRA_TOOLS = [
     jira_search_tool,
