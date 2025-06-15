@@ -291,28 +291,23 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     
-    # Step 1: Fetch the source ticket's data
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
-    
-    # Step 2: Extract keywords from the ticket's text using the LLM
+ 
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
     if not text_to_analyze.strip():
-        return [] # Return empty list if no text to analyze
+        return [] 
     
     extracted_keywords = extract_keywords_from_text(text_to_analyze)
     print(f"--- Extracted Keywords: '{extracted_keywords}' ---")
 
-    # Step 3: Build a new search query based on the extracted traits
     params = {
         'project': source_ticket_data.get('project'),
         'keywords': extracted_keywords,
-        'maxResults': 10 # Limit to 10 similar results
+        'maxResults': 10 
     }
-    
-    # Use the 'exclude_key' parameter to avoid finding the source ticket
+  
     similar_jql = build_jql(params, exclude_key=issue_key)
     
-    # Step 4: Execute the search and return the results
     similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
     
     return similar_issues
