@@ -2,11 +2,11 @@ import os
 from langchain.tools import tool
 from typing import List, Dict, Any, Optional
 from jira import JIRA
-from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError
+from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError, get_ticket_data_for_analysis
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS
+    VALID_SEVERITY_LEVELS, project_map, extract_keywords_from_text
 )
 from llm_config import get_llm
 
@@ -223,22 +223,24 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
         raise e
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
-    
+
 @tool
-def find_duplicate_tickets_tool(summary: str, poject: str, program: str) -> List[Dict[str, Any]]:
+def find_duplicate_tickets_tool(summary: str, project: str, program: str) -> List[Dict[str, Any]]:
     """
-    Use this tool to find potential duplcate JIRA tickets before creating a new one. 
-    You must provide a summary, project, and program for the new ticket
+    Use this tool to find potential duplicate JIRA tickets before creating a new one. 
+    You must provide a summary, project, and program for the new ticket.
     """
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
-    print(f"--- Checking for duplicates of summary: '{summary}" in Project ={project}, Program={program}")
-    #In future steps, we will add the full logic here.
+    print(f"--- Checking for duplicates of summary: '{summary}' in Project={project}, Program={program} ---")
+    # In future steps, we will add the full logic here.
     return []
+
 
 ALL_JIRA_TOOLS = [
     jira_search_tool,
     summarize_ticket_tool,
     summarize_multiple_tickets_tool,
     create_ticket_tool,
-    get_field_options_tool
+    get_field_options_tool,
+    find_duplicate_tickets_tool
 ]
