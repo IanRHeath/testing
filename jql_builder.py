@@ -13,7 +13,6 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# ... (program_map, system_map, and other maps remain the same) ...
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -250,8 +249,6 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
         if assignee.upper() == "EMPTY":
             jql_parts.append("assignee is EMPTY")
         else:
-            # Use the name exactly as provided. This relies on the user
-            # providing a correct Jira username or full display name.
             jql_parts.append(f'assignee = "{assignee}"')
 
     created_date = params.get("createdDate")
@@ -300,7 +297,6 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' AND '.join(keyword_parts)})")
 
-    # Add the exclusion clause if a key is provided
     if exclude_key:
         jql_parts.append(f'key != "{exclude_key}"')
 
