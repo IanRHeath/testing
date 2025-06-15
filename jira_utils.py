@@ -69,6 +69,7 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
 
         formatted_issues = []
         for issue in issues:
+            # Safer way to access potentially missing fields
             assignee_name = "Unassigned"
             if hasattr(issue.fields, 'assignee') and issue.fields.assignee:
                 assignee_name = issue.fields.assignee.displayName
@@ -151,7 +152,7 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None) -> JIRA.issue:
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None) -> JIRA.issue:
     """
     Creates a new issue in Jira.
     """
@@ -160,7 +161,7 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
     fields = {
         'project':          {'key': project},
         'summary':          summary,
-        'issuetype':        {'name': issuetype},
+        'issuetype':        {'name': 'Draft'},
         'description':      description,
         'customfield_11607': steps_to_reproduce,
         'customfield_12610': {'value': severity},
