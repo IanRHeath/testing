@@ -18,11 +18,10 @@ def initialize_jira_client():
     if not all([JIRA_SERVER_URL, JIRA_USERNAME, JIRA_PASSWORD]):
         raise JiraBotError("JIRA environment variables (URL, USERNAME, PASSWORD) are not set. Please check .env file.")
     try:
-        # Increased timeout from 10 to 30 seconds for complex queries
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
             basic_auth=(JIRA_USERNAME, JIRA_PASSWORD),
-            timeout=30
+            timeout=60
         )
         print("JIRA client initialized successfully with basic_auth (username/password).")
         return jira_client
@@ -45,7 +44,6 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
             "description": issue.fields.description or "",
             "project": issue.fields.project.key
         }
-        # Safely get the program field if it exists
         if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
              data['program'] = getattr(issue.fields, 'customfield_13002')
 
@@ -71,7 +69,6 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
 
         formatted_issues = []
         for issue in issues:
-            # Safer way to access potentially missing fields
             assignee_name = "Unassigned"
             if hasattr(issue.fields, 'assignee') and issue.fields.assignee:
                 assignee_name = issue.fields.assignee.displayName
