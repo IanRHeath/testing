@@ -62,8 +62,6 @@ try:
 except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
-VALID_ISSUE_TYPES = ['Issue', 'Enhancement', 'Draft', 'Task', 'Sub-task']
-
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
     if JIRA_CLIENT_INSTANCE is None:
@@ -105,8 +103,6 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         return f"The valid options for Program are: {list(program_map.keys())}"
     elif "project" in field_lower:
         return f"The valid options for Project are: {list(project_map.keys())}"
-    elif "issue type" in field_lower or "issuetype" in field_lower:
-        return f"The valid options for Issue Type are: {VALID_ISSUE_TYPES}"
     elif "triage category" in field_lower:
         return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
     elif "silicon revision" in field_lower or "iod" in field_lower or "ccd" in field_lower:
@@ -142,8 +138,6 @@ def create_ticket_tool(project: str, summary: str, program: str, system: str, si
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
-    if issuetype.lower() not in [t.lower() for t in VALID_ISSUE_TYPES]:
-        return f"Error: Invalid issue type '{issuetype}'. It must be one of {VALID_ISSUE_TYPES}."
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. It must be one of {list(program_map.keys())}."
@@ -292,7 +286,7 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     print(f"--- Received issue_key: {issue_key} ---")
     
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
- 
+    
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
     if not text_to_analyze.strip():
         return [] 
@@ -305,11 +299,11 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
         'keywords': extracted_keywords,
         'maxResults': 10 
     }
-  
+   
     similar_jql = build_jql(params, exclude_key=issue_key)
-    
+   
     similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
-    
+   
     return similar_issues
 
 
