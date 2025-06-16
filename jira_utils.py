@@ -80,7 +80,9 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
                 "status": status_name,
                 "assignee": assignee_name,
                 "priority": priority_name,
-                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}"
+                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}",
+                "created": issue.fields.created[:10],
+                "updated": issue.fields.updated[:10]
             })
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
@@ -117,6 +119,9 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
         assignee = issue.fields.assignee
         details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
         
+        details.append(f"Created: {issue.fields.created[:10]}")
+        details.append(f"Updated: {issue.fields.updated[:10]}")
+
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
         
