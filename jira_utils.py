@@ -21,7 +21,7 @@ def initialize_jira_client():
         jira_client = JIRA(
             server=JIRA_SERVER_URL,
             basic_auth=(JIRA_USERNAME, JIRA_PASSWORD),
-            timeout=60
+            timeout=10
         )
         print("JIRA client initialized successfully with basic_auth (username/password).")
         return jira_client
@@ -44,6 +44,7 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
             "description": issue.fields.description or "",
             "project": issue.fields.project.key
         }
+        # Safely get the program field if it exists
         if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
              data['program'] = getattr(issue.fields, 'customfield_13002')
 
@@ -69,18 +70,9 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
 
         formatted_issues = []
         for issue in issues:
-            # Safer way to access potentially missing fields
-            assignee_name = "Unassigned"
-            if hasattr(issue.fields, 'assignee') and issue.fields.assignee:
-                assignee_name = issue.fields.assignee.displayName
-
-            status_name = "Unknown"
-            if hasattr(issue.fields, 'status') and issue.fields.status:
-                status_name = issue.fields.status.name
-
-            priority_name = "Unknown"
-            if hasattr(issue.fields, 'priority') and issue.fields.priority:
-                priority_name = issue.fields.priority.name
+            assignee_name = issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned"
+            status_name = issue.fields.status.name if issue.fields.status else "Unknown"
+            priority_name = issue.fields.priority.name if issue.fields.priority else "Unknown"
 
             formatted_issues.append({
                 "key": issue.key,
@@ -88,9 +80,7 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
                 "status": status_name,
                 "assignee": assignee_name,
                 "priority": priority_name,
-                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}",
-                "created": issue.fields.created[:10],
-                "updated": issue.fields.updated[:10]
+                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}"
             })
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
@@ -127,9 +117,6 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
         assignee = issue.fields.assignee
         details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
         
-        details.append(f"Created: {issue.fields.created[:10]}")
-        details.append(f"Updated: {issue.fields.updated[:10]}")
-
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
         
@@ -152,7 +139,7 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_rev: str, ccd_silicon_rev: str, assignee: Optional[str] = None) -> JIRA.issue:
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
     """
     Creates a new issue in Jira.
     """
@@ -161,22 +148,17 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
     fields = {
         'project':          {'key': project},
         'summary':          summary,
-        'issuetype':        {'name': 'Draft'},
+        'issuetype':        {'name': issuetype},
         'description':      description,
         'customfield_11607': steps_to_reproduce,
-        'customfield_12610': {'value': severity},
-        'customfield_13002': program,
-        'customfield_13208': system,
+        'customfield_12610': {'value': severity },
+        'customfield_13002': {'value': program },
+        'customfield_13208': {'value': system },
         'customfield_14200': bios_version,
-        'customfield_14307': triage_category,
-        'customfield_14308': triage_assignment,
-        'customfield_17000': silicon_revision,
-        'customfield_27209': iod_silicon_rev,
-        'customfield_27210': ccd_silicon_rev
+        'customfield_14307': {'value': triage_category},
+        'customfield_14308': {'value': triage_assignment},
+        'customfield_17000': {'value': silicon_revision }
     }
-    
-    if assignee:
-        fields['assignee'] = {'name': assignee}
 
     try:
         print("[LIVE MODE] Sending data to Jira API...")
