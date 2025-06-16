@@ -2,11 +2,11 @@ import os
 from langchain.tools import tool
 from typing import List, Dict, Any, Optional
 from jira import JIRA
-from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError, get_ticket_data_for_analysis
+from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS, project_map, extract_keywords_from_text
+    VALID_SEVERITY_LEVELS
 )
 from llm_config import get_llm
 
@@ -227,7 +227,7 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
 @tool
 def find_duplicate_tickets_tool(summary: str, project: str, program: str) -> List[Dict[str, Any]]:
     """
-    Use this tool to find potential duplicate JIRA tickets before creating a new one. 
+    Use this tool to find potential duplicate JIRA tickets before creating a new one.
     You must provide a summary, project, and program for the new ticket.
     """
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
