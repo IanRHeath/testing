@@ -24,7 +24,7 @@ def get_jira_agent() -> AgentExecutor:
     - You can search for JIRA tickets using natural language.
     - You can summarize a single JIRA ticket. If the user asks a specific question about a ticket (e.g., "what is the root cause of..."), pass that question to the tool. Otherwise, a default summary will be generated.
     - You can summarize a list of multiple JIRA tickets at once.
-    - You can check for potential duplicate tickets before creating a new one.
+    - You can find tickets that are similar to an existing ticket.
 
     **Behavioral Guidelines:**
     - Your primary goal is to select the correct tool for the job.
