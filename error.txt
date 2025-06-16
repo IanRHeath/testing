@@ -1,0 +1,10 @@
+An unexpected error occurred: 'created'
+--- FULL TRACEBACK ---
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/main.py", line 58, in main
+    print(f"   Created: {issue['created']}")
+                         ~~~~~^^^^^^^^^^^
+KeyError: 'created'
+----------------------
+
+Please try rephrasing your request or contact support if the issue persists.
