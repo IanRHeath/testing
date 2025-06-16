@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import openai
 from jira import JIRA
 
@@ -94,40 +94,6 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
-def extract_keywords_from_text(text_to_analyze: str) -> str:
-    """Uses the LLM to extract key technical terms from a block of text."""
-    if RAW_AZURE_OPENAI_CLIENT is None:
-        raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
-        
-    system_prompt = """
-    You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
-    
-    Combine the keywords into a single, space-separated string.
-    
-    Example:
-    Text: "The login button is broken on the main branch. When a user clicks it, the screen goes white and the application crashes with a memory allocation error in the new authentication module."
-    Result: "login button crash"
-    
-    Output only the keywords and nothing else.
-    """
-    
-    messages_to_send = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": text_to_analyze}
-    ]
-
-    try:
-        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
-            messages=messages_to_send,
-            max_tokens=50,
-        )
-        keywords = resp.choices[0].message.content.strip()
-        return keywords
-    except Exception as e:
-        raise JiraBotError(f"Error during keyword extraction from text: {e}")
-
-
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
@@ -143,8 +109,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
-    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - If the user's query contains text to search for, extract the essential words into the "keywords" field.
+    - For queries about 'stale' tickets, set the 'intent' field to the special value 'stale'.
     - If a parameter is not explicitly mentioned, omit it from the JSON.
     
     Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
@@ -161,6 +127,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "intent":"list",
         "project":"PLAT",
         "keywords":"memory instability"
+    }}
+    
+    Example 3 (Stale Ticket Search): "find stale tickets"
+    {{
+        "intent": "stale"
     }}
     """
 
@@ -199,10 +170,9 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
+def build_jql(params: Dict[str, Any]) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
-    Can optionally exclude a specific issue key from the results.
     """
     jql_parts = []
     order_clause = ""
@@ -239,24 +209,13 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
 
     keywords = params.get("keywords")
     if keywords:
-        keyword_list = []
-        if isinstance(keywords, str):
-            keyword_list = keywords.split(' ') 
-        elif isinstance(keywords, list):
-            keyword_list = keywords
-
         keyword_parts = []
-        for kw_raw in keyword_list:
-            kw = str(kw_raw).strip().replace('"', '\\"')
+        for kw_raw in keywords.split(','):
+            kw = kw_raw.strip()
             if kw:
-                keyword_parts.append(f'text ~ "{kw}"')
+                keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
         if keyword_parts:
-            # Join with AND for more precise similarity matching
-            jql_parts.append(f"({' AND '.join(keyword_parts)})")
-
-    # Add the exclusion clause if a key is provided
-    if exclude_key:
-        jql_parts.append(f'key != "{exclude_key}"')
+            jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
@@ -274,6 +233,6 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
     if order_clause:
         jql += order_clause
 
-    print(f"Built JQL: {jql}")
+    print(f"Built JQL: {jql_parts}")
 
     return jql
