@@ -1,10 +1,9 @@
-An unexpected error occurred: 'created'
---- FULL TRACEBACK ---
+Raw Azure OpenAI client configured.
 Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/main.py", line 58, in main
-    print(f"   Created: {issue['created']}")
-                         ~~~~~^^^^^^^^^^^
-KeyError: 'created'
-----------------------
-
-Please try rephrasing your request or contact support if the issue persists.
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/main.py", line 3, in <module>
+    from jira_agent import get_jira_agent
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_agent.py", line 15, in <module>
+    from jira_tools import ALL_JIRA_TOOLS
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_tools.py", line 5, in <module>
+    from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError, get_ticket_data_for_analysis
+ImportError: cannot import name 'get_ticket_data_for_analysis' from 'jira_utils' (/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_utils.py)
