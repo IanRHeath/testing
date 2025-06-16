@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import openai
 from jira import JIRA
 
@@ -94,40 +94,6 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
-def extract_keywords_from_text(text_to_analyze: str) -> str:
-    """Uses the LLM to extract key technical terms from a block of text."""
-    if RAW_AZURE_OPENAI_CLIENT is None:
-        raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
-        
-    system_prompt = """
-    You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
-    
-    Combine the keywords into a single, space-separated string.
-    
-    Example:
-    Text: "The login button is broken on the main branch. When a user clicks it, the screen goes white and the application crashes with a memory allocation error in the new authentication module."
-    Result: "login button crash"
-    
-    Output only the keywords and nothing else.
-    """
-    
-    messages_to_send = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": text_to_analyze}
-    ]
-
-    try:
-        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
-            messages=messages_to_send,
-            max_tokens=50,
-        )
-        keywords = resp.choices[0].message.content.strip()
-        return keywords
-    except Exception as e:
-        raise JiraBotError(f"Error during keyword extraction from text: {e}")
-
-
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
@@ -143,8 +109,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
-    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - If the user's query contains text to search for, extract the essential words into the "keywords" field.
+    - For queries about 'stale' tickets, set the 'intent' field to the special value 'stale'.
     - If a parameter is not explicitly mentioned, omit it from the JSON.
     
     Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
@@ -161,6 +127,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "intent":"list",
         "project":"PLAT",
         "keywords":"memory instability"
+    }}
+
+    Example 3 (Stale Ticket Search): "find stale tickets"
+    {{
+        "intent":"stale"
     }}
     """
 
@@ -262,6 +233,6 @@ def build_jql(params: Dict[str, Any]) -> str:
     if order_clause:
         jql += order_clause
 
-    print(f"Built JQL: {jql_parts}")
+    print(f"Built JQL: {jql}") # Corrected to print the final string
 
     return jql
