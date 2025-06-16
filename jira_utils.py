@@ -30,33 +30,6 @@ def initialize_jira_client():
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA client initialization: {e}")
 
-def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
-    """
-    Fetches the key data from a single JIRA ticket for analysis.
-    Returns a dictionary of the raw field data.
-    """
-    print(f"Fetching data for ticket {issue_key} for analysis...")
-    try:
-        issue = client.issue(issue_key)
-        data = {
-            "key": issue.key,
-            "summary": issue.fields.summary,
-            "description": issue.fields.description or "",
-            "project": issue.fields.project.key
-        }
-        # Safely get the program field if it exists
-        if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
-             data['program'] = getattr(issue.fields, 'customfield_13002')
-
-        return data
-    except JIRAError as e:
-        if e.status_code == 404:
-            raise JiraBotError(f"Ticket '{issue_key}' not found.")
-        raise JiraBotError(f"Failed to get data for '{issue_key}': {e.text}")
-    except Exception as e:
-        raise JiraBotError(f"An unexpected error occurred while fetching ticket data: {e}")
-
-
 def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
@@ -80,7 +53,9 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
                 "status": status_name,
                 "assignee": assignee_name,
                 "priority": priority_name,
-                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}"
+                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}",
+                "created": issue.fields.created[:10],
+                "updated": issue.fields.updated[:10]
             })
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
