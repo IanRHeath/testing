@@ -2,11 +2,11 @@ import os
 from langchain.tools import tool
 from typing import List, Dict, Any, Optional
 from jira import JIRA
-from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError
+from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError, get_ticket_data_for_analysis
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS
+    VALID_SEVERITY_LEVELS, extract_keywords_from_text
 )
 from llm_config import get_llm
 
@@ -225,15 +225,39 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
         raise JiraBotError(f"An unexpected error occurred in jira_search_tool: {e}")
 
 @tool
-def find_duplicate_tickets_tool(summary: str, project: str, program: str) -> List[Dict[str, Any]]:
+def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
-    Use this tool to find potential duplicate JIRA tickets before creating a new one.
-    You must provide a summary, project, and program for the new ticket.
+    Use this tool to find Jira tickets that are similar to an existing ticket.
+    The user must provide a single, valid issue key (e.g., 'PLAT-123').
     """
-    print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
-    print(f"--- Checking for duplicates of summary: '{summary}' in Project={project}, Program={program} ---")
-    # In future steps, we will add the full logic here.
-    return []
+    print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
+    print(f"--- Received issue_key: {issue_key} ---")
+    
+    # Step 1: Fetch the source ticket's data
+    source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
+    
+    # Step 2: Extract keywords from the ticket's text using the LLM
+    text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
+    if not text_to_analyze.strip():
+        return [] # Return empty list if no text to analyze
+    
+    extracted_keywords = extract_keywords_from_text(text_to_analyze)
+    print(f"--- Extracted Keywords: '{extracted_keywords}' ---")
+
+    # Step 3: Build a new search query based on the extracted traits
+    params = {
+        'project': source_ticket_data.get('project'),
+        'keywords': extracted_keywords,
+        'maxResults': 10 # Limit to 10 similar results
+    }
+    
+    # Use the 'exclude_key' parameter to avoid finding the source ticket
+    similar_jql = build_jql(params, exclude_key=issue_key)
+    
+    # Step 4: Execute the search and return the results
+    similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
+    
+    return similar_issues
 
 
 ALL_JIRA_TOOLS = [
@@ -242,5 +266,5 @@ ALL_JIRA_TOOLS = [
     summarize_multiple_tickets_tool,
     create_ticket_tool,
     get_field_options_tool,
-    find_duplicate_tickets_tool
+    find_similar_tickets_tool
 ]
