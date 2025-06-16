@@ -136,43 +136,31 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, createdDate, updatedDate, assignee, iod_silicon_rev, ccd_silicon_rev.
+    Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains text to search for, extract the essential words into the "keywords" field.
-    - For 'stale' tickets, infer the 'intent' as 'stale'. The system will handle the complex JQL for this.
-    - For queries about unassigned tickets (e.g., "no owner", "unassigned"), set the 'assignee' field to the special value "EMPTY".
-    - For date-related queries, populate 'createdDate' or 'updatedDate'. Convert natural language dates into JQL's relative date format.
-        - "today" -> "startOfDay()"
-        - "yesterday" -> "startOfDay(-1)"
-        - "this week" -> "startOfWeek()"
-        - "this month" -> "startOfMonth()"
-        - "this year" -> "startOfYear()"
-        - "last 7 days" -> "-7d"
-    - If a parameter is not explicitly mentioned, you MUST omit it from the JSON.
-    - ONLY include a "project" field if the user explicitly names a project in their request.
-
-    Example 1 (Assignee Search): "show me unassigned tickets"
-    {{
-        "intent":"list",
-        "assignee":"EMPTY"
-    }}
-
-    Example 2 (Complex Search): "show me p2 tickets for STXH assigned to John Doe"
+    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
+    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - If a parameter is not explicitly mentioned, omit it from the JSON.
+    
+    Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
     {{
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
-        "assignee":"John Doe"
+        "project":"PLAT",
+        "maxResults":5
     }}
 
-    Example 3 (Stale Ticket Search): "find stale tickets"
+    Example 2 (Keyword Search): "search for issues related to 'memory instability'"
     {{
-        "intent":"stale"
+        "intent":"list",
+        "project":"PLAT",
+        "keywords":"memory instability"
     }}
     """
 
@@ -225,6 +213,8 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
+    else:
+        jql_parts.append("project = 'PLAT'")
 
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
@@ -243,49 +233,15 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
             jql_parts.append(f"program = '{raw_prog}'")
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
-    
-    assignee = params.get("assignee")
-    if assignee:
-        if assignee.upper() == "EMPTY":
-            jql_parts.append("assignee is EMPTY")
-        else:
-            jql_parts.append(f'assignee = "{assignee}"')
-
-    created_date = params.get("createdDate")
-    if created_date:
-        if "()" in created_date:
-            jql_parts.append(f'created >= {created_date}')
-        else:
-            jql_parts.append(f'created >= "{created_date}"')
-
-    updated_date = params.get("updatedDate")
-    if updated_date:
-        if "()" in updated_date:
-            jql_parts.append(f'updated >= {updated_date}')
-        else:
-            jql_parts.append(f'updated >= "{updated_date}"')
 
     if params.get("intent") == "stale":
-        stale_conditions = [
-            'updated < "-30d"',
-            '(assignee is EMPTY AND created < "-7d")',
-            '(status in ("In Progress", "In Development", "Development") AND NOT status CHANGED AFTER -60d)',
-            '(status in ("In Review", "In QA") AND NOT status CHANGED AFTER -7d)',
-            '(status in ("Blocked", "Waiting for Customer") AND NOT status CHANGED AFTER -15d)'
-        ]
-        
-        open_statuses = [
-            "Open", "To Do", "In Progress", "Reopened", "Blocked", 
-            "In Development", "Development", "In Review", "In QA", "Waiting for Customer"
-        ]
-        
-        jql_parts.append(f"status in ({', '.join([f'\"{s}\"' for s in open_statuses])}) AND ({' OR '.join(stale_conditions)})")
+        jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
 
     keywords = params.get("keywords")
     if keywords:
         keyword_list = []
         if isinstance(keywords, str):
-            keyword_list = keywords.split(' ')
+            keyword_list = keywords.split(' ') 
         elif isinstance(keywords, list):
             keyword_list = keywords
 
@@ -295,8 +251,10 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
             if kw:
                 keyword_parts.append(f'text ~ "{kw}"')
         if keyword_parts:
+            # Join with AND for more precise similarity matching
             jql_parts.append(f"({' AND '.join(keyword_parts)})")
 
+    # Add the exclusion clause if a key is provided
     if exclude_key:
         jql_parts.append(f'key != "{exclude_key}"')
 
@@ -309,9 +267,9 @@ def build_jql(params: Dict[str, Any], exclude_key: Optional[str] = None) -> str:
 
 
     if not jql_parts:
-        raise JiraBotError("Your query is too broad. Please specify a project, keywords, or other criteria to begin a search.")
-    
-    jql = " AND ".join(jql_parts)
+        jql = "project = 'PLAT'"
+    else:
+        jql = " AND ".join(jql_parts)
 
     if order_clause:
         jql += order_clause
