@@ -199,7 +199,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-def build_jql(params: Dict[str, Any]) -> str:
+def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
     """
@@ -214,6 +214,9 @@ def build_jql(params: Dict[str, Any]) -> str:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     else:
         jql_parts.append("project = 'PLAT'")
+    
+    if exclude_key:
+        jql_parts.append(f"issueKey != '{exclude_key}'")
 
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
@@ -262,6 +265,6 @@ def build_jql(params: Dict[str, Any]) -> str:
     if order_clause:
         jql += order_clause
 
-    print(f"Built JQL: {jql_parts}")
+    print(f"Built JQL: {jql}")
 
     return jql
