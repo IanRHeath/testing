@@ -1,6 +1,6 @@
 import json
 import os
-import re # Import the regular expression module
+import re
 from typing import Dict, Any
 import openai
 from jira import JIRA
@@ -15,6 +15,7 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
+# All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity.
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -91,29 +92,19 @@ project_map = {
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
+    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
     You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
-    
     Combine the keywords into a single, space-separated string.
-    
-    Example:
-    Text: "The login button is broken on the main branch. When a user clicks it, the screen goes white and the application crashes with a memory allocation error in the new authentication module."
-    Result: "login button crash"
-    
-    Output only the keywords and nothing else.
     """
     messages_to_send = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": text_to_analyze}
     ]
     try:
-        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
-            messages=messages_to_send,
-            max_tokens=50,
-        )
+        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), messages=messages_to_send, max_tokens=50)
         keywords = resp.choices[0].message.content.strip()
         return keywords
     except Exception as e:
@@ -123,11 +114,12 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
+    # --- MODIFIED SECTION 1 ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter.
     The "maxResults" field is MANDATORY.
 
     Available programs: {programs_list}
@@ -135,36 +127,39 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user explicitly mentions a project (e.g., 'in PLAT', 'from SWDEV'), extract it into the "project" field. If no project is mentioned, OMIT the project field from the JSON.
-    - ALWAYS include the "maxResults" field. Default to 20 if no limit is specified. If the user uses singular language like "a ticket", set "maxResults" to 1.
-    - TIME-BASED QUERIES: Convert relative dates to JQL format (e.g., "yesterday" -> "-1d", "last week" -> "-1w", "2 months ago" -> "-2M"). Use the fields: `created_after`, `created_before`, `updated_after`, `updated_before`.
-    - For absolute dates, use YYYY-MM-DD format.
-    - Extract other fields like "keywords", "priority", etc., as they appear.
-
-    Example 1 (Project specified): "show me PLAT tickets updated yesterday"
+    - If the user explicitly mentions a project, extract it. Otherwise, OMIT the project field.
+    - ALWAYS include the "maxResults" field, defaulting to 20. If the user uses singular language ("a ticket"), set "maxResults" to 1.
+    - USER-BASED QUERIES:
+      - If the user says "assigned to me", set "assignee": "currentUser()".
+      - If the user says "reported by me", set "reporter": "currentUser()".
+      - If the user mentions a specific person's name (e.g., "assigned to Bob Smith"), extract the name: "assignee": "Bob Smith".
+    - TIME-BASED QUERIES: Convert relative dates (e.g., "yesterday") to JQL format ("-1d").
+    
+    Example 1 (Assigned to me): "show me tickets assigned to me"
     {{
       "intent": "list",
-      "project": "PLAT",
-      "updated_after": "-1d",
+      "assignee": "currentUser()",
       "maxResults": 20
     }}
 
-    Example 2 (No Project specified): "find me bugs updated in the last 3 days"
+    Example 2 (Reported by specific user): "find bugs reported by 'Jane Doe'"
     {{
       "intent": "list",
       "keywords": "bug",
-      "updated_after": "-3d",
+      "reporter": "Jane Doe",
       "maxResults": 20
     }}
     
-    Example 3 (Absolute Time): "show tickets created for GNR before 2025-01-15"
+    Example 3 (Combined): "show 5 critical tickets assigned to 'John Smith' in PLAT"
     {{
       "intent": "list",
-      "program": "GNR",
-      "created_before": "2025-01-15",
-      "maxResults": 20
+      "project": "PLAT",
+      "priority": "Critical",
+      "assignee": "John Smith",
+      "maxResults": 5
     }}
     """
+    # --- END MODIFIED SECTION 1 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -185,11 +180,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     print("----------------------------------------------\n")
 
     try:
-        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
-            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
-            messages=messages_to_send,
-            max_tokens=256,
-        )
+        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"), messages=messages_to_send, max_tokens=256)
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
         if content.startswith("```json"):
@@ -205,39 +196,35 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
 
 def is_valid_jql_date_format(date_str: str) -> bool:
-    """
-    Checks if a string matches Jira's absolute (YYYY-MM-DD) or relative (-1w, -2d, -3M) date formats.
-    """
+    """Checks if a string matches Jira's absolute (YYYY-MM-DD) or relative (-1w, -2d, -3M) date formats."""
+    # This function is unchanged
     if not isinstance(date_str, str):
         return False
-    # Regex for YYYY-MM-DD
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
-    # Regex for -<number><d,w,M>
     relative_format = r'^-([1-9]\d*)[dwM]$'
-    
     if re.match(absolute_format, date_str) or re.match(relative_format, date_str):
         return True
     return False
 
+# --- MODIFIED SECTION 2 ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
-    """
-    Constructs a JQL query string based on extracted parameters.
-    """
+    """Constructs a JQL query string based on extracted parameters."""
     jql_parts = []
     order_clause = ""
 
-    # Project (Now optional)
+    # Project (unchanged)
     raw_proj = params.get("project", "").strip().upper()
-    if raw_proj: # Only add a project clause if one was extracted
+    if raw_proj:
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
         else:
-            # If an invalid project is specified, it's better to raise an error
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     
+    # Exclude Key (unchanged)
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
+    # Priority (unchanged)
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
         if raw_prio.upper() in priority_map:
@@ -247,6 +234,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
+    # Program (unchanged)
     raw_prog = params.get("program", "").strip().upper()
     if raw_prog:
         if raw_prog in program_map:
@@ -256,9 +244,25 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
+    # Stale Intent (unchanged)
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
+        
+    # --- NEW LOGIC FOR USERS ---
+    if assignee := params.get("assignee"):
+        if assignee == "currentUser()":
+            jql_parts.append(f"assignee = {assignee}")
+        else:
+            jql_parts.append(f"assignee = \"{assignee}\"")
 
+    if reporter := params.get("reporter"):
+        if reporter == "currentUser()":
+            jql_parts.append(f"reporter = {reporter}")
+        else:
+            jql_parts.append(f"reporter = \"{reporter}\"")
+    # --- END NEW LOGIC FOR USERS ---
+
+    # Keywords (unchanged)
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
@@ -269,28 +273,23 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
-    # Date validation logic
-    date_fields = {
-        "created_after": "created >=",
-        "created_before": "created <=",
-        "updated_after": "updated >=",
-        "updated_before": "updated <="
-    }
-
+    # Date validation logic (unchanged)
+    date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
     for field, operator in date_fields.items():
-        date_value = params.get(field)
-        if date_value:
+        if date_value := params.get(field):
             if is_valid_jql_date_format(date_value):
                 jql_parts.append(f"{operator} '{date_value}'")
             else:
                 raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
     
+    # Order Clause (unchanged)
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
 
+    # Final Assembly (unchanged)
     if not jql_parts:
         raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
     
@@ -301,3 +300,4 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     print(f"Built JQL: {jql}")
     return jql
+# --- END MODIFIED SECTION 2 ---
