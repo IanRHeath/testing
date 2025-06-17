@@ -112,9 +112,9 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
     except Exception as e:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
+# --- MODIFIED SECTION 1: System Prompt ---
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     """Extracts structured parameters from natural language user queries."""
-    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
@@ -122,32 +122,34 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, assignee, reporter, stale_days, date_number, date_unit, date_field, date_operator.
     The "maxResults" field is MANDATORY.
-
-    Available programs: {programs_list}
-    Available priorities: {priorities_list}
-    Available projects: {projects_list}
-
-    **Extraction Rules:**
-    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w/M/y]" for relative dates (e.g., "-7d", "-2w", "-1y"). Do NOT use the "now()" function. For absolute dates, use "YYYY-MM-DD".
-    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
-    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
-    - PROGRAMS: If the query includes a code from `Available programs` (STX, STXH, etc.), it MUST be a `program`, not a `project`.
     
-    Example 1 (Relative Time): "find me bugs updated in the last 3 days"
+    **Extraction Rules:**
+    - For time queries like "created in the last 2 years", extract "date_number": 2, "date_unit": "year", "date_field": "created", "date_operator": "after".
+    - For "updated before yesterday", extract "date_number": 1, "date_unit": "day", "date_field": "updated", "date_operator": "before".
+    - For "stale tickets" or "not updated in X days", extract `stale_days`. This overrides other date fields.
+    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
+    - PROGRAMS: If the query includes a code from the available programs list (STX, STXH, etc.), it MUST be a `program`.
+    
+    Example 1 (Relative Time - Year): "find tickets created in the past year"
     {{
       "intent": "list",
-      "keywords": "bug",
-      "updated_after": "-3d",
+      "date_number": 1,
+      "date_unit": "year",
+      "date_field": "created",
+      "date_operator": "after",
       "maxResults": 20
     }}
 
-    Example 2 (Stale query): "find stale stxh tickets"
+    Example 2 (Relative Time - Month): "show bugs from last month"
     {{
       "intent": "list",
-      "stale_days": 30,
-      "program": "STXH",
+      "keywords": "bug",
+      "date_number": 1,
+      "date_unit": "month",
+      "date_field": "created",
+      "date_operator": "after",
       "maxResults": 20
     }}
     """
@@ -185,26 +187,32 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-# --- MODIFIED SECTION ---
+# --- MODIFIED SECTION 2: Validation and Helper Functions ---
 def is_valid_jql_date_format(date_str: str) -> bool:
-    """
-    Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w, M, y).
-    """
+    """Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w)."""
     if not isinstance(date_str, str):
         return False
-    # Regex for YYYY-MM-DD
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
-    # Regex for -<number><d,w,M,y>
-    relative_format = r'^-([1-9]\d*)[dwMy]$' # Added 'y' for year
-    
+    relative_format = r'^-([1-9]\d*)[dw]$' # Only allow days and weeks
     if re.match(absolute_format, date_str) or re.match(relative_format, date_str):
         return True
     return False
-# --- END MODIFIED SECTION ---
+
+def _convert_to_relative_days(number: int, unit: str) -> str:
+    """Converts month/year units to a day-based format for JQL."""
+    unit_lower = unit.lower()
+    if "year" in unit_lower:
+        return f"-{number * 365}d"
+    if "month" in unit_lower:
+        return f"-{number * 30}d" # Approximation for month
+    if "week" in unit_lower:
+        return f"-{number * 7}d"
+    if "day" in unit_lower:
+        return f"-{number}d"
+    return None # Should not happen if LLM is prompted correctly
 
 def _format_name_for_jql(name: str) -> str:
     """Ensures a name is in 'Last, First' format for JQL."""
-    # This function is unchanged
     if name == "currentUser()" or "," in name:
         return name
     parts = name.split()
@@ -212,12 +220,13 @@ def _format_name_for_jql(name: str) -> str:
         return f"{parts[1]}, {parts[0]}"
     return name
 
+# --- MODIFIED SECTION 3: build_jql Function ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
-    # This function is unchanged
     jql_parts = []
     order_clause = ""
 
+    # Unchanged logic
     if raw_proj := params.get("project", "").strip().upper():
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
@@ -243,6 +252,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
+    # New date logic using the converter
     if stale_days := params.get("stale_days"):
         try:
             days = int(stale_days)
@@ -250,15 +260,16 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             jql_parts.append(f"status in ({status_clause}) AND updated < '-{days}d'")
         except (ValueError, TypeError):
              raise JiraBotError(f"The value for stale_days '{stale_days}' is not a valid number.")
-    else:
-        date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
-        for field, operator in date_fields.items():
-            if date_value := params.get(field):
-                if is_valid_jql_date_format(date_value):
-                    jql_parts.append(f"{operator} '{date_value}'")
-                else:
-                    raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d, -2w, -1M, or -1y.")
+    # This is the new logic path for handling structured date requests
+    elif all(k in params for k in ["date_number", "date_unit", "date_field", "date_operator"]):
+        jql_date_str = _convert_to_relative_days(params["date_number"], params["date_unit"])
+        if jql_date_str:
+            operator = ">=" if params["date_operator"] == "after" else "<="
+            jql_parts.append(f"{params['date_field']} {operator} '{jql_date_str}'")
+        else:
+            raise JiraBotError(f"Could not understand the date unit '{params['date_unit']}'.")
     
+    # Unchanged logic
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
         if formatted_name == "currentUser()":
