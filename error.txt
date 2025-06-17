@@ -1,8 +1,5 @@
- if params.get("intent") == "stale":
-        stale_conditions = [
-            'updated < "-30d"',
-            '(assignee is EMPTY AND created < "-7d")',
-            '(status in ("In Progress", "In Development", "Development") AND NOT status CHANGED AFTER -60d)',
-            '(status in ("In Review", "In QA") AND NOT status CHANGED AFTER -7d)',
-            '(status in ("Blocked", "Waiting for Customer") AND NOT status CHANGED AFTER -15d)'
-        ]
+DEBUG: Extracted parameters from LLM: {'intent': 'list', 'stale_days': 30, 'project': 'stxh', 'maxResults': 20}
+DEBUG: Successfully set limit to 20.
+
+JIRA Bot Error: Invalid project 'STXH'. Must be one of ['PLAT', 'SWDEV', 'FWDEV'].
+Please check your JQL query or JIRA connection.
