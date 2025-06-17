@@ -37,15 +37,21 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
     """
     print(f"Fetching data for ticket {issue_key} for analysis...")
     try:
-        issue = client.issue(issue_key, fields="summary,description,project,customfield_13002")
+        # Requesting specific fields can be more efficient
+        fields = "summary,description,project,customfield_13002"
+        issue = client.issue(issue_key, fields=fields)
+        
         data = {
             "key": issue.key,
             "summary": issue.fields.summary,
             "description": issue.fields.description or "",
             "project": issue.fields.project.key
         }
+        
+        # Safely get the program field
         if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
              data['program'] = issue.fields.customfield_13002
+
         return data
     except JIRAError as e:
         if e.status_code == 404:
@@ -65,11 +71,14 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
         if not issues:
             print("No issues found for the given JQL.")
             return []
+
         formatted_issues = []
         for issue in issues:
+            # Robustly access potentially missing attributes
             assignee = issue.fields.assignee.displayName if hasattr(issue.fields, 'assignee') and issue.fields.assignee else "Unassigned"
             status = issue.fields.status.name if hasattr(issue.fields, 'status') and issue.fields.status else "Unknown"
             priority = issue.fields.priority.name if hasattr(issue.fields, 'priority') and issue.fields.priority else "Undefined"
+
             formatted_issues.append({
                 "key": issue.key,
                 "summary": issue.fields.summary,
@@ -96,20 +105,29 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     try:
         issue = client.issue(issue_key, expand="comments")
         details = []
+        
         ticket_url = getattr(issue, 'permalink', lambda: f"{JIRA_SERVER_URL}/browse/{issue.key}")()
+
         details.append(f"Project: {issue.fields.project.key}")
+        
         program_field_obj = getattr(issue.fields, 'Program', None)
         details.append(f"Program: {program_field_obj if program_field_obj else 'Not Found'}")
+            
         details.append(f"Title: {issue.fields.summary}")
         details.append(f"Status: {issue.fields.status.name if hasattr(issue.fields, 'status') and issue.fields.status else 'Unknown'}")
+        
         resolution = getattr(issue.fields, 'resolution', None)
         details.append(f"Resolution: {resolution.name if resolution else 'Unresolved'}")
+        
         assignee = getattr(issue.fields, 'assignee', None)
         details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
+        
         details.append(f"Created: {issue.fields.created[:10] if hasattr(issue.fields, 'created') and issue.fields.created else 'Unknown'}")
         details.append(f"Updated: {issue.fields.updated[:10] if hasattr(issue.fields, 'updated') and issue.fields.updated else 'Unknown'}")
+
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
+        
         details.append("\n-- Comments --")
         if hasattr(issue.fields.comment, 'comments') and issue.fields.comment.comments:
             for comment in reversed(issue.fields.comment.comments[-5:]):
@@ -119,8 +137,10 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
                 details.append("-" * 10)
         else:
             details.append("No comments.")
+            
         details_text = "\n".join(details)
         return (details_text, ticket_url)
+
     except JIRAError as e:
         if e.status_code == 404:
             raise JiraBotError(f"Ticket '{issue_key}' not found.")
@@ -128,7 +148,6 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-# --- MODIFIED create_jira_issue ---
 def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
     """
     Creates a new issue in Jira with a hardcoded issuetype of 'Draft'.
