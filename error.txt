@@ -1,11 +1,52 @@
+Your JIRA Query Request: give me 5 stxh tickets created this past year
+
+--- LLM Request Details (for extract_params) ---
+Model: gpt-4.1
+Messages:
+  Role: system, Content:
+    You are an expert in extracting JIRA query parameters from natural language prompts.
+    Your goal is to create a JSON object based on the user's request.
+
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days.
+    The "maxResults" field is MANDATORY.
+
+    Available programs: STX, STXH, GNR, KRK, KRK2E, SHP, FRG
+    Available priorities: P1, P2, P3, P4
+    Available projects: PLAT, SWDEV, FWDEV
+
+    **Extraction Rules:**
+    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w/M]" for relative dates (e.g., "-7d", "-2w"). Do NOT use the "now()" function. For absolute dates, use "YYYY-MM-DD".
+    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
+    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
+    - PROGRAMS: If the query includes a code from `Available programs` (STX, STXH, etc.), it MUST be a `program`, not a `project`.
+
+    Example 1 (Relative Time): "find me bugs updated in the last 3 days"
+    {
+      "intent": "list",
+      "keywords": "bug",
+      "updated_after": "-3d",
+      "maxResults": 20
+    }
+
+    Example 2 (Stale query): "find stale stxh tickets"
+    {
+      "intent": "list",
+      "stale_days": 30,
+      "program": "STXH",
+      "maxResults": 20
+    }
+
+  Role: user, Content: 5 stxh tickets created this past year
+----------------------------------------------
 
 LLM extracted parameters: {
   "intent": "list",
-  "created_after": "now-7d",
-  "maxResults": 20
+  "program": "STXH",
+  "created_after": "-1y",
+  "maxResults": 5
 }
-DEBUG: Extracted parameters from LLM: {'intent': 'list', 'created_after': 'now-7d', 'maxResults': 20}
-DEBUG: Successfully set limit to 20.
+DEBUG: Extracted parameters from LLM: {'intent': 'list', 'program': 'STXH', 'created_after': '-1y', 'maxResults': 5}
+DEBUG: Successfully set limit to 5.
 
-JIRA Bot Error: The date format 'now-7d' for 'created_after' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.
+JIRA Bot Error: The date format '-1y' for 'created_after' is not valid. Please use the format YYYY-MM-DD or a relative date like -7d or -2w.
 Please check your JQL query or JIRA connection.
