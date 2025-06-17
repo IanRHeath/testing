@@ -15,7 +15,6 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# All maps are unchanged and omitted for brevity
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -94,7 +93,6 @@ stale_statuses = {"Open", "To Do", "In Progress", "Reopened", "Blocked"}
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
-    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
@@ -112,29 +110,58 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
     except Exception as e:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
-# --- NEW HELPER FUNCTION ---
+def get_summary_similarity_score(summary_a: str, summary_b: str) -> int:
+    """
+    Uses an LLM to compare two ticket summaries for semantic similarity and returns a score from 1 (not similar) to 10 (very similar).
+    """
+    if RAW_AZURE_OPENAI_CLIENT is None:
+        raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot compare summaries.")
+
+    system_prompt = f"""
+    You are an expert in identifying duplicate JIRA tickets. Your task is to compare the following two ticket summaries and rate their similarity on a scale of 1 to 10, where 1 is "completely different" and 10 is "almost certainly a duplicate".
+
+    Consider synonyms, rephrasing, and different ways of describing the same core technical issue. Focus on the meaning, not just the exact words.
+
+    **Summary A:** "{summary_a}"
+    **Summary B:** "{summary_b}"
+
+    Based on your analysis, provide a single integer score from 1 to 10. Your response must contain ONLY the number and nothing else.
+    """
+    
+    messages_to_send = [
+        {"role": "system", "content": system_prompt}
+    ]
+
+    try:
+        resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
+            model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
+            messages=messages_to_send,
+            max_tokens=5,
+            temperature=0.0
+        )
+        score_str = resp.choices[0].message.content.strip()
+        print(f"DEBUG: Similarity score between summaries is '{score_str}'.")
+        return int(score_str)
+    except (ValueError, TypeError) as e:
+        print(f"WARNING: Could not parse similarity score from LLM output '{score_str}'. Error: {e}. Defaulting to low score.")
+        return 1
+    except Exception as e:
+        raise JiraBotError(f"Error during summary similarity check: {e}")
+
 def _is_valid_jira_key_format(key_str: str) -> bool:
     """
     Checks if a string matches the typical JIRA key format (e.g., PROJ-1234).
     """
-    # A JIRA key is typically uppercase letters, a hyphen, and numbers.
-    # We check for a case-insensitive match for robustness.
     pattern = r'^[A-Z][A-Z0-9]+-[1-9]\d*$'
     return re.match(pattern, key_str, re.IGNORECASE) is not None
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     """Extracts structured parameters from natural language user queries."""
     
-    # --- NEW PRE-CHECK VALIDATION LOGIC ---
-    # First, scan the input for anything that looks like a JIRA key but has an invalid format.
     for word in prompt_text.split():
-        # A potential key is any word that contains a hyphen.
-        if '-' in word:
-            # Clean up potential trailing characters like commas or question marks
-            cleaned_word = re.sub(r'[,?.]+$', '', word)
-            if not _is_valid_jira_key_format(cleaned_word):
-                raise JiraBotError(f"Potential JIRA key '{cleaned_word}' has an invalid format. Keys should be in the format 'PROJ-123' and cannot contain special characters like '*'.")
-    # --- END NEW PRE-CHECK ---
+        cleaned_word = re.sub(r'[,?.]+$', '', word)
+        if '-' in cleaned_word and not _is_valid_jira_key_format(cleaned_word):
+            raise JiraBotError(f"Potential JIRA key '{cleaned_word}' has an invalid format. Keys should be in the format 'PROJ-123' and cannot contain special characters like '*'.")
 
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
@@ -151,7 +178,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w/M]" for relative dates (e.g., "-7d", "-2w"). Do NOT use "y" for year or the "now()" function. For absolute dates, use "YYYY-MM-DD".
+    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w]" for relative dates (e.g., "-7d", "-2w"). Do NOT use "y" for year, "M" for month, or the "now()" function. For absolute dates, use "YYYY-MM-DD".
     - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
     - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
     - PROGRAMS: If the query includes a code from `Available programs` (STX, STXH, etc.), it MUST be a `program`, not a `project`.
@@ -213,10 +240,23 @@ def is_valid_jql_date_format(date_str: str) -> bool:
     if not isinstance(date_str, str):
         return False
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
-    relative_format = r'^-([1-9]\d*)[dw]$' # Only days and weeks are truly safe across instances
+    relative_format = r'^-([1-9]\d*)[dw]$'
     if re.match(absolute_format, date_str) or re.match(relative_format, date_str):
         return True
     return False
+
+def _convert_to_relative_days(number: int, unit: str) -> str:
+    """Converts month/year units to a day-based format for JQL."""
+    unit_lower = unit.lower()
+    if "year" in unit_lower:
+        return f"-{number * 365}d"
+    if "month" in unit_lower:
+        return f"-{number * 30}d"
+    if "week" in unit_lower:
+        return f"-{number * 7}d"
+    if "day" in unit_lower:
+        return f"-{number}d"
+    return None
 
 def _format_name_for_jql(name: str) -> str:
     """Ensures a name is in 'Last, First' format for JQL."""
@@ -229,7 +269,6 @@ def _format_name_for_jql(name: str) -> str:
 
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
-    # This function is unchanged
     jql_parts = []
     order_clause = ""
 
@@ -265,14 +304,13 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             jql_parts.append(f"status in ({status_clause}) AND updated < '-{days}d'")
         except (ValueError, TypeError):
              raise JiraBotError(f"The value for stale_days '{stale_days}' is not a valid number.")
-    else:
-        date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
-        for field, operator in date_fields.items():
-            if date_value := params.get(field):
-                if is_valid_jql_date_format(date_value):
-                    jql_parts.append(f"{operator} '{date_value}'")
-                else:
-                    raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
+    elif all(k in params for k in ["date_number", "date_unit", "date_field", "date_operator"]):
+        jql_date_str = _convert_to_relative_days(params["date_number"], params["date_unit"])
+        if jql_date_str:
+            operator = ">=" if params["date_operator"] == "after" else "<="
+            jql_parts.append(f"{params['date_field']} {operator} '{jql_date_str}'")
+        else:
+            raise JiraBotError(f"Could not understand the date unit '{params['date_unit']}'.")
     
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
@@ -289,8 +327,6 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             jql_parts.append(f"reporter = \"{formatted_name}\"")
 
     if keywords := params.get("keywords"):
-        # If a valid-looking JIRA key is part of the keywords, we should treat it as a key search.
-        # This is an advanced case, for now we just search text.
         keyword_parts = []
         for kw_raw in keywords.replace(',', ' ').split():
             kw = kw_raw.strip()
