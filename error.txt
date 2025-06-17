@@ -1,9 +1,63 @@
-Raw Azure OpenAI client configured.
-Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/main.py", line 3, in <module>
-    from jira_agent import get_jira_agent
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_agent.py", line 15, in <module>
-    from jira_tools import ALL_JIRA_TOOLS
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_tools.py", line 6, in <module>
-    from jql_builder import (
-ImportError: cannot import name 'extract_keywords_from_text' from 'jql_builder' (/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jql_builder.py)
+Your JIRA Query Request: find a bug related to memory leaks
+
+--- LLM Request Details (for extract_params) ---
+Model: gpt-4.1
+Messages:
+  Role: system, Content:
+    You are an expert in extracting JIRA query parameters from natural language prompts.
+    Your goal is to create a JSON object based on the user's request.
+
+    Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
+    The "maxResults" field is MANDATORY.
+
+    Available programs: STX, STXH, GNR, KRK, KRK2E, SHP, FRG
+    Available priorities: P1, P2, P3, P4
+    Available projects: PLAT, SWDEV, FWDEV
+
+    **Extraction Rules:**
+    - ALWAYS include the "maxResults" field in your JSON output.
+    - If the user's query contains a specific number for a limit (e.g., "show me 5", "top 3"), use that number for "maxResults".
+    - If the user uses singular language like "a ticket" or "the ticket", set "maxResults" to 1.
+    - If NO limit or singular is mentioned, set "maxResults" to a default value of 20.
+    - Extract other fields like "keywords", "priority", etc., as they appear.
+
+    Example 1 (Specific Limit): "show me the top 5 p2 tickets for STXH"
+    {
+      "intent": "list",
+      "priority": "P2",
+      "program": "STXH",
+      "project": "PLAT",
+      "maxResults": 5
+    }
+
+    Example 2 (No Limit): "search for issues related to 'memory instability'"
+    {
+      "intent": "list",
+      "project": "PLAT",
+      "keywords": "memory instability",
+      "maxResults": 20
+    }
+
+    Example 3 (Singular Limit): "find a ticket about boot failures"
+    {
+      "intent": "list",
+      "project": "PLAT",
+      "keywords": "boot failures",
+      "maxResults": 1
+    }
+
+  Role: user, Content: memory leak
+----------------------------------------------
+
+LLM extracted parameters: {
+  "intent": "list",
+  "project": "PLAT",
+  "keywords": "memory leak",
+  "maxResults": 20
+}
+DEBUG: Extracted parameters from LLM: {'intent': 'list', 'project': 'PLAT', 'keywords': 'memory leak', 'maxResults': 20}
+DEBUG: Successfully set limit to 20.
+Built JQL: project = 'PLAT' AND (summary ~ "memory" OR description ~ "memory" OR summary ~ "leak" OR description ~ "leak") ORDER BY created DESC
+
+Attempting JIRA search with JQL: project = 'PLAT' AND (summary ~ "memory" OR description ~ "memory" OR summary ~ "leak" OR description ~ "leak") ORDER BY created DESC | Limit: 20
+Successfully found 20 issues.
