@@ -17,6 +17,7 @@ except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
+    # This function is unchanged
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
@@ -51,6 +52,7 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
 
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
+    # This function is unchanged
     """
     Use this tool when the user asks for the available or valid options for a specific ticket field...
     """
@@ -84,14 +86,55 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     return f"Sorry, I cannot provide options for the field '{field_name}'."
 
 
+# --- MODIFIED create_ticket_tool ---
 @tool
 def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
+    It will first automatically check for potential duplicates.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
+    # --- NEW: Proactive Duplicate Check ---
+    print("\n--- Running proactive duplicate check before creating ticket... ---")
+    
+    # Use a try-except block to ensure duplicate check failure doesn't halt creation
+    try:
+        # We need the full program name for the JQL query
+        program_code_for_dupe_check = program.upper()
+        if program_code_for_dupe_check in program_map:
+            program_full_name_for_dupe_check = program_map[program_code_for_dupe_check]
+            
+            dupe_jql = f'project = "{project}" AND "Program" = "{program_full_name_for_dupe_check}"'
+            candidate_tickets = search_jira_issues(dupe_jql, JIRA_CLIENT_INSTANCE, limit=25)
+            
+            potential_duplicates = []
+            if candidate_tickets:
+                print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries... ---")
+                SIMILARITY_THRESHOLD = 8
+                for candidate in candidate_tickets:
+                    if candidate_summary := candidate.get('summary'):
+                        score = get_summary_similarity_score(summary, candidate_summary)
+                        if score >= SIMILARITY_THRESHOLD:
+                            potential_duplicates.append(candidate)
+            
+            if potential_duplicates:
+                print("\n--- WARNING: Found potential duplicate tickets! ---")
+                for i, issue in enumerate(potential_duplicates):
+                    print(f"{i+1}. Key: {issue['key']} - {issue['status']}")
+                    print(f"   Summary: {issue['summary']}")
+                    print(f"   URL: {issue['url']}")
+                    print("-" * 20)
+                
+                confirmation = input("Do you still want to continue creating a new ticket? (yes/no): ")
+                if confirmation.lower().strip() != 'yes':
+                    return "Ticket creation cancelled by user after duplicate check."
+    except Exception as e:
+        print(f"\nWARNING: Could not perform duplicate check due to an error: {e}. Proceeding with ticket creation.")
+    # --- END DUPLICATE CHECK ---
+
+    # Validation logic (unchanged)
     valid_issue_types = ['Issue', 'enhancement', 'draft']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
@@ -125,9 +168,10 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
 
     program_full_name = program_map[program_code]
 
+    # Description file workflow (unchanged)
     steps_delimiter = "\n\n---STEPS-TO-REPRODUCE---\n"
     description_template = f"""---DESCRIPTION---
-Detailed Summary:
+Detailed Summary: {summary}
 
 System Level Signature:
 
@@ -163,9 +207,9 @@ All Scandump Links:
             f.write(description_template)
 
         print("\n----------------------------------------------------------------")
-        print(f"ACTION REQUIRED: I have created a template file named '{description_filename}' in this directory.")
-        print("Please open the file, fill in the Description and Steps to Reproduce, and save it.")
-        input("Press Enter here when you have saved the file and are ready to continue...")
+        print(f"ACTION REQUIRED: I have created a template file named '{description_filename}'.")
+        print("Please open it, complete the details, and save the file.")
+        input("Press Enter here when you are ready to continue...")
 
         with open(description_filename, "r") as f:
             full_text_input = f.read()
@@ -284,7 +328,6 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
     return similar_issues
 
-# --- MODIFIED SECTION ---
 @tool
 def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
@@ -298,29 +341,24 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     source_summary = source_ticket_data.get('summary')
     source_project = source_ticket_data.get('project')
     
-    # --- FIX: Correctly extract the Program value ---
-    # The 'program' custom field can be complex. We need to safely get the string value.
     program_field_value = source_ticket_data.get('program')
     source_program = ""
     if isinstance(program_field_value, str):
         source_program = program_field_value
     elif isinstance(program_field_value, list) and len(program_field_value) > 0:
-        # Handle cases where it might be a list
         source_program = str(program_field_value[0])
     elif program_field_value is not None:
-        # Handle other potential object types by converting to string and cleaning up
         source_program = str(program_field_value)
 
-    # Clean up the program string just in case it was a list string representation
     source_program = source_program.strip("[]'")
-    # --- END FIX ---
 
     if not all([source_summary, source_project, source_program]):
         return [f"Source ticket {issue_key} is missing a summary, project, or program field. Cannot search for duplicates."]
 
     jql_query = f'project = "{source_project}" AND "Program" = "{source_program}" AND key != "{issue_key}"'
     print(f"--- Searching for candidate tickets with JQL: {jql_query} ---")
-    candidate_tickets = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=50)
+    
+    candidate_tickets = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=25)
 
     if not candidate_tickets:
         return [f"No other tickets found in the same project and program as {issue_key}."]
@@ -348,7 +386,6 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
          return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
 
     return duplicate_tickets
-# --- END MODIFIED SECTION ---
 
 
 ALL_JIRA_TOOLS = [
