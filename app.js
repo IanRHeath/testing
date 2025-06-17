@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // --- Helper Components ---
 
-// User Icon Component
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -11,7 +10,6 @@ const UserIcon = () => (
     </div>
 );
 
-// AI Icon Component
 const AiIcon = () => (
     <div className="w-8 h-8 text-white bg-indigo-600 rounded-full p-1.5 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -20,7 +18,6 @@ const AiIcon = () => (
     </div>
 );
 
-// Copy Icon Component
 const CopyIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
         <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
@@ -28,14 +25,12 @@ const CopyIcon = () => (
     </svg>
 );
 
-// Check Icon Component
 const CheckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
 );
 
-// Jira Ticket Component
 const JiraTicket = ({ ticket }) => {
     const [copied, setCopied] = useState(false);
     const handleCopy = () => {
@@ -54,7 +49,9 @@ const JiraTicket = ({ ticket }) => {
                 <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ticket.key}</a>
                 <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>{ticket.status}</span>
-                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"><CheckIcon /></button>
+                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        {copied ? <CheckIcon /> : <CopyIcon />}
+                    </button>
                 </div>
             </div>
             <p className="text-gray-800 dark:text-gray-300 mb-3">{ticket.summary}</p>
@@ -68,7 +65,6 @@ const JiraTicket = ({ ticket }) => {
     );
 };
 
-// Markdown Renderer Component
 const MarkdownRenderer = ({ text }) => {
     const createMarkup = (markdownText) => {
         if (typeof markdownText !== 'string') return { __html: '' };
@@ -82,7 +78,6 @@ const MarkdownRenderer = ({ text }) => {
     return <div dangerouslySetInnerHTML={createMarkup(text)} />;
 };
 
-// OptionsInput Component
 const OptionsInput = ({ questionData, onOptionSelect }) => {
     const { question, options, next_field } = questionData;
 
@@ -94,7 +89,7 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
         return (
             <div className="mt-4">
                 <select 
-                    onChange={(e) => onOptionSelect(next_field, e.target.value)}
+                    onChange={(e) => { if(e.target.value) onOptionSelect(next_field, e.target.value) }}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
                 >
                     <option value="">Select an option...</option>
@@ -121,7 +116,6 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
     );
 };
 
-// --- NEW ThemeToggle Component ---
 const ThemeToggle = ({ darkMode, setDarkMode }) => {
     const MoonIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -143,9 +137,7 @@ const ThemeToggle = ({ darkMode, setDarkMode }) => {
 };
 
 
-// Main App Component
 export default function App() {
-    // State Management
     const initialMessage = { role: 'ai', type: 'text', content: "Welcome to the Jira Triage LLM Agent! How can I help you today?" };
     const [messages, setMessages] = useState([initialMessage]);
     const [input, setInput] = useState('');
@@ -155,7 +147,8 @@ export default function App() {
     const [currentQuestion, setCurrentQuestion] = useState(null);
     const [darkMode, setDarkMode] = useState(false);
 
-    // Effect to handle dark mode persistence
+    const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
+
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -234,9 +227,10 @@ export default function App() {
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
-                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">New Chat</button>
+                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+                    New Chat
+                </button>
                 <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
-                {/* --- FIX: Render the actual toggle button --- */}
                 <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
             </header>
 
