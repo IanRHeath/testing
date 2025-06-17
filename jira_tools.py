@@ -10,16 +10,17 @@ from jql_builder import (
 )
 from llm_config import get_llm
 
-# This part of the file is unchanged
+# --- This part of the file is unchanged ---
 JIRA_CLIENT_INSTANCE = None
 try:
     JIRA_CLIENT_INSTANCE = initialize_jira_client()
 except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
+# --- The _get_single_ticket_summary, get_field_options_tool, and create_ticket_tool functions are unchanged. ---
+# --- They are omitted for brevity but are part of the full file. ---
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
-    # This function is unchanged
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
     sanitized_key = issue_key.replace('_', '-').upper()
@@ -57,7 +58,6 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     """
     Use this tool when the user asks for the available or valid options for a specific ticket field...
     """
-    # This function is unchanged
     field_lower = field_name.lower()
 
     if "program" in field_lower:
@@ -92,7 +92,6 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
     """
     Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
     """
-    # This function is unchanged
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
    
@@ -199,7 +198,6 @@ All Scandump Links:
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
 
-
 @tool
 def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> str:
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL."""
@@ -208,7 +206,6 @@ def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a f
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
     """Use this tool when the user asks to summarize MORE THAN ONE JIRA ticket."""
-    # This function is unchanged
     summaries = []
     question_for_each = "Provide a full 4-point summary."
     for key in issue_keys:
@@ -218,45 +215,40 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
             summaries.append(f"Could not generate summary for {key}: {e}")
     return "\n\n---\n\n".join(summaries)
 
-# --- MODIFIED SECTION ---
+# --- REVISED SECTION ---
 @tool
 def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     """Searches JIRA issues based on a natural language query."""
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
         params = extract_params(query)
-        
-        # --- NEW LOGIC ---
-        # Default to 1 if the user asks for "a ticket" or "the ticket" and doesn't specify another limit.
-        singular_phrases = [' a ticket', ' the ticket', ' a plat ticket', ' a bug', ' the bug']
-        query_lower = query.lower()
-        
-        # Check if a singular phrase is in the query AND no limit was extracted by the LLM
-        if any(phrase in query_lower for phrase in singular_phrases) and "maxResults" not in params:
-            limit = 1
-            print("INFO: User query implies a single result. Setting search limit to 1.")
-        else:
-            # Use the limit from the LLM, or default to 20 if none is found.
-            limit = int(params.get("maxResults", 20)) 
-        # --- END NEW LOGIC ---
+        print(f"DEBUG: Extracted parameters from LLM: {params}")
+
+        # Defensively get the limit, handling potential missing key or non-integer values.
+        limit_str = params.get("maxResults", "20") # Default to string "20"
+        try:
+            limit = int(limit_str)
+            print(f"DEBUG: Successfully set limit to {limit}.")
+        except (ValueError, TypeError):
+            limit = 20 # Fallback if conversion fails
+            print(f"DEBUG: Could not parse '{limit_str}' as an integer. Defaulting limit to {limit}.")
 
         jql_query = build_jql(params)
         return search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=limit)
     except JiraBotError as e:
         raise e
     except Exception as e:
-        # It's good practice to log the original query for debugging.
         error_message = f"An unexpected error occurred in jira_search_tool for query: '{query}'. Details: {e}"
         raise JiraBotError(error_message)
-# --- END MODIFIED SECTION ---
+# --- END REVISED SECTION ---
 
+# --- The find_similar_tickets_tool and ALL_JIRA_TOOLS list are unchanged. ---
 @tool
 def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
     Use this tool to find Jira tickets that are similar to an existing ticket.
     The user must provide a single, valid issue key (e.g., 'PLAT-123').
     """
-    # This function is unchanged
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     
