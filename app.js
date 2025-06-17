@@ -28,41 +28,33 @@ const CopyIcon = () => (
     </svg>
 );
 
-// Check Icon Component (for showing copy success)
+// Check Icon Component
 const CheckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
 );
 
-
 // Jira Ticket Component
 const JiraTicket = ({ ticket }) => {
     const [copied, setCopied] = useState(false);
-
     const handleCopy = () => {
         const textToCopy = `Key: ${ticket.key}\nSummary: ${ticket.summary}\nURL: ${ticket.url}`;
         navigator.clipboard.writeText(textToCopy).then(() => {
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+            setTimeout(() => setCopied(false), 2000);
         });
     };
-
     const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened') 
         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-
     return (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
             <div className="flex justify-between items-start mb-2">
                 <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ticket.key}</a>
                 <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>
-                        {ticket.status}
-                    </span>
-                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                        {copied ? <CheckIcon /> : <CopyIcon />}
-                    </button>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>{ticket.status}</span>
+                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"><CheckIcon /></button>
                 </div>
             </div>
             <p className="text-gray-800 dark:text-gray-300 mb-3">{ticket.summary}</p>
@@ -90,29 +82,49 @@ const MarkdownRenderer = ({ text }) => {
     return <div dangerouslySetInnerHTML={createMarkup(text)} />;
 };
 
-// Theme Toggle Component
-const ThemeToggle = ({ darkMode, setDarkMode }) => {
-    const MoonIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-        </svg>
-    );
+// --- NEW COMPONENT: OptionsInput ---
+const OptionsInput = ({ questionData, onOptionSelect }) => {
+    const { question, options, next_field } = questionData;
 
-    const SunIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clipRule="evenodd" />
-        </svg>
-    );
+    if (!options || options.length === 0) {
+        return null; // Don't render if there are no options
+    }
 
+    // Use a dropdown for longer lists
+    if (options.length > 5) {
+        return (
+            <div className="mt-4">
+                <select 
+                    onChange={(e) => onOptionSelect(next_field, e.target.value)}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    <option value="">Select an option...</option>
+                    {options.map((option, i) => (
+                        <option key={i} value={option}>{option}</option>
+                    ))}
+                </select>
+            </div>
+        );
+    }
+
+    // Use buttons for shorter lists
     return (
-        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            {darkMode ? <SunIcon /> : <MoonIcon />}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+            {options.map((option, i) => (
+                <button
+                    key={i}
+                    onClick={() => onOptionSelect(next_field, option)}
+                    className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium py-1.5 px-3 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                >
+                    {option}
+                </button>
+            ))}
+        </div>
     );
 };
 
 
-// --- Main App Component ---
+// Main App Component
 export default function App() {
     // State Management
     const initialMessage = { role: 'ai', type: 'text', content: "Welcome to the Jira Triage LLM Agent! How can I help you today?" };
@@ -121,43 +133,27 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
-    const [darkMode, setDarkMode] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState(null); // NEW: Track the current question
 
-    const suggestionPrompts = [
-        "Find stale tickets",
-        "Show me tickets assigned to me",
-        "Summarize PLAT-12345"
-    ];
+    const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
-    // Effect to handle dark mode changes
-    useEffect(() => {
-        const isDarkMode = localStorage.getItem('darkMode') === 'true';
-        setDarkMode(isDarkMode);
-    }, []);
-
-    useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('darkMode', 'true');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('darkMode', 'false');
-        }
-    }, [darkMode]);
-
-    // Effect to auto-scroll to the latest message
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSend = async (prompt = input) => {
+    const handleSend = async (prompt, isAutoTriggered = false) => {
         if (!prompt.trim() || isLoading) return;
 
         setShowSuggestions(false);
-        const userMessage = { role: 'user', type: 'text', content: prompt };
-        setMessages(prev => [...prev, userMessage]);
+        // Only show the user's message if it wasn't an auto-triggered button click
+        if (!isAutoTriggered) {
+             const userMessage = { role: 'user', type: 'text', content: prompt };
+             setMessages(prev => [...prev, userMessage]);
+        }
+       
         setInput('');
         setIsLoading(true);
+        setCurrentQuestion(null); // Clear previous question
 
         const apiHistory = messages.map(msg => ({
             role: msg.role,
@@ -174,7 +170,14 @@ export default function App() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.content || 'An API error occurred.');
             
-            setMessages(prev => [...prev, { role: 'ai', ...data }]);
+            // --- NEW: Handle structured options response ---
+            if (data.type === 'options_request') {
+                const questionMessage = { role: 'ai', type: 'text', content: data.content.question, raw_output: data.raw_output };
+                setMessages(prev => [...prev, questionMessage]);
+                setCurrentQuestion(data.content);
+            } else {
+                setMessages(prev => [...prev, { role: 'ai', ...data }]);
+            }
         } catch (error) {
             setMessages(prev => [...prev, { role: 'ai', type: 'error', content: error.message }]);
         } finally {
@@ -182,27 +185,36 @@ export default function App() {
         }
     };
     
+    // --- NEW: Function to handle selecting an option ---
+    const handleOptionSelect = (fieldName, fieldValue) => {
+        // Display the user's choice as a message
+        const userMessage = { role: 'user', type: 'text', content: fieldValue };
+        setMessages(prev => [...prev, userMessage]);
+        
+        // Formulate the command for the agent and send it automatically
+        const command = `set_ticket_field(field_name='${fieldName}', field_value='${fieldValue}')`;
+        handleSend(command, true); // `isAutoTriggered` hides this command from the chat
+    };
+
     const startNewChat = () => {
         setMessages([initialMessage]);
         setShowSuggestions(true);
+        setCurrentQuestion(null);
     };
 
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
-                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
-                    New Chat
-                </button>
+                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">New Chat</button>
                 <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
-                <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+                <div>{/* Placeholder for theme toggle or other buttons */}</div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                 <div className="max-w-3xl mx-auto">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                         <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <AiIcon />}
-                            
                             <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
                                 {msg.type === 'text' && <MarkdownRenderer text={msg.content} />}
                                 {msg.type === 'error' && <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>}
@@ -213,21 +225,13 @@ export default function App() {
                                     </div>
                                 )}
                             </div>
-
                             {msg.role === 'user' && <UserIcon />}
                         </div>
                     ))}
                     {isLoading && (
                          <div className="flex items-start gap-4 mb-6 justify-start">
                             <AiIcon />
-                            <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div>
-                                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                                    <span className="text-gray-500 dark:text-gray-400">Thinking...</span>
-                                </div>
-                            </div>
+                            <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700"><div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div><span className="text-gray-500 dark:text-gray-400">Thinking...</span></div></div>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
@@ -236,7 +240,10 @@ export default function App() {
 
             <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
                 <div className="max-w-3xl mx-auto">
-                    {showSuggestions && (
+                    {/* Render the options input if there's a question */}
+                    {currentQuestion && <OptionsInput questionData={currentQuestion} onOptionSelect={handleOptionSelect} />}
+                    
+                    {showSuggestions && !currentQuestion && (
                         <div className="flex flex-wrap gap-2 mb-3 justify-center">
                             {suggestionPrompts.map((prompt, i) => (
                                 <button key={i} onClick={() => handleSend(prompt)} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm py-1.5 px-3 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -251,15 +258,11 @@ export default function App() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Type your Jira request..."
+                            placeholder={currentQuestion ? "Please make a selection above or type your answer..." : "Type your Jira request..."}
                             className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
                             disabled={isLoading}
                         />
-                        <button
-                            onClick={() => handleSend()}
-                            disabled={isLoading || !input.trim()}
-                            className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-                        >
+                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
                             Send
                         </button>
                     </div>
