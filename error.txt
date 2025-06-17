@@ -1,10 +1,1 @@
-[eslint]
-src/App.js
-  Line 82:13:  'question' is assigned a value but never used  no-unused-vars
-
-Search for the keywords to learn more about each warning.
-To ignore, add // eslint-disable-next-line to the line before.
-
-WARNING in [eslint]
-src/App.js
-  Line 82:13:  'question' is assigned a value but never used  no-unused-vars
+An unexpected error occurred in jira_search_tool for query: 'STXH ticket with BSOD'. Details: 'list' object has no attribute 'replace'
