@@ -1,8 +1,3 @@
---- [Integration Test] Attempting to create a live ticket... ---
-
---- Running proactive duplicate check before creating ticket... ---
-
-----------------------------------------------------------------
 ACTION REQUIRED: I have created a template file named 'ticket_description.txt'.
 Please open it, complete the details, and save the file.
 
@@ -30,7 +25,7 @@ ERROR: test_live_ticket_creation_and_deletion (integration_test_live_creation.Te
 Tests the end-to-end creation of a ticket in a live Jira instance,
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_utils.py", line 174, in create_jira_issue
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_utils.py", line 173, in create_jira_issue
     new_issue = client.create_issue(fields=fields)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/venv/lib/python3.12/site-packages/jira/client.py", line 1858, in create_issue
@@ -46,8 +41,8 @@ Traceback (most recent call last):
     raise JIRAError(
 jira.exceptions.JIRAError: JiraError HTTP 400 url: https://ontrack-internal.amd.com/rest/api/2/issue
 
-        response headers = {'X-AREQUESTID': '120x2974557x16', 'X-ASESSIONID': 'r09kwf', 'X-ANODEID': 'node3', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 06:00:48 GMT', 'Connection': 'close'}
-        response text = {"errorMessages":[],"errors":{"customfield_14308":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13002":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13208":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_14307":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_17000":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])"}}
+        response headers = {'X-AREQUESTID': '123x3014206x19', 'X-ASESSIONID': '1baq5f7', 'X-ANODEID': 'node4', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 06:03:08 GMT', 'Connection': 'close'}
+        response text = {"errorMessages":[],"errors":{"customfield_27209":"IOD Silicon Die Revision is required.","customfield_27210":"CCD Silicon Die Revision is required."}}
 
 During handling of the above exception, another exception occurred:
 
@@ -72,14 +67,14 @@ Traceback (most recent call last):
   File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_tools.py", line 226, in create_ticket_tool
     new_issue = create_jira_issue(
                 ^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_utils.py", line 178, in create_jira_issue
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/jira_utils.py", line 177, in create_jira_issue
     raise JiraBotError(error_details)
 jira_utils.JiraBotError: JIRA API Error on ticket creation: JiraError HTTP 400 url: https://ontrack-internal.amd.com/rest/api/2/issue
 
-        response headers = {'X-AREQUESTID': '120x2974557x16', 'X-ASESSIONID': 'r09kwf', 'X-ANODEID': 'node3', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 06:00:48 GMT', 'Connection': 'close'}
-        response text = {"errorMessages":[],"errors":{"customfield_14308":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13002":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_13208":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_14307":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])","customfield_17000":"Unrecognized field \"value\" (Class com.valiantys.jira.plugins.sql.customfield.value.FormValues), not marked as ignorable\n at [Source: N/A; line: -1, column: -1] (through reference chain: com.valiantys.jira.plugins.sql.customfield.value.FormValues[\"value\"])"}}
+        response headers = {'X-AREQUESTID': '123x3014206x19', 'X-ASESSIONID': '1baq5f7', 'X-ANODEID': 'node4', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 06:03:08 GMT', 'Connection': 'close'}
+        response text = {"errorMessages":[],"errors":{"customfield_27209":"IOD Silicon Die Revision is required.","customfield_27210":"CCD Silicon Die Revision is required."}}
 
 ----------------------------------------------------------------------
-Ran 1 test in 0.242s
+Ran 1 test in 0.325s
 
 FAILED (errors=1)
