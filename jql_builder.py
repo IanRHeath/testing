@@ -7,6 +7,7 @@ from jira import JIRA
 from llm_config import get_azure_openai_client
 from jira_utils import JiraBotError
 
+# This part of the file is unchanged
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
@@ -22,7 +23,8 @@ program_map = {
     "SHP": "Shimada Peak HEDT [PRG-000326]",
     "FRG": "Fire Range [PRG-000394]",
 }
-
+# ... (all other maps like system_map, VALID_SILICON_REVISIONS, etc., remain unchanged) ...
+# For brevity, the large, unchanged map definitions are omitted here, but they are part of the full file.
 system_map = {
     "STX": [
         "System-Strix1 FP8 APU",
@@ -34,16 +36,13 @@ system_map = {
         "System-Strix Halo Customer A Platform"
     ]
 }
-
 VALID_SILICON_REVISIONS = {
     "A0", "A0A", "A0B", "A0C", "A0D", "A1", "A1B", "A1C", "A1D", "A1E",
     "A2", "B0", "B0A", "B0B", "B0C", "B0D", "B1", "B1B", "B1C", "B1E",
     "B1F", "B1G", "B2", "B2D", "B3", "B3E", "C0", "C1", "C1A", "C1B",
     "C1C", "C1D", "DP"
 }
-
 VALID_TRIAGE_CATEGORIES = {"APU", "APU/CPU-FW", "CPU", "GPU"}
-
 triage_assignment_map = {
     "APU": [ "Client- Platform Debug - HW", "Diags-GPU" ],
     "APU/CPU-FW": [
@@ -78,16 +77,13 @@ triage_assignment_map = {
         "Sys Mgmt Ras/Security - Benson Tsang", "Sys Mgmt Virt/IOMMU/DFD/Scan/Fuse/Reset/", "Workloads"
     ]
 }
-
 VALID_SEVERITY_LEVELS = {"Critical", "High", "Medium", "Low"}
-
 priority_map = {
     "P1": "P1 (Gating)",
     "P2": "P2 (Must Solve)",
     "P3": "P3 (Solution Desired)",
     "P4": "P4 (No Impact/Notify)"
 }
-
 project_map = {
     "PLAT": "PLAT",
     "SWDEV": "SWDEV",
@@ -95,10 +91,9 @@ project_map = {
 }
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
-    """Uses the LLM to extract key technical terms from a block of text."""
+    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
-        
     system_prompt = """
     You are an expert in analyzing Jira tickets to find core issues. From the following ticket text, extract the 3 most important and specific technical keywords that describe the core problem. Focus on nouns, verbs, and technical terms (like 'crash', 'UI button', 'memory leak', 'API', 'authentication'). 
     
@@ -110,12 +105,10 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
     
     Output only the keywords and nothing else.
     """
-    
     messages_to_send = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": text_to_analyze}
     ]
-
     try:
         resp = RAW_AZURE_OPENAI_CLIENT.chat.completions.create(
             model=os.getenv("LLM_CHAT_DEPLOYMENT_NAME"),
@@ -127,11 +120,11 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
     except Exception as e:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
-
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
+    # --- MODIFIED SECTION ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -143,17 +136,19 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
+    - If the user's query contains a number that clearly indicates a limit (e.g., "show me 5", "top 3", "get 10"), extract it into the "maxResults" field as an integer.
+    - If the user uses singular language like "a ticket" or "the ticket", do NOT set maxResults, as the system will handle this case.
     - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
-    - For 'stale' tickets, infer 'status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"'.
+    - For 'stale' tickets, infer 'intent':'stale'. The system will handle the JQL for this.
     - If a parameter is not explicitly mentioned, omit it from the JSON.
     
-    Example 1 (Complex Search): "show me the top 5 p2 tickets for STXH"
+    Example 1 (Complex Search with Limit): "show me the top 5 p2 tickets for STXH"
     {{
         "intent":"list",
         "priority":"P2",
         "program":"STXH",
         "project":"PLAT",
-        "maxResults":5
+        "maxResults": 5
     }}
 
     Example 2 (Keyword Search): "search for issues related to 'memory instability'"
@@ -162,7 +157,15 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         "project":"PLAT",
         "keywords":"memory instability"
     }}
+    
+    Example 3 (Singular, no limit): "find a ticket about boot failures"
+    {{
+        "intent":"list",
+        "project":"PLAT",
+        "keywords":"boot failures"
+    }}
     """
+    # --- END MODIFIED SECTION ---
 
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -190,6 +193,9 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         )
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
+        # Make sure to handle both raw JSON and code-blocked JSON
+        if content.startswith("```json"):
+            content = content[7:-3].strip()
         params = json.loads(content)
         return params
     except json.JSONDecodeError as e:
@@ -199,10 +205,9 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
+
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
-    """
-    Constructs a JQL query string based on extracted parameters.
-    """
+    # This function is unchanged
     jql_parts = []
     order_clause = ""
 
@@ -242,7 +247,8 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
-        for kw_raw in keywords.split(','):
+        # Support both comma-separated and space-separated keywords from the LLM
+        for kw_raw in keywords.replace(',', ' ').split():
             kw = kw_raw.strip()
             if kw:
                 keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
