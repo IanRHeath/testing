@@ -15,7 +15,7 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# All maps (program_map, system_map, etc.) are unchanged.
+# All maps are unchanged and omitted for brevity
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -90,13 +90,10 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
-# --- NEW CONFIGURATION SET ---
-# The single source of truth for what statuses are considered "stale".
 stale_statuses = {"Open", "To Do", "In Progress", "Reopened", "Blocked"}
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
-    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
@@ -116,7 +113,6 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     """Extracts structured parameters from natural language user queries."""
-    # This function is unchanged from the last version
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
@@ -127,33 +123,30 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days.
     The "maxResults" field is MANDATORY.
 
+    Available programs: {programs_list}
+    Available priorities: {priorities_list}
+    Available projects: {projects_list}
+
     **Extraction Rules:**
-    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30. This intent overrides other `updated` fields.
-    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", use "assignee": "Heath, Ian".
-    - PROJECT: If a project is mentioned, extract it. Otherwise, OMIT the project field.
+    - CRITICAL RULE: The `Available programs` list contains specific codes (STX, STXH, GNR, etc.). If the user's query includes one of these exact codes, you MUST classify it as a `program`. Do NOT classify it as a `project`.
+    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
+    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
+    - PROJECT: If a project (PLAT, SWDEV, FWDEV) is mentioned, extract it. Otherwise, OMIT the project field.
     - MAXRESULTS: ALWAYS include "maxResults", defaulting to 20. For "a ticket", use 1.
-    - DATES: Convert relative dates (e.g., "yesterday") to JQL format ("-1d").
     
-    Example 1 (Default Stale): "show me stale tickets"
+    Example 1 (Program query): "find stale stxh tickets"
     {{
       "intent": "list",
       "stale_days": 30,
+      "program": "STXH",
       "maxResults": 20
     }}
 
-    Example 2 (Custom Stale): "find issues that have not been updated in 90 days"
+    Example 2 (Project query): "show me PLAT tickets"
     {{
       "intent": "list",
-      "stale_days": 90,
+      "project": "PLAT",
       "maxResults": 20
-    }}
-    
-    Example 3 (Standard search): "show 5 critical tickets assigned to 'John Smith'"
-    {{
-      "intent": "list",
-      "priority": "Critical",
-      "assignee": "Smith, John",
-      "maxResults": 5
     }}
     """
     
@@ -193,7 +186,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
 def is_valid_jql_date_format(date_str: str) -> bool:
     """Checks if a string matches Jira's absolute (YYYY-MM-DD) or relative (-1w, -2d, -3M) date formats."""
-    # This function is unchanged
     if not isinstance(date_str, str):
         return False
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
@@ -203,22 +195,26 @@ def is_valid_jql_date_format(date_str: str) -> bool:
     return False
 
 def _format_name_for_jql(name: str) -> str:
-    """Ensures a name is in 'Last, First' format for JQL."""
-    # This function is unchanged
+    """
+    Ensures a name is in 'Last, First' format for JQL.
+    If the name is 'currentUser()', it's returned as is.
+    If it appears to be 'First Last', it's reversed.
+    Otherwise, it's assumed to be correct.
+    """
     if name == "currentUser()" or "," in name:
         return name
+    
     parts = name.split()
     if len(parts) == 2:
         return f"{parts[1]}, {parts[0]}"
+    
     return name
 
-# --- MODIFIED build_jql FUNCTION ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
     jql_parts = []
     order_clause = ""
 
-    # This logic is unchanged
     if raw_proj := params.get("project", "").strip().upper():
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
@@ -244,17 +240,14 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    # --- REVISED LOGIC FOR STALE/DATES using the new stale_statuses set ---
     if stale_days := params.get("stale_days"):
         try:
             days = int(stale_days)
-            # Programmatically build the statuses string from the set
             status_clause = ", ".join(f'"{status}"' for status in stale_statuses)
             jql_parts.append(f"status in ({status_clause}) AND updated < '-{days}d'")
         except (ValueError, TypeError):
              raise JiraBotError(f"The value for stale_days '{stale_days}' is not a valid number.")
     else:
-        # If not a stale query, then process standard date fields
         date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
         for field, operator in date_fields.items():
             if date_value := params.get(field):
@@ -263,7 +256,6 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
                 else:
                     raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
     
-    # This logic is unchanged
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
         if formatted_name == "currentUser()":
@@ -290,9 +282,9 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY updated {order_direction}"
-    elif params.get("stale_days"): # Default sort for stale is oldest first
+    elif params.get("stale_days"):
         order_clause = " ORDER BY updated ASC"
-    else: # Default sort for all other queries
+    else:
         order_clause = " ORDER BY created DESC"
 
 
