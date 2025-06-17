@@ -1,4 +1,11 @@
-Your JIRA Query Request: find a bug related to memory leaks
+Your JIRA Query Request: give me a stxh ticket
+
+
+> Entering new AgentExecutor chain...
+
+Invoking: `jira_search_tool` with `{'original_query': 'give me a stxh ticket'}`
+
+
 
 --- LLM Request Details (for extract_params) ---
 Model: gpt-4.1
@@ -46,18 +53,39 @@ Messages:
       "maxResults": 1
     }
 
-  Role: user, Content: memory leak
+  Role: user, Content: give me a stxh ticket
 ----------------------------------------------
 
 LLM extracted parameters: {
   "intent": "list",
+  "program": "STXH",
   "project": "PLAT",
-  "keywords": "memory leak",
-  "maxResults": 20
+  "maxResults": 1
 }
-DEBUG: Extracted parameters from LLM: {'intent': 'list', 'project': 'PLAT', 'keywords': 'memory leak', 'maxResults': 20}
-DEBUG: Successfully set limit to 20.
-Built JQL: project = 'PLAT' AND (summary ~ "memory" OR description ~ "memory" OR summary ~ "leak" OR description ~ "leak") ORDER BY created DESC
+DEBUG: Extracted parameters from LLM: {'intent': 'list', 'program': 'STXH', 'project': 'PLAT', 'maxResults': 1}
+DEBUG: Successfully set limit to 1.
+Built JQL: project = 'PLAT' AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC
 
-Attempting JIRA search with JQL: project = 'PLAT' AND (summary ~ "memory" OR description ~ "memory" OR summary ~ "leak" OR description ~ "leak") ORDER BY created DESC | Limit: 20
-Successfully found 20 issues.
+Attempting JIRA search with JQL: project = 'PLAT' AND program = 'Strix Halo [PRG-000391]' ORDER BY created DESC | Limit: 1
+Successfully found 1 issues.
+[{'key': 'PLAT-179528', 'summary': '[STXH][SSV_Farm]System unexpected reboot W/O BSOD when run S0i3 -Power Button x100 loops, FR: 5/12u', 'status': 'Opened', 'assignee': 'He, Lei', 'priority': 'Undefined', 'url': 'https://ontrack-internal.amd.com/browse/PLAT-179528', 'created': '2025-06-13', 'updated': '2025-06-16'}]Here is an STXH ticket:
+
+- Key: PLAT-179528
+- Summary: [STXH][SSV_Farm]System unexpected reboot W/O BSOD when run S0i3 -Power Button x100 loops, FR: 5/12u
+- Status: Opened
+- Assignee: He, Lei
+
+If you need more details or a summary, let me know!
+
+> Finished chain.
+
+--- Found 1 JIRA Issues ---
+1. Key: PLAT-179528
+   Summary: [STXH][SSV_Farm]System unexpected reboot W/O BSOD when run S0i3 -Power Button x100 loops, FR: 5/12u
+   Status: Opened
+   Assignee: He, Lei
+   Priority: Undefined
+   Created: 2025-06-13
+   Updated: 2025-06-16
+   URL: https://ontrack-internal.amd.com/browse/PLAT-179528
+--------------------
