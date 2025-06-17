@@ -7,13 +7,14 @@ from jira import JIRA
 from llm_config import get_azure_openai_client
 from jira_utils import JiraBotError
 
-# This part of the file is unchanged
+# --- This part of the file is unchanged ---
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
+# --- All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity but are part of the full file. ---
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -23,8 +24,6 @@ program_map = {
     "SHP": "Shimada Peak HEDT [PRG-000326]",
     "FRG": "Fire Range [PRG-000394]",
 }
-# ... (all other maps like system_map, VALID_SILICON_REVISIONS, etc., remain unchanged) ...
-# For brevity, the large, unchanged map definitions are omitted here, but they are part of the full file.
 system_map = {
     "STX": [
         "System-Strix1 FP8 APU",
@@ -90,8 +89,9 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
+# --- The extract_keywords_from_text function is unchanged. ---
 def extract_keywords_from_text(text_to_analyze: str) -> str:
-    # This function is unchanged
+    """Uses the LLM to extract key technical terms from a block of text."""
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
@@ -124,48 +124,51 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION ---
+    # --- REVISED SECTION ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
     Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
+    The "maxResults" field is MANDATORY.
 
     Available programs: {programs_list}
     Available priorities: {priorities_list}
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user's query contains a number that clearly indicates a limit (e.g., "show me 5", "top 3", "get 10"), extract it into the "maxResults" field as an integer.
-    - If the user uses singular language like "a ticket" or "the ticket", do NOT set maxResults, as the system will handle this case.
-    - If the user's query contains text to search for in the ticket's content (like in a summary or description), extract the essential words into the "keywords" field. For example, for a query like "find tickets about system hangs on boot", the keywords would be "system hang boot".
-    - For 'stale' tickets, infer 'intent':'stale'. The system will handle the JQL for this.
-    - If a parameter is not explicitly mentioned, omit it from the JSON.
+    - ALWAYS include the "maxResults" field in your JSON output.
+    - If the user's query contains a specific number for a limit (e.g., "show me 5", "top 3"), use that number for "maxResults".
+    - If the user uses singular language like "a ticket" or "the ticket", set "maxResults" to 1.
+    - If NO limit or singular is mentioned, set "maxResults" to a default value of 20.
+    - Extract other fields like "keywords", "priority", etc., as they appear.
     
-    Example 1 (Complex Search with Limit): "show me the top 5 p2 tickets for STXH"
+    Example 1 (Specific Limit): "show me the top 5 p2 tickets for STXH"
     {{
-        "intent":"list",
-        "priority":"P2",
-        "program":"STXH",
-        "project":"PLAT",
-        "maxResults": 5
+      "intent": "list",
+      "priority": "P2",
+      "program": "STXH",
+      "project": "PLAT",
+      "maxResults": 5
     }}
 
-    Example 2 (Keyword Search): "search for issues related to 'memory instability'"
+    Example 2 (No Limit): "search for issues related to 'memory instability'"
     {{
-        "intent":"list",
-        "project":"PLAT",
-        "keywords":"memory instability"
+      "intent": "list",
+      "project": "PLAT",
+      "keywords": "memory instability",
+      "maxResults": 20
     }}
     
-    Example 3 (Singular, no limit): "find a ticket about boot failures"
+    Example 3 (Singular Limit): "find a ticket about boot failures"
     {{
-        "intent":"list",
-        "project":"PLAT",
-        "keywords":"boot failures"
+      "intent": "list",
+      "project": "PLAT",
+      "keywords": "boot failures",
+      "maxResults": 1
     }}
     """
-    # --- END MODIFIED SECTION ---
+    # --- END REVISED SECTION ---
 
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -205,9 +208,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-
+# --- The build_jql function is unchanged. ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
-    # This function is unchanged
+    """
+    Constructs a JQL query string based on extracted parameters.
+    """
     jql_parts = []
     order_clause = ""
 
