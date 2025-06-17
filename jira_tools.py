@@ -16,6 +16,8 @@ try:
 except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
+# --- TICKET CREATION LOGIC ---
+
 class TicketCreator:
     """A stateful class to manage the ticket creation process."""
     def __init__(self):
@@ -53,7 +55,7 @@ class TicketCreator:
         
         if field_name_lower == 'program':
             self.draft_data[field_name_lower] = field_value
-            self._run_duplicate_check() # Run duplicate check now that we have the program
+            self._run_duplicate_check()
         else:
             self.draft_data[field_name_lower] = field_value
             
@@ -101,8 +103,6 @@ class TicketCreator:
             
             if candidate_tickets:
                 print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
-                # In a real GUI, this would trigger a proper warning. For now, it logs to the console.
-                # The proactive check will be fully integrated in the GUI phase.
 
     def finalize(self) -> str:
         """Validates all data and creates the final ticket."""
@@ -138,8 +138,10 @@ class TicketCreator:
         except Exception as e:
             return f"Failed to create ticket. Error: {e}"
 
+# Instantiate the state manager
 ticket_creator = TicketCreator()
 
+# Define the new tools
 @tool
 def start_ticket_creation(summary: str, project: str = "PLAT") -> dict:
     """
@@ -169,7 +171,7 @@ def cancel_ticket_creation() -> str:
     ticket_creator.reset()
     return "Ticket creation process has been cancelled."
 
-
+# --- EXISTING TOOLS ---
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
     if JIRA_CLIENT_INSTANCE is None:
@@ -180,20 +182,15 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     llm = get_llm()
     prompt = f"""
     You are an expert engineering assistant. Your task is to answer a user's question based on the provided 'Ticket Details'.
-
     **User's Question:** "{question}"
     **Ticket Details:**
     ---
     {details_text}
     ---
-
     **Instructions:**
     1.  Begin your answer *always* with the ticket key and the link, like this: `Summary for PLAT-123: [Link]`
-    2.  Then, analyze the "User's Question".
-    3.  If the question is a generic request for a "full summary", "summary", "details", or similar, provide a detailed, structured summary with these four points: Problem Statement, Latest Analysis / Debug, Identified Root Cause, and Current Blockers.
-    4.  If the question is specific (e.g., "what is the root cause?", "who is assigned?", "what are the blockers?"), provide a direct, concise answer to only that question.
-    5.  If the question implies an audience (e.g., "for a manager"), tailor the summary's content and tone appropriately, focusing on status, impact, and blockers.
-
+    2.  If the question is a generic request for a "full summary", provide a detailed, structured summary with these four points: Problem Statement, Latest Analysis / Debug, Identified Root Cause, and Current Blockers.
+    3.  If the question is specific (e.g., "what is the root cause?"), provide a direct, concise answer to only that question.
     **Answer:**
     """
     summary_content = llm.invoke(prompt).content
@@ -204,44 +201,10 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     return final_output
 
 @tool
-def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
-    """
-    Use this tool when the user asks for the available or valid options for a specific ticket field...
-    """
-    field_lower = field_name.lower()
-
-    if "program" in field_lower:
-        return f"The valid options for Program are: {list(program_map.keys())}"
-    elif "triage category" in field_lower:
-        return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
-    elif "silicon revision" in field_lower:
-        return f"The valid options for Silicon Revision are: {list(VALID_SILICON_REVISIONS)}"
-    elif "severity" in field_lower:
-        return f"The valid options for Severity are: {list(VALID_SEVERITY_LEVELS)}"
-    elif "system" in field_lower:
-        if not depends_on:
-            return "To list the valid Systems, you must first provide a Program code."
-        options = system_map.get(depends_on.upper())
-        if options:
-            return f"For Program '{depends_on.upper()}', the valid Systems are: {options}"
-        else:
-            return f"Could not find a Program with the code '{depends_on.upper()}' or it has no defined systems."
-    elif "triage assignment" in field_lower:
-        if not depends_on:
-            return "To list the Triage Assignments, you must first provide a Triage Category."
-        options = triage_assignment_map.get(depends_on.upper())
-        if options:
-            return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
-        else:
-            return f"Could not find a Triage Category named '{depends_on.upper()}' or it has no defined assignments."
-
-    return f"Sorry, I cannot provide options for the field '{field_name}'."
-
-@tool
 def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> str:
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL."""
     return _get_single_ticket_summary(issue_key, question)
-
+    
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
     """
@@ -250,7 +213,6 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
     """
     if not issue_keys:
         return "Please provide at least one issue key."
-
     summaries = []
     question_for_each = "Provide a full 4-point summary."
     for key in issue_keys:
@@ -259,33 +221,24 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
             summaries.append(summary_text)
         except JiraBotError as e:
             summaries.append(f"Could not generate summary for {key}: {e}")
-
     individual_summaries_text = "\n\n---\n\n".join(summaries)
-    
     successful_summaries = [s for s in summaries if not s.startswith("Could not generate summary")]
-    
     if len(successful_summaries) > 1:
         print("\n--- Generating aggregate summary for all tickets... ---")
         llm = get_llm()
-        
         aggregate_prompt = f"""
         You are an expert engineering program manager. Your task is to analyze the following collection of JIRA ticket summaries and provide a high-level aggregate summary.
-        
         Identify any common themes, recurring root causes, shared blockers, or patterns across all the tickets provided.
-        
         Structure your response with these headings:
         - **Overall Status & Common Themes:**
         - **Potential Shared Root Causes:**
         - **Overarching Blockers or Dependencies:**
-
         **Individual Ticket Summaries:**
         ---
         {individual_summaries_text}
         ---
-
         **Aggregate Analysis:**
         """
-        
         try:
             aggregate_summary = llm.invoke(aggregate_prompt).content
             final_output = (
@@ -299,9 +252,7 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
         except Exception as e:
             print(f"WARNING: Could not generate aggregate summary due to an error: {e}")
             return individual_summaries_text
-
     return individual_summaries_text
-
 
 @tool
 def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
@@ -399,7 +350,43 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
          return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
     return duplicate_tickets
 
+# --- FIX: Re-adding the missing tool definition ---
+@tool
+def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
+    """
+    Use this tool when the user asks for the available or valid options for a specific ticket field...
+    """
+    field_lower = field_name.lower()
 
+    if "program" in field_lower:
+        return f"The valid options for Program are: {list(program_map.keys())}"
+    elif "triage category" in field_lower:
+        return f"The valid options for Triage Category are: {list(VALID_TRIAGE_CATEGORIES)}"
+    elif "silicon revision" in field_lower:
+        return f"The valid options for Silicon Revision are: {list(VALID_SILICON_REVISIONS)}"
+    elif "severity" in field_lower:
+        return f"The valid options for Severity are: {list(VALID_SEVERITY_LEVELS)}"
+    elif "system" in field_lower:
+        if not depends_on:
+            return "To list the valid Systems, you must first provide a Program code."
+        options = system_map.get(depends_on.upper())
+        if options:
+            return f"For Program '{depends_on.upper()}', the valid Systems are: {options}"
+        else:
+            return f"Could not find a Program with the code '{depends_on.upper()}' or it has no defined systems."
+    elif "triage assignment" in field_lower:
+        if not depends_on:
+            return "To list the Triage Assignments, you must first provide a Triage Category."
+        options = triage_assignment_map.get(depends_on.upper())
+        if options:
+            return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
+        else:
+            return f"Could not find a Triage Category named '{depends_on.upper()}' or it has no defined assignments."
+
+    return f"Sorry, I cannot provide options for the field '{field_name}'."
+
+
+# --- FIX: Moved this list to the end of the file ---
 ALL_JIRA_TOOLS = [
     jira_search_tool,
     summarize_ticket_tool,
