@@ -1,5 +1,11 @@
+Your JIRA Query Request: find duplicates for plat-179648
 
-Attempting JIRA search with JQL: program = 'Strix Halo [PRG-000391]' AND created >= '-1y' ORDER BY created DESC | Limit: 5
+--- TOOL CALLED: find_duplicate_tickets_tool ---
+--- Received source issue_key: plat-179648 ---
+Fetching data for ticket plat-179648 for analysis...
+--- Searching for candidate tickets with JQL: project = "PLAT" AND "Program" = "['PRG-000382']" AND key != "plat-179648" ---
 
-JIRA Bot Error: JIRA search failed for JQL 'program = 'Strix Halo [PRG-000391]' AND created >= '-1y' ORDER BY created DESC': Date value '-1y' for field 'created' is invalid. Valid formats include: 'yyyy/MM/dd HH:mm', 'yyyy-MM-dd HH:mm', 'yyyy/MM/dd', 'yyyy-MM-dd', or a period format e.g. '-5d', '4w 2d'.. Status code: 400. Please refine the query.
-Please check your JQL query or JIRA connection.
+Attempting JIRA search with JQL: project = "PLAT" AND "Program" = "['PRG-000382']" AND key != "plat-179648" | Limit: 50
+No issues found for the given JQL.
+
+JIRA Bot: There are no potential duplicate tickets found in the same project and program as PLAT-179648. If you have any other requests or wish to check for similarities outside this context, let me know!
