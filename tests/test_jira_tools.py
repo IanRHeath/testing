@@ -36,8 +36,8 @@ class TestCreateTicketTool(unittest.TestCase):
             "project": "PLAT"
         }
 
-        # Call the tool
-        result = create_ticket_tool(**args)
+        # --- FIX: Call the tool using .invoke() with the args dictionary ---
+        result = create_ticket_tool.invoke(args)
 
         # Assertions
         # 1. Check if the final API call was made
@@ -77,7 +77,8 @@ class TestCreateTicketTool(unittest.TestCase):
             "project": "PLAT"
         }
 
-        result = create_ticket_tool(**args)
+        # --- FIX: Call the tool using .invoke() with the args dictionary ---
+        result = create_ticket_tool.invoke(args)
         
         # Check that the function returned the correct cancellation message
         self.assertEqual(result, "Ticket creation cancelled by user after duplicate check.")
