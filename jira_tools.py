@@ -10,15 +10,12 @@ from jql_builder import (
 )
 from llm_config import get_llm
 
-# --- This part of the file is unchanged ---
 JIRA_CLIENT_INSTANCE = None
 try:
     JIRA_CLIENT_INSTANCE = initialize_jira_client()
 except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
-# --- The _get_single_ticket_summary, get_field_options_tool, and create_ticket_tool functions are unchanged. ---
-# --- They are omitted for brevity but are part of the full file. ---
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
     if JIRA_CLIENT_INSTANCE is None:
@@ -84,8 +81,9 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
             return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
         else:
             return f"Could not find a Triage Category named '{depends_on.upper()}'."
-    
+
     return f"Sorry, I cannot provide options for the field '{field_name}'."
+
 
 @tool
 def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
@@ -94,7 +92,7 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
-   
+
     valid_issue_types = ['Issue', 'enhancement', 'draft']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
@@ -139,7 +137,7 @@ BIOS Edits:
 OS Edits:
 All external devices connected:
 
-Regression Details: 
+Regression Details:
 
 Link to Test Case:
 
@@ -154,19 +152,19 @@ All Scandump Links:
     try:
         with open(description_filename, "w") as f:
             f.write(description_template)
-        
+
         print("\n----------------------------------------------------------------")
         print(f"ACTION REQUIRED: I have created a template file named '{description_filename}' in this directory.")
         print("Please open the file, fill in the Description and Steps to Reproduce, and save it.")
         input("Press Enter here when you have saved the file and are ready to continue...")
-        
+
         with open(description_filename, "r") as f:
             full_text_input = f.read()
-            
+
     finally:
         if os.path.exists(description_filename):
             os.remove(description_filename)
-    
+
     if steps_delimiter in full_text_input:
         description_part, steps_part = full_text_input.split(steps_delimiter, 1)
         final_description = description_part.replace("---DESCRIPTION---", "").strip()
@@ -184,7 +182,7 @@ All Scandump Links:
     print("\n--- Steps to Reproduce Preview ---")
     print(final_steps)
     print("----------------------------------\n")
-    
+
     confirmation = input("Is this information correct? (yes/no): ")
 
     if confirmation.lower().strip() != 'yes':
@@ -197,6 +195,7 @@ All Scandump Links:
         severity=severity_title, steps_to_reproduce=final_steps
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
+
 
 @tool
 def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> str:
@@ -215,13 +214,17 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
             summaries.append(f"Could not generate summary for {key}: {e}")
     return "\n\n---\n\n".join(summaries)
 
-# --- REVISED SECTION ---
+
 @tool
-def jira_search_tool(query: str) -> List[Dict[str, Any]]:
-    """Searches JIRA issues based on a natural language query."""
+def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
+    """
+    Use this tool to search for Jira issues based on a user's natural language query.
+    You must pass the user's complete, original query to the 'original_query' parameter.
+    """
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
-        params = extract_params(query)
+        # Use the full original query for parameter extraction
+        params = extract_params(original_query)
         print(f"DEBUG: Extracted parameters from LLM: {params}")
 
         # Defensively get the limit, handling potential missing key or non-integer values.
@@ -238,11 +241,9 @@ def jira_search_tool(query: str) -> List[Dict[str, Any]]:
     except JiraBotError as e:
         raise e
     except Exception as e:
-        error_message = f"An unexpected error occurred in jira_search_tool for query: '{query}'. Details: {e}"
+        error_message = f"An unexpected error occurred in jira_search_tool for query: '{original_query}'. Details: {e}"
         raise JiraBotError(error_message)
-# --- END REVISED SECTION ---
 
-# --- The find_similar_tickets_tool and ALL_JIRA_TOOLS list are unchanged. ---
 @tool
 def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
@@ -251,13 +252,13 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
-    
+
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
-    
+
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
     if not text_to_analyze.strip():
         return ["Could not find enough text in the source ticket to perform a similarity search."]
-    
+
     extracted_keywords = extract_keywords_from_text(text_to_analyze)
     print(f"--- Extracted Keywords: '{extracted_keywords}' ---")
 
@@ -266,11 +267,11 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
         'keywords': extracted_keywords,
         'maxResults': 10
     }
-    
+
     similar_jql = build_jql(params, exclude_key=issue_key)
-    
+
     similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
-    
+
     if not similar_issues:
         return [f"No similar issues found for {issue_key} based on keywords: '{extracted_keywords}'."]
 
