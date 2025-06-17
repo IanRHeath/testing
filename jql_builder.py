@@ -7,14 +7,14 @@ from jira import JIRA
 from llm_config import get_azure_openai_client
 from jira_utils import JiraBotError
 
-# --- This part of the file is unchanged ---
+# This part of the file is unchanged
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# --- All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity but are part of the full file. ---
+# All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity.
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -89,7 +89,7 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
-# --- The extract_keywords_from_text function is unchanged. ---
+# The extract_keywords_from_text function is unchanged.
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
     if RAW_AZURE_OPENAI_CLIENT is None:
@@ -124,12 +124,12 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- REVISED SECTION ---
+    # --- MODIFIED SECTION ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, and keywords.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before.
     The "maxResults" field is MANDATORY.
 
     Available programs: {programs_list}
@@ -137,12 +137,14 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - ALWAYS include the "maxResults" field in your JSON output.
-    - If the user's query contains a specific number for a limit (e.g., "show me 5", "top 3"), use that number for "maxResults".
-    - If the user uses singular language like "a ticket" or "the ticket", set "maxResults" to 1.
-    - If NO limit or singular is mentioned, set "maxResults" to a default value of 20.
+    - ALWAYS include the "maxResults" field. Default to 20 if no limit is specified. If the user uses singular language like "a ticket", set "maxResults" to 1.
+    - TIME-BASED QUERIES:
+      - If the user mentions a time range for ticket creation or updates, extract it.
+      - Convert relative dates to JQL format (e.g., "yesterday" -> "-1d", "last week" -> "-1w", "2 months ago" -> "-2M").
+      - Use the fields: `created_after`, `created_before`, `updated_after`, `updated_before`.
+      - For absolute dates, use YYYY-MM-DD format.
     - Extract other fields like "keywords", "priority", etc., as they appear.
-    
+
     Example 1 (Specific Limit): "show me the top 5 p2 tickets for STXH"
     {{
       "intent": "list",
@@ -152,23 +154,23 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 5
     }}
 
-    Example 2 (No Limit): "search for issues related to 'memory instability'"
+    Example 2 (Relative Time): "find me bugs updated in the last 3 days"
     {{
       "intent": "list",
-      "project": "PLAT",
-      "keywords": "memory instability",
+      "keywords": "bug",
+      "updated_after": "-3d",
       "maxResults": 20
     }}
     
-    Example 3 (Singular Limit): "find a ticket about boot failures"
+    Example 3 (Absolute Time): "show tickets created for GNR before 2025-01-15"
     {{
       "intent": "list",
-      "project": "PLAT",
-      "keywords": "boot failures",
-      "maxResults": 1
+      "program": "GNR",
+      "created_before": "2025-01-15",
+      "maxResults": 20
     }}
     """
-    # --- END REVISED SECTION ---
+    # --- END MODIFIED SECTION ---
 
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -208,7 +210,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-# --- The build_jql function is unchanged. ---
+
+# The build_jql function is unchanged in this step.
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
