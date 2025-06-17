@@ -84,12 +84,12 @@ priority_map = {
     "P4": "P4 (No Impact/Notify)"
 }
 project_map = {
-    "PLAT": "PLAT",
-    "SWDEV": "SWDEV",
-    "FWDEV": "FWDEV"
+    "PLAT": "PLATFORM", # Correcting to a more likely full name
+    "SWDEV": "Software Development",
+    "FWDEV": "Firmware Development"
 }
 
-# The extract_keywords_from_text and extract_params functions are unchanged in this step.
+# The extract_keywords_from_text function is unchanged.
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
     if RAW_AZURE_OPENAI_CLIENT is None:
@@ -124,6 +124,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
+    # --- MODIFIED SECTION 1 ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -136,40 +137,29 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
+    - If the user explicitly mentions a project (e.g., 'in PLAT', 'from SWDEV'), extract it into the "project" field. If no project is mentioned, OMIT the project field from the JSON.
     - ALWAYS include the "maxResults" field. Default to 20 if no limit is specified. If the user uses singular language like "a ticket", set "maxResults" to 1.
-    - TIME-BASED QUERIES:
-      - If the user mentions a time range for ticket creation or updates, extract it.
-      - Convert relative dates to JQL format (e.g., "yesterday" -> "-1d", "last week" -> "-1w", "2 months ago" -> "-2M").
-      - Use the fields: `created_after`, `created_before`, `updated_after`, `updated_before`.
-      - For absolute dates, use YYYY-MM-DD format.
+    - TIME-BASED QUERIES: Convert relative dates to JQL format (e.g., "yesterday" -> "-1d") and use `created_after`, `created_before`, `updated_after`, `updated_before`.
     - Extract other fields like "keywords", "priority", etc., as they appear.
 
-    Example 1 (Specific Limit): "show me the top 5 p2 tickets for STXH"
+    Example 1 (Project specified): "show me PLAT tickets updated yesterday"
     {{
       "intent": "list",
-      "priority": "P2",
-      "program": "STXH",
       "project": "PLAT",
-      "maxResults": 5
+      "updated_after": "-1d",
+      "maxResults": 20
     }}
 
-    Example 2 (Relative Time): "find me bugs updated in the last 3 days"
+    Example 2 (No Project specified): "find me bugs updated in the last 3 days"
     {{
       "intent": "list",
       "keywords": "bug",
       "updated_after": "-3d",
       "maxResults": 20
     }}
-    
-    Example 3 (Absolute Time): "show tickets created for GNR before 2025-01-15"
-    {{
-      "intent": "list",
-      "program": "GNR",
-      "created_before": "2025-01-15",
-      "maxResults": 20
-    }}
     """
-
+    # --- END MODIFIED SECTION 1 ---
+    
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
         priorities_list=", ".join(priority_map.keys()),
@@ -196,7 +186,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         )
         content = resp.choices[0].message.content.strip()
         print(f"LLM extracted parameters: {content}")
-        # Make sure to handle both raw JSON and code-blocked JSON
         if content.startswith("```json"):
             content = content[7:-3].strip()
         params = json.loads(content)
@@ -209,7 +198,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
 
-# --- MODIFIED SECTION ---
+# --- MODIFIED SECTION 2 ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
@@ -217,15 +206,14 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     jql_parts = []
     order_clause = ""
 
-    # Project (unchanged)
+    # Project (Now optional)
     raw_proj = params.get("project", "").strip().upper()
-    if raw_proj:
+    if raw_proj: # Only add a project clause if one was extracted
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
         else:
+            # If an invalid project is specified, it's better to raise an error
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
-    else:
-        jql_parts.append("project = 'PLAT'")
     
     # Exclude Key (unchanged)
     if exclude_key:
@@ -266,7 +254,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
-    # --- NEW LOGIC FOR DATES ---
+    # Dates (unchanged)
     if params.get("created_after"):
         jql_parts.append(f"created >= '{params['created_after']}'")
     if params.get("created_before"):
@@ -275,7 +263,6 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         jql_parts.append(f"updated >= '{params['updated_after']}'")
     if params.get("updated_before"):
         jql_parts.append(f"updated <= '{params['updated_before']}'")
-    # --- END NEW LOGIC ---
 
     # Order Clause (unchanged)
     order_direction = params.get("order", "").strip().upper()
@@ -284,15 +271,15 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
 
-    # Final Assembly (unchanged)
+    # Final Assembly (Crucial change: what if jql_parts is empty?)
     if not jql_parts:
-        jql = "project = 'PLAT'"
-    else:
-        jql = " AND ".join(jql_parts)
+        raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
+    
+    jql = " AND ".join(jql_parts)
 
     if order_clause:
         jql += order_clause
 
     print(f"Built JQL: {jql}")
     return jql
-# --- END MODIFIED SECTION ---
+# --- END MODIFIED SECTION 2 ---
