@@ -15,7 +15,7 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity.
+# All maps (program_map, system_map, etc.) are unchanged.
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -90,6 +90,10 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
+# --- NEW CONFIGURATION SET ---
+# The single source of truth for what statuses are considered "stale".
+stale_statuses = {"Open", "To Do", "In Progress", "Reopened", "Blocked"}
+
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
     # This function is unchanged
@@ -111,10 +115,11 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
+    """Extracts structured parameters from natural language user queries."""
+    # This function is unchanged from the last version
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION 1: System Prompt ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -151,7 +156,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 5
     }}
     """
-    # --- END MODIFIED SECTION 1 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -208,13 +212,13 @@ def _format_name_for_jql(name: str) -> str:
         return f"{parts[1]}, {parts[0]}"
     return name
 
-# --- MODIFIED SECTION 2: build_jql ---
+# --- MODIFIED build_jql FUNCTION ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
     jql_parts = []
     order_clause = ""
 
-    # Project (unchanged)
+    # This logic is unchanged
     if raw_proj := params.get("project", "").strip().upper():
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
@@ -240,12 +244,13 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    # --- REVISED LOGIC FOR STALE/DATES ---
-    # The 'stale_days' parameter now takes precedence over other date fields.
+    # --- REVISED LOGIC FOR STALE/DATES using the new stale_statuses set ---
     if stale_days := params.get("stale_days"):
         try:
             days = int(stale_days)
-            jql_parts.append(f'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND updated < "-{days}d"')
+            # Programmatically build the statuses string from the set
+            status_clause = ", ".join(f'"{status}"' for status in stale_statuses)
+            jql_parts.append(f"status in ({status_clause}) AND updated < '-{days}d'")
         except (ValueError, TypeError):
              raise JiraBotError(f"The value for stale_days '{stale_days}' is not a valid number.")
     else:
@@ -257,8 +262,8 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
                     jql_parts.append(f"{operator} '{date_value}'")
                 else:
                     raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
-    # --- END REVISED LOGIC ---
-
+    
+    # This logic is unchanged
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
         if formatted_name == "currentUser()":
@@ -269,7 +274,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     if reporter := params.get("reporter"):
         formatted_name = _format_name_for_jql(reporter)
         if formatted_name == "currentUser()":
-            jql_parts.append(f"reporter = {formatted_name}")
+            jql_parts.append(f"reporter = {reporter}")
         else:
             jql_parts.append(f"reporter = \"{formatted_name}\"")
 
@@ -284,9 +289,12 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
-        order_clause = f" ORDER BY updated {order_direction}" # Changed to sort by 'updated' for stale tickets
-    else:
-        order_clause = " ORDER BY updated ASC" # Default sort for stale is oldest first
+        order_clause = f" ORDER BY updated {order_direction}"
+    elif params.get("stale_days"): # Default sort for stale is oldest first
+        order_clause = " ORDER BY updated ASC"
+    else: # Default sort for all other queries
+        order_clause = " ORDER BY created DESC"
+
 
     if not jql_parts:
         raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
@@ -298,4 +306,3 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     print(f"Built JQL: {jql}")
     return jql
-# --- END MODIFIED SECTION 2 ---
