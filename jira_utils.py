@@ -162,8 +162,8 @@ def create_jira_issue(client: JIRA, project: str, summary: str, description: str
         'customfield_14307': triage_category,
         'customfield_14308': triage_assignment,
         'customfield_17000': silicon_revision,
-        'customfield_27209': iod_silicon_die_revision, # New required field
-        'customfield_27210': ccd_silicon_die_revision  # New required field
+        'customfield_27209': iod_silicon_die_revision, 
+        'customfield_27210': ccd_silicon_die_revision  
     }
 
     try:
