@@ -84,10 +84,8 @@ priority_map = {
     "P3": "P3 (Solution Desired)",
     "P4": "P4 (No Impact/Notify)"
 }
-
-# --- MODIFIED SECTION 1: project_map ---
 project_map = {
-    "PLAT": "PLAT", # Corrected this mapping from "PLATFORM" to "PLAT"
+    "PLAT": "PLAT",
     "SWDEV": "SWDEV",
     "FWDEV": "FWDEV"
 }
@@ -116,42 +114,44 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION 2: System Prompt ---
+    # --- MODIFIED SECTION 1: System Prompt ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days.
     The "maxResults" field is MANDATORY.
 
-    Available programs: {programs_list}
-    Available priorities: {priorities_list}
-    Available projects: {projects_list}
-
     **Extraction Rules:**
-    - If a project is mentioned, extract it. Otherwise, OMIT the project field.
-    - ALWAYS include "maxResults", defaulting to 20. For "a ticket", use 1.
-    - USER-BASED QUERIES:
-      - For "assigned to me" or "reported by me", use "currentUser()".
-      - For specific names like "assigned to Ian Heath", you MUST reformat it to "Last, First" format. Example: "Heath, Ian".
-    - TIME-BASED QUERIES: Convert phrases like "yesterday" to JQL format ("-1d").
+    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30. This intent overrides other `updated` fields.
+    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", use "assignee": "Heath, Ian".
+    - PROJECT: If a project is mentioned, extract it. Otherwise, OMIT the project field.
+    - MAXRESULTS: ALWAYS include "maxResults", defaulting to 20. For "a ticket", use 1.
+    - DATES: Convert relative dates (e.g., "yesterday") to JQL format ("-1d").
     
-    Example 1 (Assigned to me): "show me tickets assigned to me"
+    Example 1 (Default Stale): "show me stale tickets"
     {{
       "intent": "list",
-      "assignee": "currentUser()",
+      "stale_days": 30,
       "maxResults": 20
     }}
 
-    Example 2 (Reported by specific user): "find bugs reported by 'Ian Heath'"
+    Example 2 (Custom Stale): "find issues that have not been updated in 90 days"
     {{
       "intent": "list",
-      "keywords": "bug",
-      "reporter": "Heath, Ian",
+      "stale_days": 90,
       "maxResults": 20
+    }}
+    
+    Example 3 (Standard search): "show 5 critical tickets assigned to 'John Smith'"
+    {{
+      "intent": "list",
+      "priority": "Critical",
+      "assignee": "Smith, John",
+      "maxResults": 5
     }}
     """
-    # --- END MODIFIED SECTION 2 ---
+    # --- END MODIFIED SECTION 1 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -198,32 +198,23 @@ def is_valid_jql_date_format(date_str: str) -> bool:
         return True
     return False
 
-# --- NEW HELPER FUNCTION ---
 def _format_name_for_jql(name: str) -> str:
-    """
-    Ensures a name is in 'Last, First' format for JQL.
-    If the name is 'currentUser()', it's returned as is.
-    If it appears to be 'First Last', it's reversed.
-    Otherwise, it's assumed to be correct.
-    """
+    """Ensures a name is in 'Last, First' format for JQL."""
+    # This function is unchanged
     if name == "currentUser()" or "," in name:
-        return name # Already correct or a special value
-    
+        return name
     parts = name.split()
     if len(parts) == 2:
-        # Simple reversal for "First Last" format
         return f"{parts[1]}, {parts[0]}"
-    
-    # If format is unusual (single name, multiple middle names), return as is
     return name
 
-# --- MODIFIED SECTION 3: build_jql ---
+# --- MODIFIED SECTION 2: build_jql ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
     jql_parts = []
     order_clause = ""
 
-    # Project (Now uses the corrected map)
+    # Project (unchanged)
     if raw_proj := params.get("project", "").strip().upper():
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
@@ -249,10 +240,25 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    if params.get("intent") == "stale":
-        jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
-        
-    # User logic now uses the formatter
+    # --- REVISED LOGIC FOR STALE/DATES ---
+    # The 'stale_days' parameter now takes precedence over other date fields.
+    if stale_days := params.get("stale_days"):
+        try:
+            days = int(stale_days)
+            jql_parts.append(f'status in ("Open", "To Do", "In Progress", "Reopened", "Blocked") AND updated < "-{days}d"')
+        except (ValueError, TypeError):
+             raise JiraBotError(f"The value for stale_days '{stale_days}' is not a valid number.")
+    else:
+        # If not a stale query, then process standard date fields
+        date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
+        for field, operator in date_fields.items():
+            if date_value := params.get(field):
+                if is_valid_jql_date_format(date_value):
+                    jql_parts.append(f"{operator} '{date_value}'")
+                else:
+                    raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
+    # --- END REVISED LOGIC ---
+
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
         if formatted_name == "currentUser()":
@@ -275,20 +281,12 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
                 keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
-
-    date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
-    for field, operator in date_fields.items():
-        if date_value := params.get(field):
-            if is_valid_jql_date_format(date_value):
-                jql_parts.append(f"{operator} '{date_value}'")
-            else:
-                raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
     
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
-        order_clause = f" ORDER BY created {order_direction}"
-    elif params.get("maxResults") and not order_clause:
-        order_clause = " ORDER BY created DESC"
+        order_clause = f" ORDER BY updated {order_direction}" # Changed to sort by 'updated' for stale tickets
+    else:
+        order_clause = " ORDER BY updated ASC" # Default sort for stale is oldest first
 
     if not jql_parts:
         raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
@@ -300,4 +298,4 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     print(f"Built JQL: {jql}")
     return jql
-# --- END MODIFIED SECTION 3 ---
+# --- END MODIFIED SECTION 2 ---
