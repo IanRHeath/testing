@@ -48,22 +48,29 @@ const JiraTicket = ({ ticket }) => {
         });
     };
 
-    const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened') ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+    const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened') 
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
 
     return (
-        <div className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
             <div className="flex justify-between items-start mb-2">
-                <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 hover:underline">{ticket.key}</a>
-                <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-200 transition-colors">
-                    {copied ? <CheckIcon /> : <CopyIcon />}
-                </button>
+                <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ticket.key}</a>
+                <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>
+                        {ticket.status}
+                    </span>
+                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        {copied ? <CheckIcon /> : <CopyIcon />}
+                    </button>
+                </div>
             </div>
-            <p className="text-gray-800 mb-3">{ticket.summary}</p>
-            <div className="text-xs text-gray-500 grid grid-cols-2 gap-x-4">
-                <p><strong className="font-medium text-gray-600">Assignee:</strong> {ticket.assignee}</p>
-                <p><strong className="font-medium text-gray-600">Priority:</strong> {ticket.priority}</p>
-                <p><strong className="font-medium text-gray-600">Created:</strong> {ticket.created}</p>
-                <p><strong className="font-medium text-gray-600">Updated:</strong> {ticket.updated}</p>
+            <p className="text-gray-800 dark:text-gray-300 mb-3">{ticket.summary}</p>
+            <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-2 gap-x-4">
+                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Assignee:</strong> {ticket.assignee}</p>
+                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Priority:</strong> {ticket.priority}</p>
+                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Created:</strong> {ticket.created}</p>
+                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Updated:</strong> {ticket.updated}</p>
             </div>
         </div>
     );
@@ -83,6 +90,27 @@ const MarkdownRenderer = ({ text }) => {
     return <div dangerouslySetInnerHTML={createMarkup(text)} />;
 };
 
+// Theme Toggle Component
+const ThemeToggle = ({ darkMode, setDarkMode }) => {
+    const MoonIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+    );
+
+    const SunIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clipRule="evenodd" />
+        </svg>
+    );
+
+    return (
+        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            {darkMode ? <SunIcon /> : <MoonIcon />}
+        </button>
+    );
+};
+
 
 // --- Main App Component ---
 export default function App() {
@@ -93,12 +121,29 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
+    const [darkMode, setDarkMode] = useState(false);
 
     const suggestionPrompts = [
         "Find stale tickets",
         "Show me tickets assigned to me",
         "Summarize PLAT-12345"
     ];
+
+    // Effect to handle dark mode changes
+    useEffect(() => {
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        setDarkMode(isDarkMode);
+    }, []);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('darkMode', 'true');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+        }
+    }, [darkMode]);
 
     // Effect to auto-scroll to the latest message
     useEffect(() => {
@@ -143,10 +188,13 @@ export default function App() {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100 font-sans">
-            <header className="bg-white border-b border-gray-200 p-4 shadow-sm flex justify-between items-center">
-                <h1 className="text-xl font-bold text-center text-gray-800 flex-1">Jira Triage Agent</h1>
-                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 hover:text-blue-600 font-semibold py-1 px-3 border border-gray-300 rounded-md hover:border-blue-500 transition-colors">New Chat</button>
+        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
+            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
+                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+                    New Chat
+                </button>
+                <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
+                <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
@@ -155,12 +203,12 @@ export default function App() {
                         <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <AiIcon />}
                             
-                            <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800 shadow-sm border border-gray-100'}`}>
+                            <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
                                 {msg.type === 'text' && <MarkdownRenderer text={msg.content} />}
-                                {msg.type === 'error' && <div className="text-red-700 bg-red-50 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>}
+                                {msg.type === 'error' && <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>}
                                 {msg.type === 'search_result' && (
                                     <div>
-                                        <p className="font-semibold mb-3 text-gray-900">I found the following tickets:</p>
+                                        <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">I found the following tickets:</p>
                                         {msg.content.map((ticket, i) => <JiraTicket key={i} ticket={ticket} />)}
                                     </div>
                                 )}
@@ -172,12 +220,12 @@ export default function App() {
                     {isLoading && (
                          <div className="flex items-start gap-4 mb-6 justify-start">
                             <AiIcon />
-                            <div className="rounded-lg p-4 max-w-lg bg-white text-gray-800 shadow-sm border border-gray-100">
+                            <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
                                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div>
                                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                                    <span className="text-gray-500">Thinking...</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Thinking...</span>
                                 </div>
                             </div>
                         </div>
@@ -186,25 +234,25 @@ export default function App() {
                 </div>
             </main>
 
-            <footer className="bg-white border-t border-gray-200 p-4">
+            <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
                 <div className="max-w-3xl mx-auto">
                     {showSuggestions && (
                         <div className="flex flex-wrap gap-2 mb-3 justify-center">
                             {suggestionPrompts.map((prompt, i) => (
-                                <button key={i} onClick={() => handleSend(prompt)} className="bg-gray-200 text-gray-700 text-sm py-1.5 px-3 rounded-full hover:bg-gray-300 transition-colors">
+                                <button key={i} onClick={() => handleSend(prompt)} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm py-1.5 px-3 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                                     {prompt}
                                 </button>
                             ))}
                         </div>
                     )}
-                    <div className="flex items-center bg-gray-100 rounded-lg p-2">
+                    <div className="flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-2">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                             placeholder="Type your Jira request..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800"
+                            className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
                             disabled={isLoading}
                         />
                         <button
@@ -220,4 +268,3 @@ export default function App() {
         </div>
     );
 }
-
