@@ -82,15 +82,14 @@ const MarkdownRenderer = ({ text }) => {
     return <div dangerouslySetInnerHTML={createMarkup(text)} />;
 };
 
-// --- NEW COMPONENT: OptionsInput ---
+// OptionsInput Component
 const OptionsInput = ({ questionData, onOptionSelect }) => {
     const { question, options, next_field } = questionData;
 
     if (!options || options.length === 0) {
-        return null; // Don't render if there are no options
+        return null; 
     }
 
-    // Use a dropdown for longer lists
     if (options.length > 5) {
         return (
             <div className="mt-4">
@@ -107,7 +106,6 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
         );
     }
 
-    // Use buttons for shorter lists
     return (
         <div className="mt-4 flex flex-wrap gap-2">
             {options.map((option, i) => (
@@ -123,6 +121,27 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
     );
 };
 
+// --- NEW ThemeToggle Component ---
+const ThemeToggle = ({ darkMode, setDarkMode }) => {
+    const MoonIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+    );
+
+    const SunIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clipRule="evenodd" />
+        </svg>
+    );
+
+    return (
+        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            {darkMode ? <SunIcon /> : <MoonIcon />}
+        </button>
+    );
+};
+
 
 // Main App Component
 export default function App() {
@@ -133,9 +152,24 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
-    const [currentQuestion, setCurrentQuestion] = useState(null); // NEW: Track the current question
+    const [currentQuestion, setCurrentQuestion] = useState(null);
+    const [darkMode, setDarkMode] = useState(false);
 
-    const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
+    // Effect to handle dark mode persistence
+    useEffect(() => {
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        setDarkMode(isDarkMode);
+    }, []);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('darkMode', 'true');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+        }
+    }, [darkMode]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -145,7 +179,6 @@ export default function App() {
         if (!prompt.trim() || isLoading) return;
 
         setShowSuggestions(false);
-        // Only show the user's message if it wasn't an auto-triggered button click
         if (!isAutoTriggered) {
              const userMessage = { role: 'user', type: 'text', content: prompt };
              setMessages(prev => [...prev, userMessage]);
@@ -153,7 +186,7 @@ export default function App() {
        
         setInput('');
         setIsLoading(true);
-        setCurrentQuestion(null); // Clear previous question
+        setCurrentQuestion(null);
 
         const apiHistory = messages.map(msg => ({
             role: msg.role,
@@ -170,7 +203,6 @@ export default function App() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.content || 'An API error occurred.');
             
-            // --- NEW: Handle structured options response ---
             if (data.type === 'options_request') {
                 const questionMessage = { role: 'ai', type: 'text', content: data.content.question, raw_output: data.raw_output };
                 setMessages(prev => [...prev, questionMessage]);
@@ -185,15 +217,12 @@ export default function App() {
         }
     };
     
-    // --- NEW: Function to handle selecting an option ---
     const handleOptionSelect = (fieldName, fieldValue) => {
-        // Display the user's choice as a message
         const userMessage = { role: 'user', type: 'text', content: fieldValue };
         setMessages(prev => [...prev, userMessage]);
         
-        // Formulate the command for the agent and send it automatically
         const command = `set_ticket_field(field_name='${fieldName}', field_value='${fieldValue}')`;
-        handleSend(command, true); // `isAutoTriggered` hides this command from the chat
+        handleSend(command, true);
     };
 
     const startNewChat = () => {
@@ -207,7 +236,8 @@ export default function App() {
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
                 <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">New Chat</button>
                 <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
-                <div>{/* Placeholder for theme toggle or other buttons */}</div>
+                {/* --- FIX: Render the actual toggle button --- */}
+                <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
@@ -240,7 +270,6 @@ export default function App() {
 
             <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
                 <div className="max-w-3xl mx-auto">
-                    {/* Render the options input if there's a question */}
                     {currentQuestion && <OptionsInput questionData={currentQuestion} onOptionSelect={handleOptionSelect} />}
                     
                     {showSuggestions && !currentQuestion && (
