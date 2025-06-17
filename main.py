@@ -33,25 +33,20 @@ def main():
         try:
             result = agent.invoke({"input": user_input, "chat_history": chat_history})
 
-            # Always update chat history with the raw output for context
             chat_history.append(HumanMessage(content=user_input))
             chat_history.append(AIMessage(content=result["output"]))
 
-            # --- MODIFIED SECTION ---
-            # Default to assuming a search was not performed
             search_tool_used = False
             issues_found = None
 
-            # Check if the search tool was used by inspecting the intermediate steps
             if result.get('intermediate_steps'):
                 for action, tool_output in result['intermediate_steps']:
                     if action.tool == 'jira_search_tool':
                         search_tool_used = True
                         if isinstance(tool_output, list):
                             issues_found = tool_output
-                        break # Stop after finding the search tool
+                        break 
 
-            # If the search tool was used, print our custom formatted list
             if search_tool_used:
                 if issues_found:
                     print(f"\n--- Found {len(issues_found)} JIRA Issues ---")
@@ -65,20 +60,15 @@ def main():
                         print(f"   Updated: {issue['updated']}")
                         print(f"   URL: {issue['url']}")
                         print("-" * 20)
-                    # Handle max results note
-                    if len(issues_found) >= 20: # You might want to make this dynamic later
+                    if len(issues_found) >= 20: 
                         print("Note: Displaying the maximum of 20 results. Refine your query for more specific results.")
                 else:
-                    # This handles cases where the search ran but found nothing
                     print("\nJIRA Bot: I searched, but couldn't find any issues matching your query.")
             
-            # For any OTHER tool (summarize, create, etc.), print the agent's direct output
             else:
                 final_output = result.get('output')
-                # Avoid printing empty or boilerplate responses
                 if final_output and "Is this information correct? (yes/no):" not in final_output:
                     print(f"\nJIRA Bot: {final_output}")
-            # --- END MODIFIED SECTION ---
 
         except JiraBotError as e:
             print(f"\nJIRA Bot Error: {e}", file=sys.stderr)
