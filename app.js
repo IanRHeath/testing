@@ -79,7 +79,7 @@ const MarkdownRenderer = ({ text }) => {
 };
 
 const OptionsInput = ({ questionData, onOptionSelect }) => {
-    const { question, options, next_field } = questionData;
+    const { options, next_field } = questionData;
 
     if (!options || options.length === 0) {
         return null; 
@@ -149,6 +149,7 @@ export default function App() {
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
+    // --- FIX: Added useEffect hooks for dark mode ---
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -163,14 +164,13 @@ export default function App() {
             localStorage.setItem('darkMode', 'false');
         }
     }, [darkMode]);
+    // --- END FIX ---
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // --- MODIFIED handleSend function ---
     const handleSend = async (prompt, isAutoTriggered = false) => {
-        // Use the passed prompt if it exists, otherwise default to the input state
         const textToSend = (typeof prompt === 'string') ? prompt : input;
         
         if (!textToSend.trim() || isLoading) return;
