@@ -85,7 +85,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
+def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, iod_silicon_die_revision: str, ccd_silicon_die_revision: str, project: str = "PLATFORM") -> str:
     """
     Use this tool to create a new Jira ticket with a hardcoded issue type of 'Draft'. 
     It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
@@ -227,7 +227,8 @@ All Scandump Links:
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
         program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
         bios_version=bios_version, triage_category=triage_cat_upper, triage_assignment=triage_assignment,
-        severity=severity_title, steps_to_reproduce=final_steps
+        severity=severity_title, steps_to_reproduce=final_steps,
+        iod_silicon_die_revision=iod_silicon_die_revision, ccd_silicon_die_revision=ccd_silicon_die_revision
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
 
