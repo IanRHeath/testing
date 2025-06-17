@@ -1,0 +1,87 @@
+Comprehensive Test Suite for Jira Agent
+This plan covers all major features, including searching, analysis, and the new conversational ticket creation flow.
+
+I. Core Searching & Filtering
+Test 1.1 (Keywords & Limit):
+
+Prompt: show me 3 tickets about system hangs
+
+Verify: The GUI displays exactly 3 tickets related to "system hangs".
+
+Test 1.2 (Program & Project Distinction):
+
+Prompt: find me a stale stxh ticket
+
+Verify: The agent correctly identifies stxh as a program and finds one stale ticket within that program. It should not throw an "invalid project" error.
+
+Test 1.3 (Invalid JIRA Key):
+
+Prompt: summarize plat-123*456
+
+Verify: The GUI displays an immediate error message stating the JIRA key format is invalid, without attempting a search.
+
+II. Stale & Time-Based Queries
+Test 2.1 (Custom Stale Search):
+
+Prompt: show tickets untouched for 90 days
+
+Verify: The backend logs show a JQL query with updated < "-90d".
+
+Test 2.2 (Year/Month Date Search):
+
+Prompt: find bugs created in the last year
+
+Verify: The backend logs show the query was correctly converted to use days (e.g., created >= "-365d") and the search executes successfully.
+
+III. User-Based Queries
+Test 3.1 (Assigned to Me):
+
+Prompt: what tickets are assigned to me?
+
+Verify: The GUI displays a list of tickets assigned to the user configured in your .env file.
+
+Test 3.2 (Name Formatting):
+
+Prompt: find issues reported by Ian Heath
+
+Verify: The backend log shows a Built JQL with the correctly formatted name: reporter = "Heath, Ian".
+
+IV. Analysis & Summarization
+(Use real ticket keys from your Jira instance for these tests)
+
+Test 4.1 (Aggregate Summary):
+
+Prompt: summarize PLAT-12345 and PLAT-54321 (use two related tickets)
+
+Verify: The GUI displays the two individual summaries, followed by a final "Aggregate Summary" section with a high-level analysis.
+
+Test 4.2 (Duplicate Detection):
+
+Prompt: find duplicates for PLAT-179648 (use a key with known duplicates)
+
+Verify: The GUI displays a detailed list of the potential duplicate tickets.
+
+V. Conversational Ticket Creation
+Test 5.1 (Full Conversational Flow):
+
+Start: Use the suggestion chip or type Create a new ticket. The agent should respond by asking for a summary.
+
+Provide Summary: Type System crashes when running S0i3 test. The agent should ask for the Program and present a dropdown/buttons with options.
+
+Select Options: Click the options (e.g., "STXH", "System-Strix Halo Reference Board", "High", etc.) as the agent asks for them.
+
+Provide Text: When the agent asks for "Description" or "Steps To Reproduce", type a full sentence or paragraph.
+
+Finalize: When the agent says all fields are set, click the "Finalize Ticket" button.
+
+Verify: The entire process should feel like a smooth conversation, with the GUI dynamically updating. The final ticket should be created successfully in Jira.
+
+Test 5.2 (Cancellation):
+
+Start: Begin the ticket creation process.
+
+Provide a few fields.
+
+Cancel: When it asks for the next field, type cancel ticket creation.
+
+Verify: The agent should respond with "Ticket creation process has been cancelled." and the process should stop.
