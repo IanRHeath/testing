@@ -84,7 +84,6 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     return f"Sorry, I cannot provide options for the field '{field_name}'."
 
 
-# --- MODIFIED create_ticket_tool ---
 @tool
 def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
     """
@@ -95,7 +94,7 @@ def create_ticket_tool(summary: str, program: str, system: str, silicon_revision
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
-    # --- Proactive Duplicate Check (Unchanged) ---
+    # Proactive Duplicate Check
     print("\n--- Running proactive duplicate check before creating ticket... ---")
     try:
         program_code_for_dupe_check = program.upper()
@@ -125,7 +124,7 @@ def create_ticket_tool(summary: str, program: str, system: str, silicon_revision
     except Exception as e:
         print(f"\nWARNING: Could not perform duplicate check due to an error: {e}. Proceeding with ticket creation.")
     
-    # --- Validation logic (issuetype validation removed) ---
+    # Validation logic
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. Valid options are: {list(program_map.keys())}."
@@ -155,7 +154,7 @@ def create_ticket_tool(summary: str, program: str, system: str, silicon_revision
 
     program_full_name = program_map[program_code]
 
-    # Description file workflow (unchanged)
+    # Description file workflow
     steps_delimiter = "\n\n---STEPS-TO-REPRODUCE---\n"
     description_template = f"""---DESCRIPTION---
 Detailed Summary: {summary}
@@ -224,7 +223,6 @@ All Scandump Links:
     if confirmation.lower().strip() != 'yes':
         return "Ticket creation cancelled by user."
 
-    # Call to create_jira_issue no longer passes issuetype
     new_issue = create_jira_issue(
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
         program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
