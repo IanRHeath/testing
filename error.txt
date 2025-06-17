@@ -1,30 +1,12 @@
-Initializing Jira Agent for the web server...
-LangChain Azure LLM configured: Model=gpt-4.1, Endpoint=https://llm-api.amd.com
-LangChain Agent initialized successfully.
-Jira Agent initialized successfully.
- * Debugger is active!
- * Debugger PIN: 789-715-041
- * Detected change in '/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_agent.py', reloading
- * Restarting with stat
-Raw Azure OpenAI client configured.
-JIRA client initialized successfully with basic_auth (username/password).
-INFO: TicketCreator state has been reset.
-Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/app.py", line 6, in <module>
-    from jira_agent import get_jira_agent
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_agent.py", line 15, in <module>
-    from jira_tools import ALL_JIRA_TOOLS
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_tools.py", line 374, in <module>
-    get_field_options_tool,
-    ^^^^^^^^^^^^^^^^^^^^^^
-NameError: name 'get_field_options_tool' is not defined
-
-
-Compiled with problems:
-×
-ERROR
-[eslint] 
-src/App.js
-  Line 278:30:  'suggestionPrompts' is not defined  no-undef
-
-Search for the keywords to learn more about each error.
+Cannot read properties of undefined (reading 'trim')
+TypeError: Cannot read properties of undefined (reading 'trim')
+    at handleSend (http://localhost:3000/static/js/bundle.js:22200:17)
+    at onKeyPress (http://localhost:3000/static/js/bundle.js:22471:51)
+    at executeDispatch (http://localhost:3000/static/js/bundle.js:11027:7)
+    at runWithFiberInDEV (http://localhost:3000/static/js/bundle.js:3769:68)
+    at processDispatchQueue (http://localhost:3000/static/js/bundle.js:11055:31)
+    at http://localhost:3000/static/js/bundle.js:11348:7
+    at batchedUpdates$1 (http://localhost:3000/static/js/bundle.js:4618:38)
+    at dispatchEventForPluginEventSystem (http://localhost:3000/static/js/bundle.js:11131:5)
+    at dispatchEvent (http://localhost:3000/static/js/bundle.js:13230:31)
+    at dispatchDiscreteEvent (http://localhost:3000/static/js/bundle.js:13212:58
