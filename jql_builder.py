@@ -89,7 +89,7 @@ project_map = {
     "FWDEV": "FWDEV"
 }
 
-# The extract_keywords_from_text function is unchanged.
+# The extract_keywords_from_text and extract_params functions are unchanged in this step.
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
     if RAW_AZURE_OPENAI_CLIENT is None:
@@ -124,7 +124,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -170,7 +169,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 20
     }}
     """
-    # --- END MODIFIED SECTION ---
 
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -211,7 +209,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
 
-# The build_jql function is unchanged in this step.
+# --- MODIFIED SECTION ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
@@ -219,6 +217,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     jql_parts = []
     order_clause = ""
 
+    # Project (unchanged)
     raw_proj = params.get("project", "").strip().upper()
     if raw_proj:
         if raw_proj in project_map:
@@ -228,9 +227,11 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     else:
         jql_parts.append("project = 'PLAT'")
     
+    # Exclude Key (unchanged)
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
+    # Priority (unchanged)
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
         if raw_prio.upper() in priority_map:
@@ -240,6 +241,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
+    # Program (unchanged)
     raw_prog = params.get("program", "").strip().upper()
     if raw_prog:
         if raw_prog in program_map:
@@ -249,13 +251,14 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
+    # Stale Intent (unchanged)
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
 
+    # Keywords (unchanged)
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
-        # Support both comma-separated and space-separated keywords from the LLM
         for kw_raw in keywords.replace(',', ' ').split():
             kw = kw_raw.strip()
             if kw:
@@ -263,14 +266,25 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
+    # --- NEW LOGIC FOR DATES ---
+    if params.get("created_after"):
+        jql_parts.append(f"created >= '{params['created_after']}'")
+    if params.get("created_before"):
+        jql_parts.append(f"created <= '{params['created_before']}'")
+    if params.get("updated_after"):
+        jql_parts.append(f"updated >= '{params['updated_after']}'")
+    if params.get("updated_before"):
+        jql_parts.append(f"updated <= '{params['updated_before']}'")
+    # --- END NEW LOGIC ---
+
+    # Order Clause (unchanged)
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
-    
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
 
-
+    # Final Assembly (unchanged)
     if not jql_parts:
         jql = "project = 'PLAT'"
     else:
@@ -280,5 +294,5 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         jql += order_clause
 
     print(f"Built JQL: {jql}")
-
     return jql
+# --- END MODIFIED SECTION ---
