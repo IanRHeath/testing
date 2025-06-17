@@ -1,39 +1,35 @@
 Raw Azure OpenAI client configured.
 JIRA client initialized successfully with basic_auth (username/password).
-/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py:80: LangChainDeprecationWarning: The method `BaseTool.__call__` was deprecated in langchain-core 0.1.47 and will be removed in 1.0. Use :meth:`~invoke` instead.
-  result = create_ticket_tool(**args)
-EE
-======================================================================
-ERROR: test_create_ticket_duplicate_found_and_cancelled (test_jira_tools.TestCreateTicketTool.test_create_ticket_duplicate_found_and_cancelled)
-Tests the workflow where a duplicate is found and the user chooses to cancel the creation.
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/unittest/mock.py", line 1390, in patched
-    return func(*newargs, **newkeywargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py", line 80, in test_create_ticket_duplicate_found_and_cancelled
-    result = create_ticket_tool(**args)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/venv/lib/python3.12/site-packages/langchain_core/_api/deprecation.py", line 191, in warning_emitting_wrapper
-    return wrapped(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: BaseTool.__call__() got an unexpected keyword argument 'summary'
 
-======================================================================
-ERROR: test_create_ticket_happy_path (test_jira_tools.TestCreateTicketTool.test_create_ticket_happy_path)
-Tests the successful creation of a ticket when all inputs are valid and no duplicates are found.
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/unittest/mock.py", line 1390, in patched
-    return func(*newargs, **newkeywargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py", line 40, in test_create_ticket_happy_path
-    result = create_ticket_tool(**args)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/venv/lib/python3.12/site-packages/langchain_core/_api/deprecation.py", line 191, in warning_emitting_wrapper
-    return wrapped(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: BaseTool.__call__() got an unexpected keyword argument 'summary'
+--- Running proactive duplicate check before creating ticket... ---
+--- Found 1 candidates. Comparing summaries... ---
 
+--- WARNING: Found potential duplicate tickets! ---
+1. Key: PLAT-12345 - Open
+   Summary: A very similar summary
+   URL: http://...
+--------------------
+.
+--- Running proactive duplicate check before creating ticket... ---
+
+----------------------------------------------------------------
+ACTION REQUIRED: I have created a template file named 'ticket_description.txt'.
+Please open it, complete the details, and save the file.
+
+---
+A new Jira ticket will be created with the following details:
+  Project:           PLAT
+  Summary:           New test summary for happy path
+
+--- Description Preview ---
+Test Description
+
+--- Steps to Reproduce Preview ---
+Test Steps
+----------------------------------
+
+.
 ----------------------------------------------------------------------
-Ran 2 tests in 0.027s
+Ran 2 tests in 0.051s
+
+OK
