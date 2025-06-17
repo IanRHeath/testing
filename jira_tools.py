@@ -43,7 +43,6 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     **Answer:**
     """
     summary_content = llm.invoke(prompt).content
-    # Small fix to avoid double-printing the URL if the LLM includes it.
     if ticket_url in summary_content:
         final_output = summary_content
     else:
@@ -72,7 +71,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         if options:
             return f"For Program '{depends_on.upper()}', the valid Systems are: {options}"
         else:
-            return f"Could not find a Program with the code '{depends_on.upper()}'."
+            return f"Could not find a Program with the code '{depends_on.upper()}' or it has no defined systems."
     elif "triage assignment" in field_lower:
         if not depends_on:
             return "To list the Triage Assignments, you must first provide a Triage Category."
@@ -80,7 +79,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
         if options:
             return f"For Triage Category '{depends_on.upper()}', the valid Triage Assignments are: {options}"
         else:
-            return f"Could not find a Triage Category named '{depends_on.upper()}'."
+            return f"Could not find a Triage Category named '{depends_on.upper()}' or it has no defined assignments."
 
     return f"Sorry, I cannot provide options for the field '{field_name}'."
 
@@ -93,26 +92,45 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
+    # --- MODIFIED/HARDENED SECTION ---
+    # Validate Issue Type
     valid_issue_types = ['Issue', 'enhancement', 'draft']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
+
+    # Validate Program
     program_code = program.upper()
     if program_code not in program_map:
-        return f"Error: Invalid program code '{program}'. It must be one of {list(program_map.keys())}."
+        return f"Error: Invalid program code '{program}'. Valid options are: {list(program_map.keys())}."
+
+    # Validate System (Hardened Logic)
     valid_systems = system_map.get(program_code)
-    if not valid_systems or system not in valid_systems:
+    if valid_systems is None: # Explicitly check if the program has any systems defined
+        return f"Error: The program '{program_code}' exists, but has no valid Systems defined for it."
+    if system not in valid_systems:
         return f"Error: Invalid system '{system}' for program '{program_code}'. Valid options are: {valid_systems}"
+
+    # Validate Silicon Revision
     if silicon_revision.upper() not in VALID_SILICON_REVISIONS:
-        return f"Error: Invalid silicon revision '{silicon_revision}'. Please provide a valid option."
+        return f"Error: Invalid silicon revision '{silicon_revision}'. Valid options are: {list(VALID_SILICON_REVISIONS)}."
+    
+    # Validate Triage Category
     triage_cat_upper = triage_category.upper()
     if triage_cat_upper not in VALID_TRIAGE_CATEGORIES:
-        return f"Error: Invalid triage category '{triage_category}'. It must be one of {list(VALID_TRIAGE_CATEGORIES)}."
+        return f"Error: Invalid triage category '{triage_category}'. Valid options are: {list(VALID_TRIAGE_CATEGORIES)}."
+
+    # Validate Triage Assignment (Hardened Logic)
     valid_assignments = triage_assignment_map.get(triage_cat_upper)
-    if not valid_assignments or triage_assignment not in valid_assignments:
+    if valid_assignments is None: # Explicitly check if the category has any assignments
+        return f"Error: The Triage Category '{triage_cat_upper}' exists, but has no valid Triage Assignments defined for it."
+    if triage_assignment not in valid_assignments:
         return f"Error: Invalid triage assignment '{triage_assignment}' for category '{triage_cat_upper}'. Valid options are: {valid_assignments}"
+    
+    # Validate Severity
     severity_title = severity.title()
     if severity_title not in VALID_SEVERITY_LEVELS:
-        return f"Error: Invalid severity '{severity}'. It must be one of {list(VALID_SEVERITY_LEVELS)}."
+        return f"Error: Invalid severity '{severity}'. Valid options are: {list(VALID_SEVERITY_LEVELS)}."
+    # --- END MODIFIED/HARDENED SECTION ---
 
     program_full_name = program_map[program_code]
 
@@ -223,17 +241,15 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
     """
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
-        # Use the full original query for parameter extraction
         params = extract_params(original_query)
         print(f"DEBUG: Extracted parameters from LLM: {params}")
 
-        # Defensively get the limit, handling potential missing key or non-integer values.
-        limit_str = params.get("maxResults", "20") # Default to string "20"
+        limit_str = params.get("maxResults", "20")
         try:
             limit = int(limit_str)
             print(f"DEBUG: Successfully set limit to {limit}.")
         except (ValueError, TypeError):
-            limit = 20 # Fallback if conversion fails
+            limit = 20
             print(f"DEBUG: Could not parse '{limit_str}' as an integer. Defaulting limit to {limit}.")
 
         jql_query = build_jql(params)
