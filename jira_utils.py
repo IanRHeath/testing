@@ -57,6 +57,7 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket data: {e}")
 
 
+# --- MODIFIED SECTION ---
 def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[dict]:
     """
     Searches JIRA issues using a JQL query and returns formatted results.
@@ -70,19 +71,20 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
 
         formatted_issues = []
         for issue in issues:
-            assignee_name = issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned"
-            status_name = issue.fields.status.name if issue.fields.status else "Unknown"
-            priority_name = issue.fields.priority.name if issue.fields.priority else "Unknown"
+            # Safely access potentially missing attributes using getattr
+            assignee = getattr(issue.fields.assignee, 'displayName', 'Unassigned')
+            status = getattr(issue.fields.status, 'name', 'Unknown')
+            priority = getattr(issue.fields.priority, 'name', 'Undefined')
 
             formatted_issues.append({
                 "key": issue.key,
                 "summary": issue.fields.summary,
-                "status": status_name,
-                "assignee": assignee_name,
-                "priority": priority_name,
-                "url": f"{JIRA_SERVER_URL}/browse/{issue.key}",
-                "created": issue.fields.created[:10],
-                "updated": issue.fields.updated[:10]
+                "status": status,
+                "assignee": assignee,
+                "priority": priority,
+                "url": getattr(issue, 'permalink', lambda: f"{JIRA_SERVER_URL}/browse/{issue.key}")(),
+                "created": issue.fields.created[:10] if hasattr(issue.fields, 'created') and issue.fields.created else "Unknown",
+                "updated": issue.fields.updated[:10] if hasattr(issue.fields, 'updated') and issue.fields.updated else "Unknown"
             })
         print(f"Successfully found {len(issues)} issues.")
         return formatted_issues
@@ -90,6 +92,8 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
         raise JiraBotError(f"JIRA search failed for JQL '{jql_query}': {e.text}. Status code: {e.status_code}. Please refine the query.")
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred during JIRA search: {e}")
+# --- END MODIFIED SECTION ---
+
 
 def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     """
@@ -101,34 +105,36 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
         issue = client.issue(issue_key, expand="comments")
         details = []
         
-        ticket_url = f"{JIRA_SERVER_URL}/browse/{issue.key}"
+        ticket_url = getattr(issue, 'permalink', lambda: f"{JIRA_SERVER_URL}/browse/{issue.key}")()
 
         details.append(f"Project: {issue.fields.project.key}")
         try:
-            program_field = issue.raw['fields']['Program']
+            # Using getattr for safer access here too
+            program_field = getattr(issue.fields, 'Program', 'Not found')
             details.append(f"Program: {program_field}")
-        except KeyError:
+        except Exception:
             details.append("Program: Not found.")
             
         details.append(f"Title: {issue.fields.summary}")
-        details.append(f"Status: {issue.fields.status.name}")
+        details.append(f"Status: {getattr(issue.fields.status, 'name', 'Unknown')}")
         
-        resolution = issue.fields.resolution
-        details.append(f"Resolution: {resolution.name if resolution else 'Unresolved'}")
+        resolution = getattr(issue.fields, 'resolution', None)
+        details.append(f"Resolution: {getattr(resolution, 'name', 'Unresolved')}")
         
-        assignee = issue.fields.assignee
-        details.append(f"Assignee: {assignee.displayName if assignee else 'Unassigned'}")
+        assignee = getattr(issue.fields, 'assignee', None)
+        details.append(f"Assignee: {getattr(assignee, 'displayName', 'Unassigned')}")
         
-        details.append(f"Created: {issue.fields.created[:10]}")
-        details.append(f"Updated: {issue.fields.updated[:10]}")
+        details.append(f"Created: {issue.fields.created[:10] if hasattr(issue.fields, 'created') and issue.fields.created else 'Unknown'}")
+        details.append(f"Updated: {issue.fields.updated[:10] if hasattr(issue.fields, 'updated') and issue.fields.updated else 'Unknown'}")
 
         details.append("\n-- Description --")
         details.append(issue.fields.description if issue.fields.description else "No description.")
         
         details.append("\n-- Comments --")
-        if issue.fields.comment.comments:
+        if hasattr(issue.fields.comment, 'comments') and issue.fields.comment.comments:
             for comment in reversed(issue.fields.comment.comments[-5:]):
-                details.append(f"Comment by {comment.author.displayName} on {comment.created[:10]}:")
+                author_name = getattr(comment.author, 'displayName', 'Unknown author')
+                details.append(f"Comment by {author_name} on {comment.created[:10]}:")
                 details.append(comment.body)
                 details.append("-" * 10)
         else:
