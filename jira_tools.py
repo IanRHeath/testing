@@ -85,10 +85,9 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 
 @tool
-def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, iod_silicon_die_revision: str, ccd_silicon_die_revision: str, project: str = "PLATFORM") -> str:
+def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
     """
     Use this tool to create a new Jira ticket with a hardcoded issue type of 'Draft'. 
-    It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
     It will first automatically check for potential duplicates.
     """
     if JIRA_CLIENT_INSTANCE is None:
@@ -227,8 +226,7 @@ All Scandump Links:
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
         program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
         bios_version=bios_version, triage_category=triage_cat_upper, triage_assignment=triage_assignment,
-        severity=severity_title, steps_to_reproduce=final_steps,
-        iod_silicon_die_revision=iod_silicon_die_revision, ccd_silicon_die_revision=ccd_silicon_die_revision
+        severity=severity_title, steps_to_reproduce=final_steps
     )
     return f"Successfully created ticket {new_issue.key}. You can view it here: {new_issue.permalink()}"
 
@@ -238,17 +236,70 @@ def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a f
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL."""
     return _get_single_ticket_summary(issue_key, question)
 
+# --- MODIFIED summarize_multiple_tickets_tool ---
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
-    """Use this tool when the user asks to summarize MORE THAN ONE JIRA ticket."""
+    """
+    Use this tool to summarize MORE THAN ONE JIRA ticket. 
+    It will provide individual summaries and then a final aggregate analysis of all tickets together.
+    """
+    if not issue_keys:
+        return "Please provide at least one issue key."
+
+    # 1. Generate individual summaries
     summaries = []
     question_for_each = "Provide a full 4-point summary."
     for key in issue_keys:
         try:
-            summaries.append(_get_single_ticket_summary(key, question_for_each))
+            summary_text = _get_single_ticket_summary(key, question_for_each)
+            summaries.append(summary_text)
         except JiraBotError as e:
             summaries.append(f"Could not generate summary for {key}: {e}")
-    return "\n\n---\n\n".join(summaries)
+
+    individual_summaries_text = "\n\n---\n\n".join(summaries)
+
+    # 2. Generate the aggregate summary if there's more than one successful summary
+    successful_summaries = [s for s in summaries if not s.startswith("Could not generate summary")]
+    
+    if len(successful_summaries) > 1:
+        print("\n--- Generating aggregate summary for all tickets... ---")
+        llm = get_llm()
+        
+        aggregate_prompt = f"""
+        You are an expert engineering program manager. Your task is to analyze the following collection of JIRA ticket summaries and provide a high-level aggregate summary.
+        
+        Identify any common themes, recurring root causes, shared blockers, or patterns across all the tickets provided.
+        
+        Structure your response with these headings:
+        - **Overall Status & Common Themes:**
+        - **Potential Shared Root Causes:**
+        - **Overarching Blockers or Dependencies:**
+
+        **Individual Ticket Summaries:**
+        ---
+        {individual_summaries_text}
+        ---
+
+        **Aggregate Analysis:**
+        """
+        
+        try:
+            aggregate_summary = llm.invoke(aggregate_prompt).content
+            
+            # 3. Combine everything for the final output
+            final_output = (
+                f"{individual_summaries_text}\n\n"
+                f"----------------------------------------\n"
+                f"**Aggregate Summary of {len(successful_summaries)} Tickets**\n"
+                f"----------------------------------------\n"
+                f"{aggregate_summary}"
+            )
+            return final_output
+        except Exception as e:
+            print(f"WARNING: Could not generate aggregate summary due to an error: {e}")
+            return individual_summaries_text
+
+    return individual_summaries_text
 
 
 @tool
