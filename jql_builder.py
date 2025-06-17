@@ -8,12 +8,14 @@ from jira import JIRA
 from llm_config import get_azure_openai_client
 from jira_utils import JiraBotError
 
+# This part of the file is unchanged
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
+# All maps are unchanged and omitted for brevity
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -169,31 +171,33 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days.
+    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days, date_number, date_unit, date_field, date_operator.
     The "maxResults" field is MANDATORY.
-
-    Available programs: {programs_list}
-    Available priorities: {priorities_list}
-    Available projects: {projects_list}
-
-    **Extraction Rules:**
-    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w]" for relative dates (e.g., "-7d", "-2w"). Do NOT use "y" for year, "M" for month, or the "now()" function. For absolute dates, use "YYYY-MM-DD".
-    - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
-    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
-    - PROGRAMS: If the query includes a code from `Available programs` (STX, STXH, etc.), it MUST be a `program`, not a `project`.
     
-    Example 1 (Program query): "find stale stxh tickets"
+    **Extraction Rules:**
+    - For time queries like "created in the last 2 years", extract "date_number": 2, "date_unit": "year", "date_field": "created", "date_operator": "after".
+    - For "stale tickets" or "not updated in X days", extract `stale_days`. This overrides other date fields.
+    - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
+    - PROGRAMS: If the query includes a code from the available programs list (STX, STXH, etc.), it MUST be a `program`.
+    
+    Example 1 (Relative Time - Year): "find tickets created in the past year"
     {{
       "intent": "list",
-      "stale_days": 30,
-      "program": "STXH",
+      "date_number": 1,
+      "date_unit": "year",
+      "date_field": "created",
+      "date_operator": "after",
       "maxResults": 20
     }}
 
-    Example 2 (Project query): "show me PLAT tickets"
+    Example 2 (Relative Time - Month): "show bugs from last month"
     {{
       "intent": "list",
-      "project": "PLAT",
+      "keywords": "bug",
+      "date_number": 1,
+      "date_unit": "month",
+      "date_field": "created",
+      "date_operator": "after",
       "maxResults": 20
     }}
     """
@@ -233,9 +237,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
 
 def is_valid_jql_date_format(date_str: str) -> bool:
-    """
-    Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w).
-    """
+    """Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w)."""
     if not isinstance(date_str, str):
         return False
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
@@ -324,11 +326,20 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             jql_parts.append(f"reporter = {reporter}")
         else:
             jql_parts.append(f"reporter = \"{formatted_name}\"")
-
-    if keywords := params.get("keywords"):
+            
+    # --- MODIFIED KEYWORD HANDLING ---
+    keywords = params.get("keywords")
+    if keywords:
         keyword_parts = []
-        for kw_raw in keywords.replace(',', ' ').split():
-            kw = kw_raw.strip()
+        
+        # Handle case where LLM returns a list of strings OR a single string
+        if isinstance(keywords, list):
+            keyword_list = keywords
+        else: # Assume it's a string that might need splitting
+            keyword_list = keywords.replace(',', ' ').split()
+
+        for kw_raw in keyword_list:
+            kw = str(kw_raw).strip() # Ensure it's a string
             if kw:
                 keyword_parts.append(f"summary ~ \"{kw}\" OR description ~ \"{kw}\"")
         if keyword_parts:
