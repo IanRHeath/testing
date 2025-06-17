@@ -1,5 +1,11 @@
-DEBUG: Extracted parameters from LLM: {'intent': 'list', 'stale_days': 30, 'project': 'stxh', 'maxResults': 20}
+
+LLM extracted parameters: {
+  "intent": "list",
+  "created_after": "now-7d",
+  "maxResults": 20
+}
+DEBUG: Extracted parameters from LLM: {'intent': 'list', 'created_after': 'now-7d', 'maxResults': 20}
 DEBUG: Successfully set limit to 20.
 
-JIRA Bot Error: Invalid project 'STXH'. Must be one of ['PLAT', 'SWDEV', 'FWDEV'].
+JIRA Bot Error: The date format 'now-7d' for 'created_after' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.
 Please check your JQL query or JIRA connection.
