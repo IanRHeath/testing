@@ -6,7 +6,7 @@ from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_c
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS, extract_keywords_from_text
+    VALID_SEVERITY_LEVELS, extract_keywords_from_text, get_summary_similarity_score
 )
 from llm_config import get_llm
 
@@ -92,45 +92,36 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
-    # --- MODIFIED/HARDENED SECTION ---
-    # Validate Issue Type
     valid_issue_types = ['Issue', 'enhancement', 'draft']
     if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
         return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
 
-    # Validate Program
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. Valid options are: {list(program_map.keys())}."
 
-    # Validate System (Hardened Logic)
     valid_systems = system_map.get(program_code)
-    if valid_systems is None: # Explicitly check if the program has any systems defined
+    if valid_systems is None:
         return f"Error: The program '{program_code}' exists, but has no valid Systems defined for it."
     if system not in valid_systems:
         return f"Error: Invalid system '{system}' for program '{program_code}'. Valid options are: {valid_systems}"
 
-    # Validate Silicon Revision
     if silicon_revision.upper() not in VALID_SILICON_REVISIONS:
         return f"Error: Invalid silicon revision '{silicon_revision}'. Valid options are: {list(VALID_SILICON_REVISIONS)}."
     
-    # Validate Triage Category
     triage_cat_upper = triage_category.upper()
     if triage_cat_upper not in VALID_TRIAGE_CATEGORIES:
         return f"Error: Invalid triage category '{triage_category}'. Valid options are: {list(VALID_TRIAGE_CATEGORIES)}."
 
-    # Validate Triage Assignment (Hardened Logic)
     valid_assignments = triage_assignment_map.get(triage_cat_upper)
-    if valid_assignments is None: # Explicitly check if the category has any assignments
+    if valid_assignments is None:
         return f"Error: The Triage Category '{triage_cat_upper}' exists, but has no valid Triage Assignments defined for it."
     if triage_assignment not in valid_assignments:
         return f"Error: Invalid triage assignment '{triage_assignment}' for category '{triage_cat_upper}'. Valid options are: {valid_assignments}"
     
-    # Validate Severity
     severity_title = severity.title()
     if severity_title not in VALID_SEVERITY_LEVELS:
         return f"Error: Invalid severity '{severity}'. Valid options are: {list(VALID_SEVERITY_LEVELS)}."
-    # --- END MODIFIED/HARDENED SECTION ---
 
     program_full_name = program_map[program_code]
 
@@ -293,6 +284,56 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
     return similar_issues
 
+@tool
+def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
+    """
+    Use this tool to find potential duplicate Jira tickets based on a source ticket key.
+    This tool checks for other tickets in the same Program and Project with a very similar summary.
+    """
+    print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
+    print(f"--- Received source issue_key: {issue_key} ---")
+    
+    source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
+    source_summary = source_ticket_data.get('summary')
+    source_project = source_ticket_data.get('project')
+    # Make sure to handle the case where 'program' might be a dictionary
+    program_field = source_ticket_data.get('program')
+    source_program = program_field['value'] if isinstance(program_field, dict) else program_field
+
+    if not all([source_summary, source_project, source_program]):
+        return ["Source ticket is missing a summary, project, or program field. Cannot search for duplicates."]
+
+    jql_query = f'project = "{source_project}" AND "Program" = "{source_program}" AND key != "{issue_key}"'
+    print(f"--- Searching for candidate tickets with JQL: {jql_query} ---")
+    candidate_tickets = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=50)
+
+    if not candidate_tickets:
+        return [f"No other tickets found in the same project and program as {issue_key}."]
+    
+    print(f"--- Found {len(candidate_tickets)} candidates. Now comparing summaries... ---")
+
+    SIMILARITY_THRESHOLD = 8
+    duplicate_tickets = []
+    
+    for candidate in candidate_tickets:
+        candidate_summary = candidate.get('summary')
+        if not candidate_summary:
+            continue
+
+        try:
+            similarity_score = get_summary_similarity_score(source_summary, candidate_summary)
+            if similarity_score >= SIMILARITY_THRESHOLD:
+                print(f"--- Found likely duplicate: {candidate['key']} with score {similarity_score} ---")
+                duplicate_tickets.append(candidate)
+        except JiraBotError as e:
+            print(f"WARNING: Could not compare summary for {candidate['key']}. Error: {e}")
+            continue
+
+    if not duplicate_tickets:
+         return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
+
+    return duplicate_tickets
+
 
 ALL_JIRA_TOOLS = [
     jira_search_tool,
@@ -300,5 +341,6 @@ ALL_JIRA_TOOLS = [
     summarize_multiple_tickets_tool,
     create_ticket_tool,
     get_field_options_tool,
-    find_similar_tickets_tool
+    find_similar_tickets_tool,
+    find_duplicate_tickets_tool
 ]
