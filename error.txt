@@ -1,21 +1,20 @@
-  GNU nano 7.2                              2025-06-17T14_00_25_275Z-debug-0.log                                        0 verbose cli /home/ianheath/.nvm/versions/node/v22.16.0/bin/node /home/ianheath/.nvm/versions/node/v22.16.0/lib/node_m>1 info using npm@10.9.2
-2 info using node@v22.16.0
-3 silly config load:file:/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/npmrc
-4 silly config load:file:/home/ianheath/jira_auto_triage-IanDev/frontend/.npmrc
-5 silly config load:file:/home/ianheath/.npmrc
-6 silly config load:file:/home/ianheath/.nvm/versions/node/v22.16.0/etc/npmrc
-7 verbose title npm exec tailwindcss init-p
-8 verbose argv "exec" "--" "tailwindcss" "init-p"
-9 verbose logfile logs-max:10 dir:/home/ianheath/.npm/_logs/2025-06-17T14_00_25_275Z-
-10 verbose logfile /home/ianheath/.npm/_logs/2025-06-17T14_00_25_275Z-debug-0.log
-11 silly logfile start cleaning logs, removing 1 files
-12 silly logfile done cleaning log files
-13 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
-14 verbose stack Error: could not determine executable to run
-14 verbose stack     at getBinFromManifest (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_module>14 verbose stack     at exec (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/libnpmexec/l>14 verbose stack     at async Npm.exec (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/lib/npm.js:207:>14 verbose stack     at async module.exports (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/lib/cli/e>15 verbose pkgid tailwindcss@4.1.10
-16 error could not determine executable to run
-17 verbose cwd /home/ianheath/jira_auto_triage-IanDev/frontend
-18 verbose os Linux 6.6.87.1-microsoft-standard-WSL2
-19 verbose node v22.16.0
-20 verbose npm  v10.9.2
-21 verbose exit 1
+Initializing Jira Agent for the web server...
+LangChain Azure LLM configured: Model=gpt-4.1, Endpoint=https://llm-api.amd.com
+LangChain Agent initialized successfully.
+Jira Agent initialized successfully.
+ * Debugger is active!
+ * Debugger PIN: 789-715-041
+ * Detected change in '/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_agent.py', reloading
+ * Restarting with stat
+Raw Azure OpenAI client configured.
+JIRA client initialized successfully with basic_auth (username/password).
+INFO: TicketCreator state has been reset.
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/app.py", line 6, in <module>
+    from jira_agent import get_jira_agent
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_agent.py", line 15, in <module>
+    from jira_tools import ALL_JIRA_TOOLS
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/backend/jira_tools.py", line 374, in <module>
+    get_field_options_tool,
+    ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'get_field_options_tool' is not defined
