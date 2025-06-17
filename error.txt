@@ -1,5 +1,39 @@
-IRA Bot Error: JIRA API Error on ticket creation: JiraError HTTP 400 url: https://ontrack-internal.amd.com/rest/api/2/issue
+Raw Azure OpenAI client configured.
+JIRA client initialized successfully with basic_auth (username/password).
+/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py:80: LangChainDeprecationWarning: The method `BaseTool.__call__` was deprecated in langchain-core 0.1.47 and will be removed in 1.0. Use :meth:`~invoke` instead.
+  result = create_ticket_tool(**args)
+EE
+======================================================================
+ERROR: test_create_ticket_duplicate_found_and_cancelled (test_jira_tools.TestCreateTicketTool.test_create_ticket_duplicate_found_and_cancelled)
+Tests the workflow where a duplicate is found and the user chooses to cancel the creation.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1390, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py", line 80, in test_create_ticket_duplicate_found_and_cancelled
+    result = create_ticket_tool(**args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/venv/lib/python3.12/site-packages/langchain_core/_api/deprecation.py", line 191, in warning_emitting_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: BaseTool.__call__() got an unexpected keyword argument 'summary'
 
-        response headers = {'X-AREQUESTID': '100x2956032x9', 'X-ASESSIONID': '1wnnjs4', 'X-ANODEID': 'node3', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 05:40:48 GMT', 'Connection': 'close'}
-        response text = {"errorMessages":[],"errors":{"summary":"Field 'summary' cannot be set. It is not on the appropriate screen, or unknown.","customfield_14308":"Field 'customfield_14308' cannot be set. It is not on the appropriate screen, or unknown.","customfield_13208":"Field 'customfield_13208' cannot be set. It is not on the appropriate screen, or unknown.","customfield_14307":"Field 'customfield_14307' cannot be set. It is not on the appropriate screen, or unknown.","customfield_11607":"Field 'customfield_11607' cannot be set. It is not on the appropriate screen, or unknown.","customfield_17000":"Field 'customfield_17000' cannot be set. It is not on the appropriate screen, or unknown.","description":"Field 'description' cannot be set. It is not on the appropriate screen, or unknown.","customfield_13002":"Field 'customfield_13002' cannot be set. It is not on the appropriate screen, or unknown.","customfield_14200":"Field 'customfield_14200' cannot be set. It is not on the appropriate screen, or unknown.","customfield_12610":"Field 'customfield_12610' cannot be set. It is not on the appropriate screen, or unknown."}}
-Please check your JQL query or JIRA connection.
+======================================================================
+ERROR: test_create_ticket_happy_path (test_jira_tools.TestCreateTicketTool.test_create_ticket_happy_path)
+Tests the successful creation of a ticket when all inputs are valid and no duplicates are found.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1390, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/test_jira_tools.py", line 40, in test_create_ticket_happy_path
+    result = create_ticket_tool(**args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/jira_auto_triage-IanDev/venv/lib/python3.12/site-packages/langchain_core/_api/deprecation.py", line 191, in warning_emitting_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: BaseTool.__call__() got an unexpected keyword argument 'summary'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.027s
