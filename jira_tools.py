@@ -284,6 +284,7 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
     return similar_issues
 
+# --- MODIFIED SECTION ---
 @tool
 def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
@@ -296,12 +297,26 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
     source_summary = source_ticket_data.get('summary')
     source_project = source_ticket_data.get('project')
-    # Make sure to handle the case where 'program' might be a dictionary
-    program_field = source_ticket_data.get('program')
-    source_program = program_field['value'] if isinstance(program_field, dict) else program_field
+    
+    # --- FIX: Correctly extract the Program value ---
+    # The 'program' custom field can be complex. We need to safely get the string value.
+    program_field_value = source_ticket_data.get('program')
+    source_program = ""
+    if isinstance(program_field_value, str):
+        source_program = program_field_value
+    elif isinstance(program_field_value, list) and len(program_field_value) > 0:
+        # Handle cases where it might be a list
+        source_program = str(program_field_value[0])
+    elif program_field_value is not None:
+        # Handle other potential object types by converting to string and cleaning up
+        source_program = str(program_field_value)
+
+    # Clean up the program string just in case it was a list string representation
+    source_program = source_program.strip("[]'")
+    # --- END FIX ---
 
     if not all([source_summary, source_project, source_program]):
-        return ["Source ticket is missing a summary, project, or program field. Cannot search for duplicates."]
+        return [f"Source ticket {issue_key} is missing a summary, project, or program field. Cannot search for duplicates."]
 
     jql_query = f'project = "{source_project}" AND "Program" = "{source_program}" AND key != "{issue_key}"'
     print(f"--- Searching for candidate tickets with JQL: {jql_query} ---")
@@ -333,6 +348,7 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
          return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
 
     return duplicate_tickets
+# --- END MODIFIED SECTION ---
 
 
 ALL_JIRA_TOOLS = [
