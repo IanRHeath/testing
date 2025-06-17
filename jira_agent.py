@@ -17,7 +17,6 @@ from jira_tools import ALL_JIRA_TOOLS
 def get_jira_agent() -> AgentExecutor:
     llm = get_llm()
 
-    # --- MODIFIED SECTION ---
     system_message = """
     You are a helpful JIRA assistant. Your job is to understand the user's request and use the provided tools to fulfill it.
 
@@ -36,7 +35,6 @@ def get_jira_agent() -> AgentExecutor:
     - For creating a ticket, use the `create_ticket_tool`.
     - If a user's request is ambiguous, ask for clarification.
     """
-    # --- END MODIFIED SECTION ---
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -52,7 +50,7 @@ def get_jira_agent() -> AgentExecutor:
     agent_executor = AgentExecutor(
         agent=agent,
         tools=ALL_JIRA_TOOLS,
-        verbose=True, # Set to True for better debugging
+        verbose=False, # Set back to False for cleaner production output
         handle_parsing_errors=True,
         max_iterations=15,
         return_intermediate_steps=True
