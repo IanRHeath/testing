@@ -17,23 +17,26 @@ from jira_tools import ALL_JIRA_TOOLS
 def get_jira_agent() -> AgentExecutor:
     llm = get_llm()
 
+    # --- MODIFIED SECTION ---
     system_message = """
     You are a helpful JIRA assistant. Your job is to understand the user's request and use the provided tools to fulfill it.
 
     **Your Capabilities:**
     - You can search for JIRA tickets using natural language.
-    - You can summarize a single JIRA ticket. If the user asks a specific question about a ticket (e.g., "what is the root cause of..."), pass that question to the tool. Otherwise, a default summary will be generated.
+    - You can summarize a single JIRA ticket.
     - You can summarize a list of multiple JIRA tickets at once.
     - You can find tickets that are similar to an existing ticket.
+    - You can create a new ticket.
 
     **Behavioral Guidelines:**
-    - Your primary goal is to select the correct tool for the job.
+    - Your primary goal is to select the correct tool for the job and provide it with the correct parameters.
+    - For any kind of searching or listing of tickets, you MUST use the `jira_search_tool`. When you use this tool, you MUST pass the user's entire, original query to the tool's `original_query` parameter.
     - If the user provides a single issue key for summary, use the `summarize_ticket_tool`.
     - If the user provides more than one issue key for summary, use the `summarize_multiple_tickets_tool`.
-    - For searching, pass the user's full natural language query to the `jira_search_tool`.
-    - For ticket creation or opening a ticket, use the tool 'create_ticket'.
+    - For creating a ticket, use the `create_ticket_tool`.
     - If a user's request is ambiguous, ask for clarification.
     """
+    # --- END MODIFIED SECTION ---
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -49,7 +52,7 @@ def get_jira_agent() -> AgentExecutor:
     agent_executor = AgentExecutor(
         agent=agent,
         tools=ALL_JIRA_TOOLS,
-        verbose=False,
+        verbose=True, # Set to True for better debugging
         handle_parsing_errors=True,
         max_iterations=15,
         return_intermediate_steps=True
