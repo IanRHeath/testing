@@ -18,3 +18,13 @@ Traceback (most recent call last):
     get_field_options_tool,
     ^^^^^^^^^^^^^^^^^^^^^^
 NameError: name 'get_field_options_tool' is not defined
+
+
+Compiled with problems:
+×
+ERROR
+[eslint] 
+src/App.js
+  Line 278:30:  'suggestionPrompts' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
