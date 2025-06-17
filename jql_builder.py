@@ -114,10 +114,10 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
     """Extracts structured parameters from natural language user queries."""
+    # This function is unchanged
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION 1: System Prompt ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -130,7 +130,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w/M]" for relative dates (e.g., "-7d", "-2w"). Do NOT use the "now()" function. For absolute dates, use "YYYY-MM-DD".
+    - CRITICAL RULE: For time-based queries, you MUST use the format "-[number][d/w/M/y]" for relative dates (e.g., "-7d", "-2w", "-1y"). Do NOT use the "now()" function. For absolute dates, use "YYYY-MM-DD".
     - STALE TICKETS: If the user asks for "stale" tickets or "tickets not updated in X days", extract the number of days into the `stale_days` field. If no number is given, default `stale_days` to 30.
     - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
     - PROGRAMS: If the query includes a code from `Available programs` (STX, STXH, etc.), it MUST be a `program`, not a `project`.
@@ -151,7 +151,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 20
     }}
     """
-    # --- END MODIFIED SECTION 1 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -186,23 +185,22 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     except Exception as e:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
-# --- MODIFIED SECTION 2: Validation Function ---
+# --- MODIFIED SECTION ---
 def is_valid_jql_date_format(date_str: str) -> bool:
     """
-    Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats.
-    This now accepts formats like 'now-7d' as a fallback, but the prompt discourages it.
+    Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w, M, y).
     """
     if not isinstance(date_str, str):
         return False
     # Regex for YYYY-MM-DD
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
-    # Regex for -<number><d,w,M> OR now-<number><d,w,M>
-    relative_format = r'^(now)?-([1-9]\d*)[dwM]$'
+    # Regex for -<number><d,w,M,y>
+    relative_format = r'^-([1-9]\d*)[dwMy]$' # Added 'y' for year
     
     if re.match(absolute_format, date_str) or re.match(relative_format, date_str):
         return True
     return False
-# --- END MODIFIED SECTION 2 ---
+# --- END MODIFIED SECTION ---
 
 def _format_name_for_jql(name: str) -> str:
     """Ensures a name is in 'Last, First' format for JQL."""
@@ -259,7 +257,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
                 if is_valid_jql_date_format(date_value):
                     jql_parts.append(f"{operator} '{date_value}'")
                 else:
-                    raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use the format YYYY-MM-DD or a relative date like -7d or -2w.")
+                    raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d, -2w, -1M, or -1y.")
     
     if assignee := params.get("assignee"):
         formatted_name = _format_name_for_jql(assignee)
