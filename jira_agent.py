@@ -50,7 +50,7 @@ def get_jira_agent() -> AgentExecutor:
     agent_executor = AgentExecutor(
         agent=agent,
         tools=ALL_JIRA_TOOLS,
-        verbose=False, # Set back to False for cleaner production output
+        verbose=False, 
         handle_parsing_errors=True,
         max_iterations=15,
         return_intermediate_steps=True
