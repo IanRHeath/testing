@@ -17,7 +17,6 @@ except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
 def _get_single_ticket_summary(issue_key: str, question: str) -> str:
-    # This function is unchanged
     """Internal helper to get a summary for one ticket, tailored to a specific question."""
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
@@ -52,7 +51,6 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
 
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
-    # This function is unchanged
     """
     Use this tool when the user asks for the available or valid options for a specific ticket field...
     """
@@ -88,27 +86,23 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 # --- MODIFIED create_ticket_tool ---
 @tool
-def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
+def create_ticket_tool(summary: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, project: str = "PLATFORM") -> str:
     """
-    Use this tool to create a new Jira ticket. It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
+    Use this tool to create a new Jira ticket with a hardcoded issue type of 'Draft'. 
+    It gathers structured fields, then interactively prompts the user to complete a detailed template for the description and steps to reproduce.
     It will first automatically check for potential duplicates.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
-    # --- NEW: Proactive Duplicate Check ---
+    # --- Proactive Duplicate Check (Unchanged) ---
     print("\n--- Running proactive duplicate check before creating ticket... ---")
-    
-    # Use a try-except block to ensure duplicate check failure doesn't halt creation
     try:
-        # We need the full program name for the JQL query
         program_code_for_dupe_check = program.upper()
         if program_code_for_dupe_check in program_map:
             program_full_name_for_dupe_check = program_map[program_code_for_dupe_check]
-            
             dupe_jql = f'project = "{project}" AND "Program" = "{program_full_name_for_dupe_check}"'
             candidate_tickets = search_jira_issues(dupe_jql, JIRA_CLIENT_INSTANCE, limit=25)
-            
             potential_duplicates = []
             if candidate_tickets:
                 print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries... ---")
@@ -118,7 +112,6 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
                         score = get_summary_similarity_score(summary, candidate_summary)
                         if score >= SIMILARITY_THRESHOLD:
                             potential_duplicates.append(candidate)
-            
             if potential_duplicates:
                 print("\n--- WARNING: Found potential duplicate tickets! ---")
                 for i, issue in enumerate(potential_duplicates):
@@ -126,19 +119,13 @@ def create_ticket_tool(summary: str, issuetype: str, program: str, system: str, 
                     print(f"   Summary: {issue['summary']}")
                     print(f"   URL: {issue['url']}")
                     print("-" * 20)
-                
                 confirmation = input("Do you still want to continue creating a new ticket? (yes/no): ")
                 if confirmation.lower().strip() != 'yes':
                     return "Ticket creation cancelled by user after duplicate check."
     except Exception as e:
         print(f"\nWARNING: Could not perform duplicate check due to an error: {e}. Proceeding with ticket creation.")
-    # --- END DUPLICATE CHECK ---
-
-    # Validation logic (unchanged)
-    valid_issue_types = ['Issue', 'enhancement', 'draft']
-    if issuetype.lower() not in [t.lower() for t in valid_issue_types]:
-        return f"Error: Invalid issue type '{issuetype}'. It must be one of {valid_issue_types}."
-
+    
+    # --- Validation logic (issuetype validation removed) ---
     program_code = program.upper()
     if program_code not in program_map:
         return f"Error: Invalid program code '{program}'. Valid options are: {list(program_map.keys())}."
@@ -205,15 +192,12 @@ All Scandump Links:
     try:
         with open(description_filename, "w") as f:
             f.write(description_template)
-
         print("\n----------------------------------------------------------------")
         print(f"ACTION REQUIRED: I have created a template file named '{description_filename}'.")
         print("Please open it, complete the details, and save the file.")
         input("Press Enter here when you are ready to continue...")
-
         with open(description_filename, "r") as f:
             full_text_input = f.read()
-
     finally:
         if os.path.exists(description_filename):
             os.remove(description_filename)
@@ -237,13 +221,13 @@ All Scandump Links:
     print("----------------------------------\n")
 
     confirmation = input("Is this information correct? (yes/no): ")
-
     if confirmation.lower().strip() != 'yes':
         return "Ticket creation cancelled by user."
 
+    # Call to create_jira_issue no longer passes issuetype
     new_issue = create_jira_issue(
         client=JIRA_CLIENT_INSTANCE, project=project, summary=summary, description=final_description,
-        issuetype=issuetype, program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
+        program=program_full_name, system=system, silicon_revision=silicon_revision.upper(),
         bios_version=bios_version, triage_category=triage_cat_upper, triage_assignment=triage_assignment,
         severity=severity_title, steps_to_reproduce=final_steps
     )
@@ -278,7 +262,6 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
     try:
         params = extract_params(original_query)
         print(f"DEBUG: Extracted parameters from LLM: {params}")
-
         limit_str = params.get("maxResults", "20")
         try:
             limit = int(limit_str)
@@ -286,7 +269,6 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
         except (ValueError, TypeError):
             limit = 20
             print(f"DEBUG: Could not parse '{limit_str}' as an integer. Defaulting limit to {limit}.")
-
         jql_query = build_jql(params)
         return search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=limit)
     except JiraBotError as e:
@@ -303,29 +285,21 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
-
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
-
     text_to_analyze = f"{source_ticket_data.get('summary', '')}\n{source_ticket_data.get('description', '')}"
     if not text_to_analyze.strip():
         return ["Could not find enough text in the source ticket to perform a similarity search."]
-
     extracted_keywords = extract_keywords_from_text(text_to_analyze)
     print(f"--- Extracted Keywords: '{extracted_keywords}' ---")
-
     params = {
         'project': source_ticket_data.get('project'),
         'keywords': extracted_keywords,
         'maxResults': 10
     }
-
     similar_jql = build_jql(params, exclude_key=issue_key)
-
     similar_issues = search_jira_issues(similar_jql, JIRA_CLIENT_INSTANCE, limit=params['maxResults'])
-
     if not similar_issues:
         return [f"No similar issues found for {issue_key} based on keywords: '{extracted_keywords}'."]
-
     return similar_issues
 
 @tool
@@ -336,11 +310,9 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
     """
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
     print(f"--- Received source issue_key: {issue_key} ---")
-    
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
     source_summary = source_ticket_data.get('summary')
     source_project = source_ticket_data.get('project')
-    
     program_field_value = source_ticket_data.get('program')
     source_program = ""
     if isinstance(program_field_value, str):
@@ -349,30 +321,21 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
         source_program = str(program_field_value[0])
     elif program_field_value is not None:
         source_program = str(program_field_value)
-
     source_program = source_program.strip("[]'")
-
     if not all([source_summary, source_project, source_program]):
         return [f"Source ticket {issue_key} is missing a summary, project, or program field. Cannot search for duplicates."]
-
     jql_query = f'project = "{source_project}" AND "Program" = "{source_program}" AND key != "{issue_key}"'
     print(f"--- Searching for candidate tickets with JQL: {jql_query} ---")
-    
     candidate_tickets = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=25)
-
     if not candidate_tickets:
         return [f"No other tickets found in the same project and program as {issue_key}."]
-    
     print(f"--- Found {len(candidate_tickets)} candidates. Now comparing summaries... ---")
-
     SIMILARITY_THRESHOLD = 8
     duplicate_tickets = []
-    
     for candidate in candidate_tickets:
         candidate_summary = candidate.get('summary')
         if not candidate_summary:
             continue
-
         try:
             similarity_score = get_summary_similarity_score(source_summary, candidate_summary)
             if similarity_score >= SIMILARITY_THRESHOLD:
@@ -381,10 +344,8 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
         except JiraBotError as e:
             print(f"WARNING: Could not compare summary for {candidate['key']}. Error: {e}")
             continue
-
     if not duplicate_tickets:
          return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
-
     return duplicate_tickets
 
 
