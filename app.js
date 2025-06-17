@@ -168,12 +168,16 @@ export default function App() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // --- MODIFIED handleSend function ---
     const handleSend = async (prompt, isAutoTriggered = false) => {
-        if (!prompt.trim() || isLoading) return;
+        // Use the passed prompt if it exists, otherwise default to the input state
+        const textToSend = (typeof prompt === 'string') ? prompt : input;
+        
+        if (!textToSend.trim() || isLoading) return;
 
         setShowSuggestions(false);
         if (!isAutoTriggered) {
-             const userMessage = { role: 'user', type: 'text', content: prompt };
+             const userMessage = { role: 'user', type: 'text', content: textToSend };
              setMessages(prev => [...prev, userMessage]);
         }
        
@@ -190,7 +194,7 @@ export default function App() {
             const response = await fetch('http://127.0.0.1:5001/api/query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: prompt, history: apiHistory })
+                body: JSON.stringify({ input: textToSend, history: apiHistory })
             });
 
             const data = await response.json();
@@ -280,7 +284,7 @@ export default function App() {
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleSend() }}
                             placeholder={currentQuestion ? "Please make a selection above or type your answer..." : "Type your Jira request..."}
                             className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
                             disabled={isLoading}
