@@ -143,29 +143,27 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
-# --- MODIFIED create_jira_issue ---
-def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
+def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str, iod_silicon_die_revision: str, ccd_silicon_die_revision: str) -> JIRA.issue:
     """
     Creates a new issue in Jira with a hardcoded issuetype of 'Draft'.
     """
     print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
     
-    # Based on the error log, several custom fields expect a direct string value,
-    # not a dictionary like {'value': '...'}
-    # The 'severity' field was not in the error list, so we keep its format.
     fields = {
         'project':          {'key': project},
         'summary':          summary,
         'issuetype':        {'name': 'Draft'},
         'description':      description,
-        'customfield_11607': steps_to_reproduce,    # Steps to Reproduce
-        'customfield_12610': {'value': severity },  # Severity (This format seems correct per logs)
-        'customfield_13002': program,               # Program
-        'customfield_13208': system,                # System
-        'customfield_14200': bios_version,          # BIOS Version
-        'customfield_14307': triage_category,       # Triage Category
-        'customfield_14308': triage_assignment,     # Triage Assignment
-        'customfield_17000': silicon_revision       # Silicon Revision
+        'customfield_11607': steps_to_reproduce,
+        'customfield_12610': {'value': severity },
+        'customfield_13002': program,
+        'customfield_13208': system,
+        'customfield_14200': bios_version,
+        'customfield_14307': triage_category,
+        'customfield_14308': triage_assignment,
+        'customfield_17000': silicon_revision,
+        'customfield_27209': iod_silicon_die_revision, # New required field
+        'customfield_27210': ccd_silicon_die_revision  # New required field
     }
 
     try:
