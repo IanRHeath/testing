@@ -37,7 +37,6 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
     """
     print(f"Fetching data for ticket {issue_key} for analysis...")
     try:
-        # Requesting specific fields can be more efficient
         fields = "summary,description,project,customfield_13002"
         issue = client.issue(issue_key, fields=fields)
         
@@ -48,7 +47,6 @@ def get_ticket_data_for_analysis(issue_key: str, client: JIRA) -> dict:
             "project": issue.fields.project.key
         }
         
-        # Safely get the program field
         if hasattr(issue.fields, 'customfield_13002') and getattr(issue.fields, 'customfield_13002'):
              data['program'] = issue.fields.customfield_13002
 
@@ -71,14 +69,11 @@ def search_jira_issues(jql_query: str, client: JIRA, limit: int = 20) -> list[di
         if not issues:
             print("No issues found for the given JQL.")
             return []
-
         formatted_issues = []
         for issue in issues:
-            # Robustly access potentially missing attributes
             assignee = issue.fields.assignee.displayName if hasattr(issue.fields, 'assignee') and issue.fields.assignee else "Unassigned"
             status = issue.fields.status.name if hasattr(issue.fields, 'status') and issue.fields.status else "Unknown"
             priority = issue.fields.priority.name if hasattr(issue.fields, 'priority') and issue.fields.priority else "Undefined"
-
             formatted_issues.append({
                 "key": issue.key,
                 "summary": issue.fields.summary,
@@ -148,25 +143,29 @@ def get_ticket_details(issue_key: str, client: JIRA) -> Tuple[str, str]:
     except Exception as e:
         raise JiraBotError(f"An unexpected error occurred while fetching ticket details: {e}")
 
+# --- MODIFIED create_jira_issue ---
 def create_jira_issue(client: JIRA, project: str, summary: str, description: str, program: str, system: str, silicon_revision: str, bios_version: str, triage_category: str, triage_assignment: str, severity: str, steps_to_reproduce: str) -> JIRA.issue:
     """
     Creates a new issue in Jira with a hardcoded issuetype of 'Draft'.
     """
     print(f"Attempting to create ticket in project '{project}' with summary '{summary}'...")
     
+    # Based on the error log, several custom fields expect a direct string value,
+    # not a dictionary like {'value': '...'}
+    # The 'severity' field was not in the error list, so we keep its format.
     fields = {
         'project':          {'key': project},
         'summary':          summary,
-        'issuetype':        {'name': 'Draft'}, # Hardcoded value
+        'issuetype':        {'name': 'Draft'},
         'description':      description,
-        'customfield_11607': steps_to_reproduce,
-        'customfield_12610': {'value': severity },
-        'customfield_13002': {'value': program },
-        'customfield_13208': {'value': system },
-        'customfield_14200': bios_version,
-        'customfield_14307': {'value': triage_category},
-        'customfield_14308': {'value': triage_assignment},
-        'customfield_17000': {'value': silicon_revision }
+        'customfield_11607': steps_to_reproduce,    # Steps to Reproduce
+        'customfield_12610': {'value': severity },  # Severity (This format seems correct per logs)
+        'customfield_13002': program,               # Program
+        'customfield_13208': system,                # System
+        'customfield_14200': bios_version,          # BIOS Version
+        'customfield_14307': triage_category,       # Triage Category
+        'customfield_14308': triage_assignment,     # Triage Assignment
+        'customfield_17000': silicon_revision       # Silicon Revision
     }
 
     try:
