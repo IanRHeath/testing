@@ -1,5 +1,6 @@
 import json
 import os
+import re # Import the regular expression module
 from typing import Dict, Any
 import openai
 from jira import JIRA
@@ -14,7 +15,6 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# All maps (program_map, system_map, etc.) are unchanged. They are omitted here for brevity.
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -84,12 +84,11 @@ priority_map = {
     "P4": "P4 (No Impact/Notify)"
 }
 project_map = {
-    "PLAT": "PLATFORM", # Correcting to a more likely full name
+    "PLAT": "PLATFORM",
     "SWDEV": "Software Development",
     "FWDEV": "Firmware Development"
 }
 
-# The extract_keywords_from_text function is unchanged.
 def extract_keywords_from_text(text_to_analyze: str) -> str:
     """Uses the LLM to extract key technical terms from a block of text."""
     if RAW_AZURE_OPENAI_CLIENT is None:
@@ -124,7 +123,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION 1 ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -139,7 +137,8 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     **Extraction Rules:**
     - If the user explicitly mentions a project (e.g., 'in PLAT', 'from SWDEV'), extract it into the "project" field. If no project is mentioned, OMIT the project field from the JSON.
     - ALWAYS include the "maxResults" field. Default to 20 if no limit is specified. If the user uses singular language like "a ticket", set "maxResults" to 1.
-    - TIME-BASED QUERIES: Convert relative dates to JQL format (e.g., "yesterday" -> "-1d") and use `created_after`, `created_before`, `updated_after`, `updated_before`.
+    - TIME-BASED QUERIES: Convert relative dates to JQL format (e.g., "yesterday" -> "-1d", "last week" -> "-1w", "2 months ago" -> "-2M"). Use the fields: `created_after`, `created_before`, `updated_after`, `updated_before`.
+    - For absolute dates, use YYYY-MM-DD format.
     - Extract other fields like "keywords", "priority", etc., as they appear.
 
     Example 1 (Project specified): "show me PLAT tickets updated yesterday"
@@ -157,8 +156,15 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "updated_after": "-3d",
       "maxResults": 20
     }}
+    
+    Example 3 (Absolute Time): "show tickets created for GNR before 2025-01-15"
+    {{
+      "intent": "list",
+      "program": "GNR",
+      "created_before": "2025-01-15",
+      "maxResults": 20
+    }}
     """
-    # --- END MODIFIED SECTION 1 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -198,7 +204,21 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
         raise JiraBotError(f"Error during parameter extraction: {e}")
 
 
-# --- MODIFIED SECTION 2 ---
+def is_valid_jql_date_format(date_str: str) -> bool:
+    """
+    Checks if a string matches Jira's absolute (YYYY-MM-DD) or relative (-1w, -2d, -3M) date formats.
+    """
+    if not isinstance(date_str, str):
+        return False
+    # Regex for YYYY-MM-DD
+    absolute_format = r'^\d{4}-\d{2}-\d{2}$'
+    # Regex for -<number><d,w,M>
+    relative_format = r'^-([1-9]\d*)[dwM]$'
+    
+    if re.match(absolute_format, date_str) or re.match(relative_format, date_str):
+        return True
+    return False
+
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """
     Constructs a JQL query string based on extracted parameters.
@@ -215,11 +235,9 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             # If an invalid project is specified, it's better to raise an error
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     
-    # Exclude Key (unchanged)
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
-    # Priority (unchanged)
     raw_prio = params.get("priority", "").strip()
     if raw_prio:
         if raw_prio.upper() in priority_map:
@@ -229,7 +247,6 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
-    # Program (unchanged)
     raw_prog = params.get("program", "").strip().upper()
     if raw_prog:
         if raw_prog in program_map:
@@ -239,11 +256,9 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    # Stale Intent (unchanged)
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
 
-    # Keywords (unchanged)
     keywords = params.get("keywords")
     if keywords:
         keyword_parts = []
@@ -254,24 +269,28 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
-    # Dates (unchanged)
-    if params.get("created_after"):
-        jql_parts.append(f"created >= '{params['created_after']}'")
-    if params.get("created_before"):
-        jql_parts.append(f"created <= '{params['created_before']}'")
-    if params.get("updated_after"):
-        jql_parts.append(f"updated >= '{params['updated_after']}'")
-    if params.get("updated_before"):
-        jql_parts.append(f"updated <= '{params['updated_before']}'")
+    # Date validation logic
+    date_fields = {
+        "created_after": "created >=",
+        "created_before": "created <=",
+        "updated_after": "updated >=",
+        "updated_before": "updated <="
+    }
 
-    # Order Clause (unchanged)
+    for field, operator in date_fields.items():
+        date_value = params.get(field)
+        if date_value:
+            if is_valid_jql_date_format(date_value):
+                jql_parts.append(f"{operator} '{date_value}'")
+            else:
+                raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
+    
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
 
-    # Final Assembly (Crucial change: what if jql_parts is empty?)
     if not jql_parts:
         raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
     
@@ -282,4 +301,3 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     print(f"Built JQL: {jql}")
     return jql
-# --- END MODIFIED SECTION 2 ---
