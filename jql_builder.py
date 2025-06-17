@@ -84,10 +84,12 @@ priority_map = {
     "P3": "P3 (Solution Desired)",
     "P4": "P4 (No Impact/Notify)"
 }
+
+# --- MODIFIED SECTION 1: project_map ---
 project_map = {
-    "PLAT": "PLATFORM",
-    "SWDEV": "Software Development",
-    "FWDEV": "Firmware Development"
+    "PLAT": "PLAT", # Corrected this mapping from "PLATFORM" to "PLAT"
+    "SWDEV": "SWDEV",
+    "FWDEV": "FWDEV"
 }
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
@@ -114,7 +116,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract parameters.")
 
-    # --- MODIFIED SECTION 1 ---
+    # --- MODIFIED SECTION 2: System Prompt ---
     system_prompt = """
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
@@ -127,13 +129,12 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Available projects: {projects_list}
 
     **Extraction Rules:**
-    - If the user explicitly mentions a project, extract it. Otherwise, OMIT the project field.
-    - ALWAYS include the "maxResults" field, defaulting to 20. If the user uses singular language ("a ticket"), set "maxResults" to 1.
+    - If a project is mentioned, extract it. Otherwise, OMIT the project field.
+    - ALWAYS include "maxResults", defaulting to 20. For "a ticket", use 1.
     - USER-BASED QUERIES:
-      - If the user says "assigned to me", set "assignee": "currentUser()".
-      - If the user says "reported by me", set "reporter": "currentUser()".
-      - If the user mentions a specific person's name (e.g., "assigned to Bob Smith"), extract the name: "assignee": "Bob Smith".
-    - TIME-BASED QUERIES: Convert relative dates (e.g., "yesterday") to JQL format ("-1d").
+      - For "assigned to me" or "reported by me", use "currentUser()".
+      - For specific names like "assigned to Ian Heath", you MUST reformat it to "Last, First" format. Example: "Heath, Ian".
+    - TIME-BASED QUERIES: Convert phrases like "yesterday" to JQL format ("-1d").
     
     Example 1 (Assigned to me): "show me tickets assigned to me"
     {{
@@ -142,24 +143,15 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 20
     }}
 
-    Example 2 (Reported by specific user): "find bugs reported by 'Jane Doe'"
+    Example 2 (Reported by specific user): "find bugs reported by 'Ian Heath'"
     {{
       "intent": "list",
       "keywords": "bug",
-      "reporter": "Jane Doe",
+      "reporter": "Heath, Ian",
       "maxResults": 20
     }}
-    
-    Example 3 (Combined): "show 5 critical tickets assigned to 'John Smith' in PLAT"
-    {{
-      "intent": "list",
-      "project": "PLAT",
-      "priority": "Critical",
-      "assignee": "John Smith",
-      "maxResults": 5
-    }}
     """
-    # --- END MODIFIED SECTION 1 ---
+    # --- END MODIFIED SECTION 2 ---
     
     formatted_system_prompt = system_prompt.format(
         programs_list=", ".join(program_map.keys()),
@@ -206,27 +198,42 @@ def is_valid_jql_date_format(date_str: str) -> bool:
         return True
     return False
 
-# --- MODIFIED SECTION 2 ---
+# --- NEW HELPER FUNCTION ---
+def _format_name_for_jql(name: str) -> str:
+    """
+    Ensures a name is in 'Last, First' format for JQL.
+    If the name is 'currentUser()', it's returned as is.
+    If it appears to be 'First Last', it's reversed.
+    Otherwise, it's assumed to be correct.
+    """
+    if name == "currentUser()" or "," in name:
+        return name # Already correct or a special value
+    
+    parts = name.split()
+    if len(parts) == 2:
+        # Simple reversal for "First Last" format
+        return f"{parts[1]}, {parts[0]}"
+    
+    # If format is unusual (single name, multiple middle names), return as is
+    return name
+
+# --- MODIFIED SECTION 3: build_jql ---
 def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     """Constructs a JQL query string based on extracted parameters."""
     jql_parts = []
     order_clause = ""
 
-    # Project (unchanged)
-    raw_proj = params.get("project", "").strip().upper()
-    if raw_proj:
+    # Project (Now uses the corrected map)
+    if raw_proj := params.get("project", "").strip().upper():
         if raw_proj in project_map:
             jql_parts.append(f"project = '{project_map[raw_proj]}'")
         else:
             raise JiraBotError(f"Invalid project '{raw_proj}'. Must be one of {list(project_map.keys())}.")
     
-    # Exclude Key (unchanged)
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
-    # Priority (unchanged)
-    raw_prio = params.get("priority", "").strip()
-    if raw_prio:
+    if raw_prio := params.get("priority", "").strip():
         if raw_prio.upper() in priority_map:
             jql_parts.append(f"priority = \"{priority_map[raw_prio.upper()]}\"")
         elif raw_prio in priority_map.values():
@@ -234,9 +241,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
 
-    # Program (unchanged)
-    raw_prog = params.get("program", "").strip().upper()
-    if raw_prog:
+    if raw_prog := params.get("program", "").strip().upper():
         if raw_prog in program_map:
             jql_parts.append(f"program = '{program_map[raw_prog]}'")
         elif raw_prog in program_map.values():
@@ -244,27 +249,25 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         else:
             raise JiraBotError(f"Invalid program '{raw_prog}'. Must be one of {list(program_map.keys())}.")
 
-    # Stale Intent (unchanged)
     if params.get("intent") == "stale":
         jql_parts.append("status in (\"Open\", \"To Do\", \"In Progress\", \"Reopened\", \"Blocked\") AND updated < \"-30d\"")
         
-    # --- NEW LOGIC FOR USERS ---
+    # User logic now uses the formatter
     if assignee := params.get("assignee"):
-        if assignee == "currentUser()":
-            jql_parts.append(f"assignee = {assignee}")
+        formatted_name = _format_name_for_jql(assignee)
+        if formatted_name == "currentUser()":
+            jql_parts.append(f"assignee = {formatted_name}")
         else:
-            jql_parts.append(f"assignee = \"{assignee}\"")
+            jql_parts.append(f"assignee = \"{formatted_name}\"")
 
     if reporter := params.get("reporter"):
-        if reporter == "currentUser()":
-            jql_parts.append(f"reporter = {reporter}")
+        formatted_name = _format_name_for_jql(reporter)
+        if formatted_name == "currentUser()":
+            jql_parts.append(f"reporter = {formatted_name}")
         else:
-            jql_parts.append(f"reporter = \"{reporter}\"")
-    # --- END NEW LOGIC FOR USERS ---
+            jql_parts.append(f"reporter = \"{formatted_name}\"")
 
-    # Keywords (unchanged)
-    keywords = params.get("keywords")
-    if keywords:
+    if keywords := params.get("keywords"):
         keyword_parts = []
         for kw_raw in keywords.replace(',', ' ').split():
             kw = kw_raw.strip()
@@ -273,7 +276,6 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         if keyword_parts:
             jql_parts.append(f"({' OR '.join(keyword_parts)})")
 
-    # Date validation logic (unchanged)
     date_fields = { "created_after": "created >=", "created_before": "created <=", "updated_after": "updated >=", "updated_before": "updated <=" }
     for field, operator in date_fields.items():
         if date_value := params.get(field):
@@ -282,14 +284,12 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
             else:
                 raise JiraBotError(f"The date format '{date_value}' for '{field}' is not valid. Please use a format like YYYY-MM-DD or a relative date like -7d or -2w.")
     
-    # Order Clause (unchanged)
     order_direction = params.get("order", "").strip().upper()
     if order_direction in ["ASC", "DESC"]:
         order_clause = f" ORDER BY created {order_direction}"
     elif params.get("maxResults") and not order_clause:
         order_clause = " ORDER BY created DESC"
 
-    # Final Assembly (unchanged)
     if not jql_parts:
         raise JiraBotError("Your query is too broad. Please specify at least one search criteria (e.g., keywords, a program, or a project).")
     
@@ -300,4 +300,4 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     print(f"Built JQL: {jql}")
     return jql
-# --- END MODIFIED SECTION 2 ---
+# --- END MODIFIED SECTION 3 ---
