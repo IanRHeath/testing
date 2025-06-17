@@ -8,7 +8,6 @@ from jira import JIRA
 from llm_config import get_azure_openai_client
 from jira_utils import JiraBotError
 
-# This part of the file is unchanged
 RAW_AZURE_OPENAI_CLIENT = None
 try:
     RAW_AZURE_OPENAI_CLIENT = get_azure_openai_client()
