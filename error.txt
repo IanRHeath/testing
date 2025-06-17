@@ -1,41 +1,21 @@
-Raw Azure OpenAI client configured.
-JIRA client initialized successfully with basic_auth (username/password).
-
---- [Integration Test] Attempting to create a live ticket... ---
-
---- Running proactive duplicate check before creating ticket... ---
-
-----------------------------------------------------------------
-ACTION REQUIRED: I have created a template file named 'ticket_description.txt'.
-Please open it, complete the details, and save the file.
-
----
-A new Jira ticket will be created with the following details:
-  Project:           PLAT
-  Summary:           Integration Test Ticket - PLEASE DELETE IF FOUND
-
---- Description Preview ---
-This is a live integration test.
-
---- Steps to Reproduce Preview ---
-1. Run test
-2. Observe ticket creation
-3. Observe ticket deletion
-----------------------------------
-
-Attempting to create ticket in project 'PLAT' with summary 'Integration Test Ticket - PLEASE DELETE IF FOUND'...
-[LIVE MODE] Sending data to Jira API...
---- [Integration Test] Successfully created ticket PLAT-179697. ---
---- [Integration Test] Cleaning up: Deleting ticket PLAT-179697... ---
-
-CRITICAL WARNING: FAILED TO DELETE TICKET PLAT-179697.
-Please delete it manually. Error: JiraError HTTP 403 url: https://ontrack-internal.amd.com/rest/api/2/issue/4964566?deleteSubtasks=False
-        text: You do not have permission to delete issues in this project.
-
-        response headers = {'X-AREQUESTID': '126x3018238x21', 'X-ASESSIONID': '1j6xiaf', 'X-ANODEID': 'node4', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-XSS-Protection': '1; mode=block', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': 'max-age=31536000', 'X-Seraph-LoginReason': 'OK', 'X-RateLimit-Limit': '500', 'X-RateLimit-Remaining': '499', 'X-RateLimit-FillRate': '500', 'X-RateLimit-Interval-Seconds': '60', 'Retry-After': '0', 'X-AUSERNAME': 'ianheath', 'Cache-Control': 'no-cache, no-store, no-transform', 'Content-Security-Policy': 'sandbox', 'Content-Encoding': 'gzip', 'Vary': 'User-Agent', 'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Date': 'Tue, 17 Jun 2025 06:06:41 GMT', 'Keep-Alive': 'timeout=20', 'Connection': 'keep-alive'}
-        response text = {"errorMessages":["You do not have permission to delete issues in this project."],"errors":{}}
-.
-----------------------------------------------------------------------
-Ran 1 test in 3.979s
-
-OK
+  GNU nano 7.2                              2025-06-17T14_00_25_275Z-debug-0.log                                        0 verbose cli /home/ianheath/.nvm/versions/node/v22.16.0/bin/node /home/ianheath/.nvm/versions/node/v22.16.0/lib/node_m>1 info using npm@10.9.2
+2 info using node@v22.16.0
+3 silly config load:file:/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/ianheath/jira_auto_triage-IanDev/frontend/.npmrc
+5 silly config load:file:/home/ianheath/.npmrc
+6 silly config load:file:/home/ianheath/.nvm/versions/node/v22.16.0/etc/npmrc
+7 verbose title npm exec tailwindcss init-p
+8 verbose argv "exec" "--" "tailwindcss" "init-p"
+9 verbose logfile logs-max:10 dir:/home/ianheath/.npm/_logs/2025-06-17T14_00_25_275Z-
+10 verbose logfile /home/ianheath/.npm/_logs/2025-06-17T14_00_25_275Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+14 verbose stack Error: could not determine executable to run
+14 verbose stack     at getBinFromManifest (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_module>14 verbose stack     at exec (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/libnpmexec/l>14 verbose stack     at async Npm.exec (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/lib/npm.js:207:>14 verbose stack     at async module.exports (/home/ianheath/.nvm/versions/node/v22.16.0/lib/node_modules/npm/lib/cli/e>15 verbose pkgid tailwindcss@4.1.10
+16 error could not determine executable to run
+17 verbose cwd /home/ianheath/jira_auto_triage-IanDev/frontend
+18 verbose os Linux 6.6.87.1-microsoft-standard-WSL2
+19 verbose node v22.16.0
+20 verbose npm  v10.9.2
+21 verbose exit 1
