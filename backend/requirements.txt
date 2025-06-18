@@ -1,0 +1,9 @@
+jira
+langchain-community
+langchain-openai
+langgraph
+lxml
+flask
+flask-cors
+node
+npm
