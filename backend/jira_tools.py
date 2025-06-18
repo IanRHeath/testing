@@ -25,8 +25,8 @@ class TicketCreator:
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
         self.required_fields = [
-            "project", "program", "system", "severity", 
-            "triage_category", "triage_assignment", 
+            "project", "program", "system", "severity",
+            "triage_category", "triage_assignment",
             "silicon_revision", "iod_silicon_die_revision", "ccd_silicon_die_revision",
             "bios_version", "description", "steps_to_reproduce"
         ]
@@ -45,15 +45,15 @@ class TicketCreator:
                 "question": "Error: No ticket creation is currently in progress. Please start by using 'start_ticket_creation'.",
                 "options": []
             }
-        
+
         field_name_lower = field_name.lower().replace(" ", "_")
-        
+
         if field_name_lower == 'program':
             self.draft_data[field_name_lower] = field_value
             self._run_duplicate_check()
         else:
             self.draft_data[field_name_lower] = field_value
-            
+
         return self._get_next_required_field()
 
     def _get_next_required_field(self) -> dict:
@@ -81,33 +81,33 @@ class TicketCreator:
                     question = f"What is the Triage Assignment (Category: {category_code})?"
 
                 return {"next_field": field, "question": question, "options": options}
-                
+
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
 
     def _run_duplicate_check(self):
         summary = self.draft_data.get('summary', '')
         project = self.draft_data.get('project', '')
         program_code = self.draft_data.get('program', '').upper()
-        
+
         if program_code and program_code in program_map:
             program_full_name = program_map[program_code]
             dupe_jql = f'project = "{project}" AND "Program" = "{program_full_name}"'
             candidate_tickets = search_jira_issues(dupe_jql, JIRA_CLIENT_INSTANCE, limit=25)
-            
+
             if candidate_tickets:
                 print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
 
     def finalize(self) -> str:
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
-            
+
         for field in self.required_fields:
             if field not in self.draft_data:
                 return f"Error: Cannot finalize ticket. Missing required field: '{field}'."
-        
+
         print("--- Finalizing ticket with data ---")
         print(self.draft_data)
-        
+
         try:
             new_issue = create_jira_issue(
                 client=JIRA_CLIENT_INSTANCE,
@@ -162,14 +162,13 @@ def cancel_ticket_creation() -> str:
     return "Ticket creation process has been cancelled."
 
 
-# --- *** MODIFIED FUNCTION *** ---
 def _get_single_ticket_summary(issue_key: str, question: str) -> Dict[str, str]:
     """
     Internal helper to get a summary for one ticket, returning a structured dictionary.
     """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
-    
+
     if not isinstance(issue_key, str):
         raise JiraBotError(f"Error: A single ticket key (string) is required, but received a list.")
 
@@ -191,16 +190,21 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> Dict[str, str]:
     **Answer:**
     """
     summary_content = llm.invoke(prompt).content
-    
+
     return {
         "key": sanitized_key,
         "url": ticket_url,
         "body": summary_content
     }
 
+# --- *** MODIFIED FUNCTION *** ---
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
-    # ... (No Change in this tool)
+    """
+    Use this tool when a user asks for the available or valid options for a specific ticket field, such as 'program', 'system', or 'severity'.
+    The 'field_name' is the name of the field they are asking about.
+    For fields that depend on another value (like 'system' depends on 'program'), provide the value of the dependency in the 'depends_on' argument.
+    """
     field_lower = field_name.lower()
 
     if "program" in field_lower:
@@ -231,18 +235,16 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     return f"Sorry, I cannot provide options for the field '{field_name}'."
 
 
-# --- *** MODIFIED TOOL *** ---
 @tool
 def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> List[Dict[str, str]]:
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL. Returns a list containing one summary object."""
     summary_object = _get_single_ticket_summary(issue_key, question)
     return [summary_object]
 
-# --- *** MODIFIED TOOL *** ---
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str]]:
     """
-    Use this tool to summarize MORE THAN ONE JIRA ticket. 
+    Use this tool to summarize MORE THAN ONE JIRA ticket.
     It will provide individual summaries and then a final aggregate analysis of all tickets together.
     Returns a list of summary objects.
     """
@@ -261,13 +263,13 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str
             all_details_text.append(f"--- Ticket {key} ---\n{details_text}")
         except JiraBotError as e:
             summaries.append({"key": key, "url": "#", "body": f"Could not generate summary for {key}: {e}"})
-    
+
     successful_summaries = [s for s in summaries if not s['body'].startswith("Could not generate summary")]
-    
+
     if len(successful_summaries) > 1:
         print("\n--- Generating aggregate summary for all tickets... ---")
         llm = get_llm()
-        
+
         individual_summaries_for_prompt = "\n\n".join([f"Ticket {s['key']}:\n{s['body']}" for s in successful_summaries])
 
         aggregate_prompt = f"""
@@ -277,14 +279,14 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str
         - **Overall Status & Common Themes:**
         - **Potential Shared Root Causes:**
         - **Overarching Blockers or Dependencies:**
-        
+
         **Individual Ticket Summaries:**
         ---
         {individual_summaries_for_prompt}
         ---
         **Aggregate Analysis:**
         """
-        
+
         try:
             aggregate_summary_body = llm.invoke(aggregate_prompt).content
             aggregate_summary_object = {
