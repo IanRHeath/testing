@@ -1,7 +1,1 @@
-export PIP_INDEX_URL=https://atlartifactory.amd.com:8443/artifactory/api/pypi/SW-CGCDATAOPS-DEV-VIRTUAL/simple
-
-export PIP_TRUSTED_HOST=atlartifactory.amd.com
-
-pip install cgcdataplatform
-
-pip install snowflake-connector-python python-dotenv requests azure-identity openai
+anyway, interfacing with snowflake requires an oauth connection in order to authenticate as the user.  authenticating as a service account is not recommended as this removes all the access protections from the underlying data.  (i.e. the user will see whatever the service account can see, which may be more than the user should see)
