@@ -1,7 +1,8 @@
-pip install "zope.interface==4.7.1"
+
+Successfully installed setuptools-57.5.0
+(venv) ianheath@AUSIHEATH1201:/mnt/c/users/ianheath/desktop/snowflake-aida$ pip install "zope.interface==4.7.1"
 Collecting zope.interface==4.7.1
-  Downloading zope.interface-4.7.1.tar.gz (151 kB)
-     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.4/151.4 kB 821.6 kB/s eta 0:00:00
+  Using cached zope.interface-4.7.1.tar.gz (151 kB)
   Installing build dependencies ... done
   Getting requirements to build wheel ... error
   error: subprocess-exited-with-error
@@ -18,17 +19,17 @@ Collecting zope.interface==4.7.1
         File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 118, in get_requires_for_build_wheel
           return hook(config_settings)
                  ^^^^^^^^^^^^^^^^^^^^^
-        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
+        File "/tmp/pip-build-env-y95r97gt/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
           return self._get_build_requires(config_settings, requirements=[])
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
+        File "/tmp/pip-build-env-y95r97gt/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
           self.run_setup()
-        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 512, in run_setup
+        File "/tmp/pip-build-env-y95r97gt/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 512, in run_setup
           super().run_setup(setup_script=setup_script)
-        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 317, in run_setup
+        File "/tmp/pip-build-env-y95r97gt/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 317, in run_setup
           exec(code, locals())
         File "<string>", line 26, in <module>
-      ImportError: cannot import name 'Feature' from 'setuptools' (/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/__init__.py)
+      ImportError: cannot import name 'Feature' from 'setuptools' (/tmp/pip-build-env-y95r97gt/overlay/lib/python3.12/site-packages/setuptools/__init__.py)
       [end of output]
 
   note: This error originates from a subprocess, and is likely not a problem with pip.
@@ -37,3 +38,5 @@ error: subprocess-exited-with-error
 × Getting requirements to build wheel did not run successfully.
 │ exit code: 1
 ╰─> See above for output.
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
