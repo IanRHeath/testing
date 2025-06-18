@@ -1,1 +1,0 @@
-An unexpected error occurred in jira_search_tool for query: 'STXH ticket with BSOD'. Details: 'list' object has no attribute 'replace'
