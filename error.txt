@@ -1,0 +1,18 @@
+Activating virtual environment and starting Jira Agent backend...
+Raw Azure OpenAI client configured.
+JIRA client initialized successfully with basic_auth (username/password).
+INFO: TicketCreator state has been reset.
+Traceback (most recent call last):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\app.py", line 6, in <module>
+    from jira_agent import get_jira_agent
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\jira_agent.py", line 15, in <module>
+    from jira_tools import ALL_JIRA_TOOLS
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\jira_tools.py", line 202, in <module>
+    def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\tools\convert.py", line 319, in tool
+    return _create_tool_factory(name_or_callable.__name__)(name_or_callable)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\tools\convert.py", line 264, in _tool_factory
+    return StructuredTool.from_function(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\tools\structured.py", line 211, in from_function
+    raise ValueError(msg)
+ValueError: Function must have a docstring if description not provided.
