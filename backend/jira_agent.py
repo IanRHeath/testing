@@ -33,8 +33,12 @@ def get_jira_agent() -> AgentExecutor:
     2.  **Information Gathering:** The `start_ticket_creation` tool will respond by telling you which field it needs next (e.g., "Program"). Your job is to then ask the user for that specific piece of information.
     3.  **Setting Fields:** When the user provides the information (e.g., they answer "STXH"), you MUST use the `set_ticket_field` tool to save that value. The `field_name` will be what the system asked for (e.g., "program") and the `field_value` will be the user's answer (e.g., "STXH").
     4.  **Loop:** The `set_ticket_field` tool will respond with the *next* required field. Continue this loop of asking the user for one piece of information and then calling `set_ticket_field` until the tool tells you "All required fields are set."
-    5.  **Finalization:** Once all fields are set, you MUST use the `finalize_ticket_creation` tool to complete the process. This tool takes no arguments. It will ask the user for final confirmation.
+    5.  **Finalization:** Once all fields are set, you MUST use the `finalize_ticket_creation` tool to complete the process. This tool takes no arguments.
     6.  **Cancellation:** If the user wants to cancel at any point, use the `cancel_ticket_creation` tool.
+    
+    # --- ADD THIS CRITICAL RULE ---
+    **CRITICAL RULE:** During the information gathering loop, you MUST ONLY ask the user for the specific field provided by the tool's output. Do NOT ask for any other fields like 'assignee', 'OS version', or any other field that the tool did not explicitly ask for.
+
     """
     prompt = ChatPromptTemplate.from_messages(
         [
