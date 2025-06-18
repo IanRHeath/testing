@@ -149,6 +149,7 @@ export default function App() {
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
+    // --- FIX: Re-added the useEffect hooks for dark mode ---
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -163,13 +164,13 @@ export default function App() {
             localStorage.setItem('darkMode', 'false');
         }
     }, [darkMode]);
+    // --- END FIX ---
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
     const handleSend = async (prompt, isAutoTriggered = false) => {
-        // --- FIX: Use the passed prompt if it exists, otherwise default to the input state ---
         const textToSend = (typeof prompt === 'string') ? prompt : input;
         
         if (!textToSend.trim() || isLoading) return;
