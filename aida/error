@@ -1,1 +1,7 @@
-anyway, interfacing with snowflake requires an oauth connection in order to authenticate as the user.  authenticating as a service account is not recommended as this removes all the access protections from the underlying data.  (i.e. the user will see whatever the service account can see, which may be more than the user should see)
+INFO] Setting up environment...
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 177, in <module>
+    setup_environment()
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 26, in setup_environment
+    raise EnvironmentError("CRITICAL: Ensure SNOWFLAKE_USER, AIDA_USER, and AIDA_PASSWORD are in .env file.")
+OSError: CRITICAL: Ensure SNOWFLAKE_USER, AIDA_USER, and AIDA_PASSWORD are in .env file.
