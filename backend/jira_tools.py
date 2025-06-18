@@ -2,11 +2,17 @@ import os
 from langchain.tools import tool, Tool
 from typing import List, Dict, Any, Optional
 from jira import JIRA
-from jira_utils import search_jira_issues, get_ticket_details, initialize_jira_client, create_jira_issue, JiraBotError, get_ticket_data_for_analysis
+# JIRA_SERVER_URL is now needed for the new tool
+from jira_utils import (
+    search_jira_issues, get_ticket_details, initialize_jira_client,
+    create_jira_issue, JiraBotError, get_ticket_data_for_analysis,
+    JIRA_SERVER_URL
+)
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
     VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
-    VALID_SEVERITY_LEVELS, extract_keywords_from_text, get_summary_similarity_score
+    VALID_SEVERITY_LEVELS, extract_keywords_from_text, get_summary_similarity_score,
+    descriptive_priority_map
 )
 from llm_config import get_llm
 
@@ -161,11 +167,22 @@ def cancel_ticket_creation() -> str:
     ticket_creator.reset()
     return "Ticket creation process has been cancelled."
 
+# --- *** NEW TOOL *** ---
+@tool
+def get_ticket_link_tool(issue_key: str) -> str:
+    """
+    Use this tool only when the user explicitly asks for the link, URL, or web address of a single Jira ticket.
+    It takes a single 'issue_key' as input.
+    """
+    if not JIRA_SERVER_URL:
+        raise JiraBotError("JIRA_SERVER_URL is not configured. Cannot generate link.")
+    # Sanitize the key to be safe
+    sanitized_key = issue_key.strip().upper().replace(" ", "-")
+    return f"{JIRA_SERVER_URL}/browse/{sanitized_key}"
+
 
 def _get_single_ticket_summary(issue_key: str, question: str) -> Dict[str, str]:
-    """
-    Internal helper to get a summary for one ticket, returning a structured dictionary.
-    """
+    # ... (No change in this function)
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
 
@@ -197,7 +214,6 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> Dict[str, str]:
         "body": summary_content
     }
 
-# --- *** MODIFIED FUNCTION *** ---
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
     """
@@ -205,6 +221,7 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     The 'field_name' is the name of the field they are asking about.
     For fields that depend on another value (like 'system' depends on 'program'), provide the value of the dependency in the 'depends_on' argument.
     """
+    # ... (No change in this function)
     field_lower = field_name.lower()
 
     if "program" in field_lower:
@@ -237,12 +254,14 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
 
 @tool
 def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> List[Dict[str, str]]:
+    # ... (No change in this function)
     """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL. Returns a list containing one summary object."""
     summary_object = _get_single_ticket_summary(issue_key, question)
     return [summary_object]
 
 @tool
 def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str]]:
+    # ... (No change in this function)
     """
     Use this tool to summarize MORE THAN ONE JIRA ticket.
     It will provide individual summaries and then a final aggregate analysis of all tickets together.
@@ -306,10 +325,11 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str
 
 @tool
 def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
-   """
+    """
     Use this tool to search for Jira issues based on a user's natural language query.
     You must pass the user's complete, original query to the 'original_query' parameter.
     """
+    # ... (No change in this function)
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
         params = extract_params(original_query)
@@ -331,11 +351,12 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-   """
+    """
     Use this tool to find Jira tickets that are similar in content to an existing ticket.
     This is useful for finding related issues or tickets that discuss the same topic.
     You must provide a single, valid 'issue_key' (e.g., 'PLAT-123') for the source ticket.
     """
+    # ... (No change in this function)
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
@@ -357,11 +378,12 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-   """
+    """
     Use this tool to find potential *duplicate* Jira tickets for a given source ticket.
     This tool is more specific than finding similar tickets; it looks for tickets in the same Program and Project with a very similar summary text.
     You must provide a single, valid 'issue_key' (e.g., 'PLAT-123').
     """
+    # ... (No change in this function)
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
     print(f"--- Received source issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
@@ -402,10 +424,12 @@ def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
          return [f"Searched {len(candidate_tickets)} tickets, but no likely duplicates were found for {issue_key}."]
     return duplicate_tickets
 
+# --- *** UPDATED LIST *** ---
 ALL_JIRA_TOOLS = [
     jira_search_tool,
     summarize_ticket_tool,
     summarize_multiple_tickets_tool,
+    get_ticket_link_tool,
     get_field_options_tool,
     find_similar_tickets_tool,
     find_duplicate_tickets_tool,
