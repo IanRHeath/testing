@@ -1,1 +1,1 @@
-An unexpected error occurred in jira_search_tool for query: 'show me 6 P1 or P2 tickets in stxh'. Details: 'list' object has no attribute 'strip'
+Invalid priority 'High'. Must be one of ['P1', 'P2', 'P3', 'P4'].
