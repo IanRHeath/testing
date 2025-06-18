@@ -91,7 +91,7 @@ project_map = {
 stale_statuses = {"Open", "To Do", "In Progress", "Reopened", "Blocked"}
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
-    """Uses the LLM to extract key technical terms from a block of text."""
+    # ... (No change in this function)
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
@@ -110,9 +110,7 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
 def get_summary_similarity_score(summary_a: str, summary_b: str) -> int:
-    """
-    Uses an LLM to compare two ticket summaries for semantic similarity and returns a score from 1 (not similar) to 10 (very similar).
-    """
+    # ... (No change in this function)
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot compare summaries.")
 
@@ -148,15 +146,12 @@ def get_summary_similarity_score(summary_a: str, summary_b: str) -> int:
         raise JiraBotError(f"Error during summary similarity check: {e}")
 
 def _is_valid_jira_key_format(key_str: str) -> bool:
-    """
-    Checks if a string matches the typical JIRA key format (e.g., PROJ-1234).
-    """
+    # ... (No change in this function)
     pattern = r'^[A-Z][A-Z0-9]+-[1-9]\d*$'
     return re.match(pattern, key_str, re.IGNORECASE) is not None
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
-    """Extracts structured parameters from natural language user queries."""
-    
+    # ... (No change in this function)
     for word in prompt_text.split():
         cleaned_word = re.sub(r'[,?.]+$', '', word)
         if '-' in cleaned_word and not _is_valid_jira_key_format(cleaned_word):
@@ -235,7 +230,7 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
 
 def is_valid_jql_date_format(date_str: str) -> bool:
-    """Checks if a string matches Jira's absolute (YYYY-MM-DD) or common relative formats (d, w)."""
+    # ... (No change in this function)
     if not isinstance(date_str, str):
         return False
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
@@ -245,7 +240,7 @@ def is_valid_jql_date_format(date_str: str) -> bool:
     return False
 
 def _convert_to_relative_days(number: int, unit: str) -> str:
-    """Converts month/year units to a day-based format for JQL."""
+    # ... (No change in this function)
     unit_lower = unit.lower()
     if "year" in unit_lower:
         return f"-{number * 365}d"
@@ -258,7 +253,7 @@ def _convert_to_relative_days(number: int, unit: str) -> str:
     return None
 
 def _format_name_for_jql(name: str) -> str:
-    """Ensures a name is in 'Last, First' format for JQL."""
+    # ... (No change in this function)
     if name == "currentUser()" or "," in name:
         return name
     parts = name.split()
@@ -280,13 +275,29 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
-    if raw_prio := params.get("priority", "").strip():
-        if raw_prio.upper() in priority_map:
-            jql_parts.append(f"priority = \"{priority_map[raw_prio.upper()]}\"")
-        elif raw_prio in priority_map.values():
-            jql_parts.append(f"priority = \"{raw_prio}\"")
-        else:
-            raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
+    # --- *** MODIFIED LOGIC FOR PRIORITY HANDLING *** ---
+    if raw_prio := params.get("priority"):
+        # If the AI returns a list of priorities (e.g., for "P1 or P2 tickets")
+        if isinstance(raw_prio, list):
+            mapped_prios = []
+            for prio in raw_prio:
+                prio_upper = str(prio).strip().upper()
+                if prio_upper in priority_map:
+                    mapped_prios.append(f'"{priority_map[prio_upper]}"')
+                else:
+                    print(f"WARNING: Invalid priority '{prio}' in list ignored.")
+            if mapped_prios:
+                jql_parts.append(f"priority in ({', '.join(mapped_prios)})")
+        # Otherwise, handle it as a single string
+        elif isinstance(raw_prio, str):
+            prio_upper = raw_prio.strip().upper()
+            if prio_upper in priority_map:
+                jql_parts.append(f"priority = \"{priority_map[prio_upper]}\"")
+            elif raw_prio in priority_map.values():
+                jql_parts.append(f"priority = \"{raw_prio}\"")
+            else:
+                raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
+    # --- *** END OF MODIFIED LOGIC *** ---
 
     if raw_prog := params.get("program", "").strip().upper():
         if raw_prog in program_map:
