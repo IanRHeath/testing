@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// --- ICONS (No Change) ---
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -29,8 +28,6 @@ const CheckIcon = () => (
         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
 );
-
-// --- TICKET & SUMMARY COMPONENTS (No Change to component definitions) ---
 
 const JiraTicket = ({ ticket }) => {
     const [copied, setCopied] = useState(false);
@@ -97,19 +94,15 @@ const JiraSummary = ({ summary }) => {
     );
 };
 
-// --- *** MODIFIED COMPONENT *** ---
 const MarkdownRenderer = ({ text }) => {
     const createMarkup = (markdownText) => {
         if (typeof markdownText !== 'string') return { __html: '' };
 
-        // Regex to find URLs and turn them into clickable links
         const urlRegex = /(https?:\/\/[^\s]+)/g;
 
         const html = markdownText
-            // First, escape HTML to prevent injection attacks
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
-            // Then, apply formatting
             .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">$1</a>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -122,7 +115,6 @@ const MarkdownRenderer = ({ text }) => {
 };
 
 const OptionsInput = ({ questionData, onOptionSelect }) => {
-    // ... (No Change)
     const { options, next_field } = questionData;
 
     if (!options || options.length === 0) {
@@ -161,7 +153,6 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
 };
 
 const ThemeToggle = ({ darkMode, setDarkMode }) => {
-    // ... (No Change)
     const MoonIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
@@ -182,7 +173,6 @@ const ThemeToggle = ({ darkMode, setDarkMode }) => {
 };
 
 export default function App() {
-    // ... (No change in the main App component logic)
     const initialMessage = { role: 'ai', type: 'text', content: "Welcome to the Jira Triage LLM Agent! How can I help you today?" };
     const [messages, setMessages] = useState([initialMessage]);
     const [input, setInput] = useState('');
@@ -230,7 +220,7 @@ export default function App() {
 
         const apiHistory = messages.map(msg => ({
             role: msg.role,
-            content: msg.raw_output || msg.content // Use raw_output for history if available
+            content: msg.raw_output || msg.content 
         }));
 
         try {
