@@ -1,5 +1,1 @@
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-
-echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-
-echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
+pip install snowflake-connector-python python-dotenv requests "pyramid<2.0" "zope.interface<5.0" azure-identity apex
