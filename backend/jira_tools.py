@@ -81,7 +81,7 @@ class TicketCreator:
                 elif field == 'summary':
                     current_summary = self.draft_data.get('summary', '')
                     question = f"The current summary is: \"{current_summary}\". Please provide the final summary, or type 'keep' to use this one."
-                    options = [] 
+                    options = []
                 elif field == 'severity':
                     options = list(VALID_SEVERITY_LEVELS)
                     question = "What is the Severity?"
@@ -92,11 +92,18 @@ class TicketCreator:
                     category_code = self.draft_data.get('triage_category', '').upper()
                     options = triage_assignment_map.get(category_code, [])
                     question = f"What is the Triage Assignment (Category: {category_code})?"
+                elif field == 'silicon_revision':
+                    question = "What is the main Silicon Revision? (e.g., A0, B1)"
+                elif field == 'iod_silicon_die_revision':
+                    question = "Next, what is the IOD Silicon Die Revision?"
+                elif field == 'ccd_silicon_die_revision':
+                    question = "And what is the CCD Silicon Die Revision?"
+                elif field == 'steps_to_reproduce':
+                    question = "Please provide detailed steps to reproduce the issue."
 
                 return {"next_field": field, "question": question, "options": options}
 
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
-
     def _run_duplicate_check(self):
         summary = self.draft_data.get('summary', '')
         project = self.draft_data.get('project', '')
