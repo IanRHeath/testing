@@ -1,22 +1,15 @@
-rom azure.identity import InteractiveBrowserCredential
-import apex.results as arp
-import apex.clients as ac
-import asyncio
- 
-pipeline = arp.Pipeline.apex
-tenant_id = ac._AMD_TENANT_ID
-seqid = [131211781]
-target_dir = "./eras/" + str(seqid[0])
- 
-#pipeline.devinfo
-storageinfo = pipeline.prodinfo
-creds = InteractiveBrowserCredential(
-        tenant_id=tenant_id,
-        )
-asyncio.run(arp.download_eras(
-    seqids=seqid,
-    download_dir=target_dir,
-    creds=creds,
-    storageinfo=storageinfo,
-    ))
- 
+[SUCCESS] Download call for apex-next files completed.
+[INFO] Cleaned up temporary directory: ./eras/131177740
+
+
+--- FINAL ENRICHED CONTEXT ---
+{
+  "original_failure": {
+    "TEST_RESULT_SEQ_ID": 131177740,
+    "ADS_RESULT_LINK": "file://atlcorpnetfs.amd.com/ads_data_na/ads2/2025/06/02/bc312d53-5868-4da5-aa29-c287c77a34d1/reports/html/index.html",
+    "QUEUE_ITEM_NAME": "Restart: Entry-OS Restart, Event-, Exit- (500)",
+    "FAILURE_TYPE": "EXCEPTION",
+    "FAILURE_DESCRIPTION": null,
+    "BOARD": "MAPLE-STXH"
+  }
+}
