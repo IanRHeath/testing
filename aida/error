@@ -1,59 +1,10 @@
-(venv) ianheath@AUSIHEATH1201:/mnt/c/users/ianheath/desktop/snowflake-aida$ pip install azure
-Collecting azure
-  Downloading azure-5.0.0.zip (4.6 kB)
-  Installing build dependencies ... done
-  Getting requirements to build wheel ... error
-  error: subprocess-exited-with-error
-
-  × Getting requirements to build wheel did not run successfully.
-  │ exit code: 1
-  ╰─> [39 lines of output]
-      Traceback (most recent call last):
-        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 353, in <module>
-          main()
-        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 335, in main
-          json_out['return_val'] = hook(**hook_input['kwargs'])
-                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 118, in get_requires_for_build_wheel
-          return hook(config_settings)
-                 ^^^^^^^^^^^^^^^^^^^^^
-        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
-          return self._get_build_requires(config_settings, requirements=[])
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
-          self.run_setup()
-        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 512, in run_setup
-          super().run_setup(setup_script=setup_script)
-        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 317, in run_setup
-          exec(code, locals())
-        File "<string>", line 60, in <module>
-      RuntimeError:
-
-      Starting with v5.0.0, the 'azure' meta-package is deprecated and cannot be installed anymore.
-      Please install the service specific packages prefixed by `azure` needed for your application.
-
-      The complete list of available packages can be found at:
-      https://aka.ms/azsdk/python/all
-
-      Here's a non-exhaustive list of common packages:
-
-      -  azure-mgmt-compute (https://pypi.python.org/pypi/azure-mgmt-compute) : Management of Virtual Machines, etc.
-      -  azure-mgmt-storage (https://pypi.python.org/pypi/azure-mgmt-storage) : Management of storage accounts.
-      -  azure-mgmt-resource (https://pypi.python.org/pypi/azure-mgmt-resource) : Generic package about Azure Resource Management (ARM)
-      -  azure-keyvault-secrets (https://pypi.python.org/pypi/azure-keyvault-secrets) : Access to secrets in Key Vault
-      -  azure-storage-blob (https://pypi.python.org/pypi/azure-storage-blob) : Access to blobs in storage accounts
-
-      A more comprehensive discussion of the rationale for this decision can be found in the following issue:
-      https://github.com/Azure/azure-sdk-for-python/issues/10646
-
-
-      [end of output]
-
-  note: This error originates from a subprocess, and is likely not a problem with pip.
-error: subprocess-exited-with-error
-
-× Getting requirements to build wheel did not run successfully.
-│ exit code: 1
-╰─> See above for output.
-
-note: This error originates from a subprocess, and is likely not a problem with pip.
+(venv) ianheath@AUSIHEATH1201:/mnt/c/users/ianheath/desktop/snowflake-aida$ python3 main.py
+/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pyramid/path.py:3: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 13, in <module>
+    import apex.results as arp # For apex-next
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/__init__.py", line 13, in <module>
+    from pyramid.session import UnencryptedCookieSessionFactoryConfig
+ImportError: cannot import name 'UnencryptedCookieSessionFactoryConfig' from 'pyramid.session' (unknown location)
