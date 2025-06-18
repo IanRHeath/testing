@@ -14,7 +14,7 @@
 #   - open ads report to ensure it's still valid
 #   - make sure scrut shows some fails 
 
-username = "alenders"
+username =
 
 #######################################################
 
