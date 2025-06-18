@@ -14,7 +14,6 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
-# --- (No change to these maps) ---
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -31,8 +30,26 @@ system_map = {
         "System-Strix1 FP11 APU"
     ],
     "STXH": [
-        "System-Strix Halo Reference Board",
-        "System-Strix Halo Customer A Platform"
+        "System-Strix Halo FP11 APU",
+    ],
+    "GNR": [
+        "System-Granite Ridge AM5 X3D CPU",
+        "System-Granite Ridge AM5 CPU"
+    ],
+    "KRK": [
+        "System-Krackan1 FP8 APU"
+    ],
+    "KRK2E": [
+        "System-Krackan2E FP8 APU",
+        "System-Krackan2E AM5 APU",
+        "System-Gorgon Point 3 FP8 APU"
+    ],
+    "SHP": [
+        "System-Shimada Peak HEDT SP6 CPU"
+    ],
+    "FRG":[
+        "System-Fire Range FL1 X3D",
+        "System-Fire Range FL1 CPU"
     ]
 }
 VALID_SILICON_REVISIONS = {
@@ -51,7 +68,13 @@ triage_assignment_map = {
         "Firmware - IPE AGESA - GNB", "Firmware - IPE AGESA - IDS", "Firmware - IPE AGESA - MEM",
         "Firmware - IPE AGESA - Other", "Firmware - IPE AGESA - PROMONTORY", "Firmware - IPE AGESA - PSP",
         "Firmware - IPE AGESA - UEFI", "Firmware - IPE CBS - CPU", "Firmware - IPE CBS - FCH",
-        "Firmware - IPE CBS - GNB", "Firmware - IPE CBS - MEM", "Firmware - IPE CBS - Other", "Firmware - IPE CPM"
+        "Firmware - IPE CBS - GNB", "Firmware - IPE CBS - MEM", "Firmware - IPE CBS - Other", "Firmware - IPE CPM", "Firmware - IPE VBIOS",
+        "Firmware - SBIOS", "Firmware - Server - ARM Memory", "Firmware - Server - ARM SCP Bootloader/Boot ROM", "Firmware - Server - ARM SCP Firmware",
+        "Firmware - Server - ARM Trusted Firmware", "Firmware - Server - ARM UEFI Bootloader", "Firmware - Server - SW Coding", "Firmware - Server - SW Documentation",
+        "Firmware - Server - SW QA Infrastructure", "Firmware - Server - SW QA Other", "Firmware - Server - SW QA Planning", "Firmware - Server - SW QA Tests",
+        "Firmware - Tools - BIOS Config Tool", "Firmware - Tools - BIOSTestSuite", "Firmware - Tools - BVM", "Firmware - Tools - Niagara", "Firmware - Tools - Other",
+        "Firmware IPE - AGESA - MPM"
+
     ],
     "CPU": [
         "3D Graphics", "AAA", "ABL", "ACP", "ACPI", "AGESA", "Analog IO", "APML", "Application Automation", "Atomics",
@@ -78,7 +101,6 @@ triage_assignment_map = {
 }
 VALID_SEVERITY_LEVELS = {"Critical", "High", "Medium", "Low"}
 
-# --- *** NEW DESCRIPTIVE PRIORITY MAP *** ---
 descriptive_priority_map = {
     "CRITICAL": "P1",
     "HIGHEST": "P1",
@@ -103,7 +125,6 @@ project_map = {
 stale_statuses = {"Open", "To Do", "In Progress", "Reopened", "Blocked"}
 
 def extract_keywords_from_text(text_to_analyze: str) -> str:
-    # ... (No change in this function)
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot extract keywords.")
     system_prompt = """
@@ -122,7 +143,6 @@ def extract_keywords_from_text(text_to_analyze: str) -> str:
         raise JiraBotError(f"Error during keyword extraction from text: {e}")
 
 def get_summary_similarity_score(summary_a: str, summary_b: str) -> int:
-    # ... (No change in this function)
     if RAW_AZURE_OPENAI_CLIENT is None:
         raise JiraBotError("Raw Azure OpenAI client not initialized. Cannot compare summaries.")
 
@@ -158,12 +178,10 @@ def get_summary_similarity_score(summary_a: str, summary_b: str) -> int:
         raise JiraBotError(f"Error during summary similarity check: {e}")
 
 def _is_valid_jira_key_format(key_str: str) -> bool:
-    # ... (No change in this function)
     pattern = r'^[A-Z][A-Z0-9]+-[1-9]\d*$'
     return re.match(pattern, key_str, re.IGNORECASE) is not None
 
 def extract_params(prompt_text: str) -> Dict[str, Any]:
-    # ... (No change in this function)
     for word in prompt_text.split():
         cleaned_word = re.sub(r'[,?.]+$', '', word)
         if '-' in cleaned_word and not _is_valid_jira_key_format(cleaned_word):
@@ -242,7 +260,6 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
 
 
 def is_valid_jql_date_format(date_str: str) -> bool:
-    # ... (No change in this function)
     if not isinstance(date_str, str):
         return False
     absolute_format = r'^\d{4}-\d{2}-\d{2}$'
@@ -252,7 +269,6 @@ def is_valid_jql_date_format(date_str: str) -> bool:
     return False
 
 def _convert_to_relative_days(number: int, unit: str) -> str:
-    # ... (No change in this function)
     unit_lower = unit.lower()
     if "year" in unit_lower:
         return f"-{number * 365}d"
@@ -265,7 +281,6 @@ def _convert_to_relative_days(number: int, unit: str) -> str:
     return None
 
 def _format_name_for_jql(name: str) -> str:
-    # ... (No change in this function)
     if name == "currentUser()" or "," in name:
         return name
     parts = name.split()
@@ -287,9 +302,7 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
-    # --- *** MODIFIED LOGIC FOR PRIORITY HANDLING *** ---
     if raw_prio := params.get("priority"):
-        # If the AI returns a list of priorities (e.g., for "P1 or High priority tickets")
         if isinstance(raw_prio, list):
             mapped_prios = []
             for prio in raw_prio:
@@ -302,22 +315,18 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
                     print(f"WARNING: Invalid priority '{prio}' in list ignored.")
             if mapped_prios:
                 jql_parts.append(f"priority in ({', '.join(mapped_prios)})")
-        # Otherwise, handle it as a single string
         elif isinstance(raw_prio, str):
             prio_upper = raw_prio.strip().upper()
             
-            # Check if the input is a descriptive word (e.g., "High"), then check for a code (e.g., "P1")
             prio_code = descriptive_priority_map.get(prio_upper) or (prio_upper if prio_upper in priority_map else None)
 
             if prio_code:
                 jql_parts.append(f'priority = "{priority_map[prio_code]}"')
-            # As a fallback, check if the user provided the full JQL value directly
             elif raw_prio in priority_map.values():
                 jql_parts.append(f'priority = "{raw_prio}"')
             else:
                 valid_options = list(priority_map.keys()) + list(descriptive_priority_map.keys())
                 raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {valid_options}")
-    # --- *** END OF MODIFIED LOGIC *** ---
 
     if raw_prog := params.get("program", "").strip().upper():
         if raw_prog in program_map:
