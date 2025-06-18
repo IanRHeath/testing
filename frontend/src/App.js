@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
+// --- ICONS (No Change) ---
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -30,7 +30,10 @@ const CheckIcon = () => (
     </svg>
 );
 
+// --- TICKET & SUMMARY COMPONENTS (JiraSummary is new) ---
+
 const JiraTicket = ({ ticket }) => {
+    // ... (No Change)
     const [copied, setCopied] = useState(false);
     const handleCopy = () => {
         const textToCopy = `Key: ${ticket.key}\nSummary: ${ticket.summary}\nURL: ${ticket.url}`;
@@ -64,7 +67,34 @@ const JiraTicket = ({ ticket }) => {
     );
 };
 
+const JiraSummary = ({ summary }) => {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(summary.rawText).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    return (
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800">
+            <div className="flex justify-between items-start mb-2">
+                <a href={summary.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{summary.key}</a>
+                <button onClick={handleCopy} title="Copy Summary" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    {copied ? <CheckIcon /> : <CopyIcon />}
+                </button>
+            </div>
+            {/* We use MarkdownRenderer here to properly format the multi-line summary body */}
+            <div className="text-gray-800 dark:text-gray-300">
+                <MarkdownRenderer text={summary.body} />
+            </div>
+        </div>
+    );
+};
+
+
 const MarkdownRenderer = ({ text }) => {
+    // ... (No Change)
     const createMarkup = (markdownText) => {
         if (typeof markdownText !== 'string') return { __html: '' };
         const html = markdownText
@@ -78,6 +108,7 @@ const MarkdownRenderer = ({ text }) => {
 };
 
 const OptionsInput = ({ questionData, onOptionSelect }) => {
+    // ... (No Change)
     const { options, next_field } = questionData;
 
     if (!options || options.length === 0) {
@@ -116,6 +147,7 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
 };
 
 const ThemeToggle = ({ darkMode, setDarkMode }) => {
+    // ... (No Change)
     const MoonIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
@@ -136,6 +168,7 @@ const ThemeToggle = ({ darkMode, setDarkMode }) => {
 };
 
 
+// --- MAIN APP COMPONENT (Changed) ---
 export default function App() {
     const initialMessage = { role: 'ai', type: 'text', content: "Welcome to the Jira Triage LLM Agent! How can I help you today?" };
     const [messages, setMessages] = useState([initialMessage]);
@@ -147,7 +180,8 @@ export default function App() {
     const [darkMode, setDarkMode] = useState(false);
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
-
+    
+    // --- (No Change in this section) ---
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -166,8 +200,10 @@ export default function App() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+    // --- (End of No Change section) ---
 
     const handleSend = async (prompt, isAutoTriggered = false) => {
+        // ... (No Change in this function)
         const textToSend = (typeof prompt === 'string') ? prompt : input;
         
         if (!textToSend.trim() || isLoading) return;
@@ -212,6 +248,7 @@ export default function App() {
     };
     
     const handleOptionSelect = (fieldName, fieldValue) => {
+        // ... (No Change in this function)
         const userMessage = { role: 'user', type: 'text', content: fieldValue };
         setMessages(prev => [...prev, userMessage]);
         
@@ -220,14 +257,33 @@ export default function App() {
     };
 
     const startNewChat = () => {
+        // ... (No Change in this function)
         setMessages([initialMessage]);
         setShowSuggestions(true);
         setCurrentQuestion(null);
     };
+    
+    // --- NEW HELPER FUNCTION TO PARSE SUMMARIES ---
+    const parseSummaries = (text) => {
+        const summaryRegex = /Summary for ([A-Z0-9-]+): (https?:\/\/[^\s]+)\n\n([\s\S]*?)(?=(\n\n---\n\n)|$)/g;
+        const summaries = [];
+        let match;
+        while ((match = summaryRegex.exec(text)) !== null) {
+            summaries.push({
+                key: match[1],
+                url: match[2],
+                body: match[3].trim(),
+                rawText: match[0].trim()
+            });
+        }
+        return summaries;
+    };
+
 
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
+                {/* ... (No Change in this section) ... */}
                 <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
                     New Chat
                 </button>
@@ -237,24 +293,38 @@ export default function App() {
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                 <div className="max-w-3xl mx-auto">
-                    {messages.map((msg, index) => (
-                         <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.role === 'ai' && <AiIcon />}
-                            <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
-                                {msg.type === 'text' && <MarkdownRenderer text={msg.content} />}
-                                {msg.type === 'error' && <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>}
-                                {msg.type === 'search_result' && (
-                                    <div>
-                                        <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">I found the following tickets:</p>
-                                        {msg.content.map((ticket, i) => <JiraTicket key={i} ticket={ticket} />)}
-                                    </div>
-                                )}
+                    {messages.map((msg, index) => {
+                        // --- PARSING LOGIC ADDED HERE ---
+                        const isSummary = msg.role === 'ai' && msg.type === 'text' && msg.content.startsWith('Summary for');
+                        const summaries = isSummary ? parseSummaries(msg.content) : [];
+                        
+                        return (
+                            <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {msg.role === 'ai' && <AiIcon />}
+                                <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
+                                    {/* --- RENDER LOGIC UPDATED HERE --- */}
+                                    {isSummary && summaries.length > 0 ? (
+                                        <div>
+                                            {summaries.map((summary, i) => <JiraSummary key={i} summary={summary} />)}
+                                        </div>
+                                    ) : msg.type === 'text' ? (
+                                        <MarkdownRenderer text={msg.content} />
+                                    ) : msg.type === 'error' ? (
+                                        <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>
+                                    ) : msg.type === 'search_result' ? (
+                                        <div>
+                                            <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">I found the following tickets:</p>
+                                            {msg.content.map((ticket, i) => <JiraTicket key={i} ticket={ticket} />)}
+                                        </div>
+                                    ) : null}
+                                </div>
+                                {msg.role === 'user' && <UserIcon />}
                             </div>
-                            {msg.role === 'user' && <UserIcon />}
-                        </div>
-                    ))}
+                        );
+                    })}
                     {isLoading && (
                          <div className="flex items-start gap-4 mb-6 justify-start">
+                            {/* ... (No Change in this section) ... */}
                             <AiIcon />
                             <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700"><div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div><span className="text-gray-500 dark:text-gray-400">Thinking...</span></div></div>
                         </div>
@@ -264,6 +334,7 @@ export default function App() {
             </main>
 
             <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                {/* ... (No Change in this section) ... */}
                 <div className="max-w-3xl mx-auto">
                     {currentQuestion && <OptionsInput questionData={currentQuestion} onOptionSelect={handleOptionSelect} />}
                     
