@@ -1,15 +1,39 @@
- python3 main.py
-/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pyramid/path.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
-  import pkg_resources
-Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 13, in <module>
-    import apex.results as arp # For apex-next
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/__init__.py", line 18, in <module>
-    from apex.interfaces import (ApexImplementation,
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/interfaces.py", line 10, in <module>
-    class ApexImplementation(object):
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/interfaces.py", line 14, in ApexImplementation
-    implements(IApex)
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/zope/interface/declarations.py", line 483, in implements
-    raise TypeError(_ADVICE_ERROR % 'implementer')
+pip install "zope.interface==4.7.1"
+Collecting zope.interface==4.7.1
+  Downloading zope.interface-4.7.1.tar.gz (151 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.4/151.4 kB 821.6 kB/s eta 0:00:00
+  Installing build dependencies ... done
+  Getting requirements to build wheel ... error
+  error: subprocess-exited-with-error
+
+  × Getting requirements to build wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [20 lines of output]
+      Traceback (most recent call last):
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 353, in <module>
+          main()
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 335, in main
+          json_out['return_val'] = hook(**hook_input['kwargs'])
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 118, in get_requires_for_build_wheel
+          return hook(config_settings)
+                 ^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
+          return self._get_build_requires(config_settings, requirements=[])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
+          self.run_setup()
+        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 512, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File "/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 317, in run_setup
+          exec(code, locals())
+        File "<string>", line 26, in <module>
+      ImportError: cannot import name 'Feature' from 'setuptools' (/tmp/pip-build-env-9k3kahlb/overlay/lib/python3.12/site-packages/setuptools/__init__.py)
+      [end of output]
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: subprocess-exited-with-error
+
+× Getting requirements to build wheel did not run successfully.
+│ exit code: 1
+╰─> See above for output.
