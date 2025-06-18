@@ -1,0 +1,86 @@
+
+Goal: 
+
+Enter execution label and date  
+
+ 
+
+PLAT Tickets 
+
+Project: PLAT 
+
+Issue Type: Task 
+
+ 
+
+Ticket title 
+
+Summary: [program short][board][issue type] failure description [FR] 
+
+Program short: snowflake VSYSTEM_CONFIG 
+
+Board: snowflake VEXECUTION_RESULT (needs mapping) 
+
+Issue type: LLM from AIDA analysis 
+
+Failure description: LLM from AIDA analysis and snowflake VEXECUTION_RESULT 
+
+FR: ???? 
+
+ 
+
+Ticket info 
+
+Program: snowflake VSYSTEM_CONFIG (needs mapping) 
+
+System: snowflake VSYSTEM_CONFIG (needs mapping) 
+
+Die Revision: from apex-next file testflow.log 
+
+Bios Version: snowflake VSYSTEM_CONFIG 
+
+Functional area: LLM from AIDA analysis 
+
+Triage category: APU? 
+
+Triage assignment: Client - Platform Debug - HW 
+
+ 
+
+description 
+
+Detailed summary: AIDA 
+
+Sut config: apex-next file 
+
+ADS dump: VEXECUTION_RESULT 
+
+AMDz: apex-next file 
+
+BSOD dump: apex-next file (optional) 
+
+Scan dump: apex-next? (optional) 
+
+Sleep study: apex-next file (optional) 
+
+Scrut link: snowflake VEXECUTION_RESULT 
+
+ 
+
+Steps to reproduce 
+
+APEX Test Queue name: snowflake VEXECUTION_RESULT 
+
+OS version:  snowflake VSYSTEM_CONFIG 
+
+ 
+
+Labels 
+
+LLM from AIDA analysis  
+
+ 
+
+ 
+
+Input: execution label / adid 
