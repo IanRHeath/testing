@@ -1,1 +1,13 @@
-pip install snowflake-connector-python python-dotenv requests "pyramid<2.0" "zope.interface<5.0" azure-identity apex
+ python3 main.py
+Traceback (most recent call last):
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 13, in <module>
+    import apex.results as arp # For apex-next
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv-py39/lib/python3.9/site-packages/apex/__init__.py", line 18, in <module>
+    from apex.interfaces import (ApexImplementation,
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv-py39/lib/python3.9/site-packages/apex/interfaces.py", line 10, in <module>
+    class ApexImplementation(object):
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv-py39/lib/python3.9/site-packages/apex/interfaces.py", line 14, in ApexImplementation
+    implements(IApex)
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv-py39/lib/python3.9/site-packages/zope/interface/declarations.py", line 483, in implements
+    raise TypeError(_ADVICE_ERROR % 'implementer')
+TypeError: Class advice impossible in Python3.  Use the @implementer class decorator instead.
