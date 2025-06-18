@@ -1,39 +1,59 @@
-(venv) ianheath@AUSIHEATH1201:/mnt/c/users/ianheath/desktop/snowflake-aida$ python3 main.py
-[INFO] Setting up environment...
-[SUCCESS] Environment configured.
+(venv) ianheath@AUSIHEATH1201:/mnt/c/users/ianheath/desktop/snowflake-aida$ pip install azure
+Collecting azure
+  Downloading azure-5.0.0.zip (4.6 kB)
+  Installing build dependencies ... done
+  Getting requirements to build wheel ... error
+  error: subprocess-exited-with-error
 
-[INFO] Connecting to Snowflake to find failures for label: 'SYSVAL.INT.STXH.101BCDENDA-250417.FP11.0530.PPSV4694.EXP04_1001cRC2_Pre01_RevertPSP_RC62-NDA_CS7.05.16.143_TDR0_1500RB-S5_Test'
-Initiating login request with your identity provider. A browser window should have opened for you to complete the login. If you can't see it, check existing browser windows, or your OS settings. Press CTRL+C to abort and try again...
-Going to open: https://amdsso.okta.com/app/snowflake/exk77h10t6okbmTCo697/sso/saml?SAMLRequest=nZJPb%2BIwEMW%2FSuQ9J3ZCE6gFVCyoKhJbEIRq1ZtJDFhJbK%2FHIdBPvw5%2FVvTQHvZm2W%2Fm9zxv%2Bk%2FHqvQO3IBQcoDCgCCPy0zlQu4GaJ0%2B%2Bz3kgWUyZ6WSfIBOHNDTsA%2BsKjUd1XYvl%2FxPzcF6rpEE2j4MUG0kVQwEUMkqDtRmdDX6NaNRQCgD4MY6HLqW5CAca2%2Btphg3TRM0nUCZHY4IIZg8YqdqJT%2FQHUJ%2Fz9BGWZWp8lZydH%2F6AhFi8tAinMIRFtfCn0JeRvAdZXMRAX1J04W%2FmK9S5I1uvxsrCXXFzYqbg8j4ejm7GADngFU5iQLOwPo1%2BFHAPmrDA5Cq2Zas4JmqdG1d58Cd8JbnuFQ74eY1nQyQLkQ%2BXTN7SpNl8ntuRyl7r183s7nWNu7E3Lwo2UzSrKMPx1wVGfLebulGbbpTgJpPZZupdVckin2S%2BGEvDR9oHNNOGCS9%2BB15E5epkMyeK%2B%2BMA6hAFZadvTGt8T%2FbmB%2BLbncfEpuoYlOlY5U8drHT4zYxdFkaeuab4f%2BMoo%2FvO1x38NXFMp0sVCmyk%2FesTMXs16mFQXi%2BEbm%2FPUspr5goR3luOIBLryxVMzacWbfq1tQc4eGF%2BnnZh38B&RelayState=ver%3A1-hint%3A93119362335154-ETMsDgAAAZeDib1lABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEAdX3MxWkjapimRa%2Bskt5PYAAACQQIXS%2F5c7Spoh%2Ft44PqPn0ANVblERnK5m07Q%2BbFAeEpZb5HAjstcRofjj8ve844VT9ijSFjCNH2p6VA3GusGXn6gvTF5In%2FfmCVq2zQKdBdoaTbe5Jy7xD4cTjWy9Td3M%2Bc5rzIMYalnqCPYD01qjRAMsYTDHSfGONmpBlKaP53FVlB1aU5vEmpqgLkOnJWAWABTZp%2BCCUB%2FQLak9rw6elSKwzFG4hQ%3D%3D to authenticate...
-/usr/bin/xdg-open: 882: x-www-browser: not found
-/usr/bin/xdg-open: 882: firefox: not found
-/usr/bin/xdg-open: 882: iceweasel: not found
-/usr/bin/xdg-open: 882: seamonkey: not found
-/usr/bin/xdg-open: 882: mozilla: not found
-/usr/bin/xdg-open: 882: epiphany: not found
-/usr/bin/xdg-open: 882: konqueror: not found
-/usr/bin/xdg-open: 882: chromium: not found
-/usr/bin/xdg-open: 882: chromium-browser: not found
-/usr/bin/xdg-open: 882: google-chrome: not found
-/usr/bin/xdg-open: 882: www-browser: not found
-/usr/bin/xdg-open: 882: links2: not found
-/usr/bin/xdg-open: 882: elinks: not found
-/usr/bin/xdg-open: 882: links: not found
-/usr/bin/xdg-open: 882: lynx: not found
-/usr/bin/xdg-open: 882: w3m: not found
-xdg-open: no method available for opening 'https://amdsso.okta.com/app/snowflake/exk77h10t6okbmTCo697/sso/saml?SAMLRequest=nZJPb%2BIwEMW%2FSuQ9J3ZCE6gFVCyoKhJbEIRq1ZtJDFhJbK%2FHIdBPvw5%2FVvTQHvZm2W%2Fm9zxv%2Bk%2FHqvQO3IBQcoDCgCCPy0zlQu4GaJ0%2B%2Bz3kgWUyZ6WSfIBOHNDTsA%2BsKjUd1XYvl%2FxPzcF6rpEE2j4MUG0kVQwEUMkqDtRmdDX6NaNRQCgD4MY6HLqW5CAca2%2Btphg3TRM0nUCZHY4IIZg8YqdqJT%2FQHUJ%2Fz9BGWZWp8lZydH%2F6AhFi8tAinMIRFtfCn0JeRvAdZXMRAX1J04W%2FmK9S5I1uvxsrCXXFzYqbg8j4ejm7GADngFU5iQLOwPo1%2BFHAPmrDA5Cq2Zas4JmqdG1d58Cd8JbnuFQ74eY1nQyQLkQ%2BXTN7SpNl8ntuRyl7r183s7nWNu7E3Lwo2UzSrKMPx1wVGfLebulGbbpTgJpPZZupdVckin2S%2BGEvDR9oHNNOGCS9%2BB15E5epkMyeK%2B%2BMA6hAFZadvTGt8T%2FbmB%2BLbncfEpuoYlOlY5U8drHT4zYxdFkaeuab4f%2BMoo%2FvO1x38NXFMp0sVCmyk%2FesTMXs16mFQXi%2BEbm%2FPUspr5goR3luOIBLryxVMzacWbfq1tQc4eGF%2BnnZh38B&RelayState=ver%3A1-hint%3A93119362335154-ETMsDgAAAZeDib1lABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEAdX3MxWkjapimRa%2Bskt5PYAAACQQIXS%2F5c7Spoh%2Ft44PqPn0ANVblERnK5m07Q%2BbFAeEpZb5HAjstcRofjj8ve844VT9ijSFjCNH2p6VA3GusGXn6gvTF5In%2FfmCVq2zQKdBdoaTbe5Jy7xD4cTjWy9Td3M%2Bc5rzIMYalnqCPYD01qjRAMsYTDHSfGONmpBlKaP53FVlB1aU5vEmpqgLkOnJWAWABTZp%2BCCUB%2FQLak9rw6elSKwzFG4hQ%3D%3D'
-[SUCCESS] Connected to Snowflake.
-[INFO] Executing query...
-[SUCCESS] Found 21 failures to process.
-[INFO] Closing Snowflake connection.
+  × Getting requirements to build wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [39 lines of output]
+      Traceback (most recent call last):
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 353, in <module>
+          main()
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 335, in main
+          json_out['return_val'] = hook(**hook_input['kwargs'])
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 118, in get_requires_for_build_wheel
+          return hook(config_settings)
+                 ^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
+          return self._get_build_requires(config_settings, requirements=[])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
+          self.run_setup()
+        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 512, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File "/tmp/pip-build-env-5g1nuwcn/overlay/lib/python3.12/site-packages/setuptools/build_meta.py", line 317, in run_setup
+          exec(code, locals())
+        File "<string>", line 60, in <module>
+      RuntimeError:
 
---- RESULTS ---
-[
-  {
-    "TEST_RESULT_SEQ_ID": 131169908,
-    "ADS_RESULT_LINK": "file://atlcorpnetfs.amd.com/ads_data_na/ads2/2025/06/01/0af50c0d-7124-4059-8612-d0aad0d25b79/reports/html/index.html",
-    "QUEUE_ITEM_NAME": "S5: Entry-OS Shutdown, Event-, Exit-Relay Power On (500) #2",
-    "FAILURE_TYPE": "PWR_STATE_ENTRY_FAIL",
-    "FAILURE_DESCRIPTION": null,
-    "BOARD": "MAPLE-STXH"
-  },
+      Starting with v5.0.0, the 'azure' meta-package is deprecated and cannot be installed anymore.
+      Please install the service specific packages prefixed by `azure` needed for your application.
+
+      The complete list of available packages can be found at:
+      https://aka.ms/azsdk/python/all
+
+      Here's a non-exhaustive list of common packages:
+
+      -  azure-mgmt-compute (https://pypi.python.org/pypi/azure-mgmt-compute) : Management of Virtual Machines, etc.
+      -  azure-mgmt-storage (https://pypi.python.org/pypi/azure-mgmt-storage) : Management of storage accounts.
+      -  azure-mgmt-resource (https://pypi.python.org/pypi/azure-mgmt-resource) : Generic package about Azure Resource Management (ARM)
+      -  azure-keyvault-secrets (https://pypi.python.org/pypi/azure-keyvault-secrets) : Access to secrets in Key Vault
+      -  azure-storage-blob (https://pypi.python.org/pypi/azure-storage-blob) : Access to blobs in storage accounts
+
+      A more comprehensive discussion of the rationale for this decision can be found in the following issue:
+      https://github.com/Azure/azure-sdk-for-python/issues/10646
+
+
+      [end of output]
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: subprocess-exited-with-error
+
+× Getting requirements to build wheel did not run successfully.
+│ exit code: 1
+╰─> See above for output.
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
