@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
 
-// --- Helper Components ---
+import React, { useState, useEffect, useRef } from 'react';
 
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
@@ -149,7 +148,6 @@ export default function App() {
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
-    // --- FIX: Added useEffect hooks for dark mode ---
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -164,7 +162,6 @@ export default function App() {
             localStorage.setItem('darkMode', 'false');
         }
     }, [darkMode]);
-    // --- END FIX ---
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
