@@ -39,9 +39,7 @@ def query_agent():
         if msg.get('role') == 'user':
             chat_history.append(HumanMessage(content=msg.get('content')))
         elif msg.get('role') == 'ai':
-            # For summary results, the content is a list of dicts, not just a string.
-            # We must ensure the history passed to the agent is always a string.
-            # The raw_output from the previous turn is the LLM's plain text response.
+
             chat_history.append(AIMessage(content=str(msg.get('raw_output', msg.get('content')))))
 
 
@@ -57,18 +55,15 @@ def query_agent():
         
         tool_output = None
         tool_used = None
-        # Check if a tool was used in the intermediate steps
         if 'intermediate_steps' in result and result['intermediate_steps']:
-            # Get the action and output from the most recent tool call
             action, tool_output = result['intermediate_steps'][-1] 
             tool_used = action.tool
 
-        # --- *** NEW CONDITION FOR SUMMARY RESULTS *** ---
         if tool_used in ['summarize_ticket_tool', 'summarize_multiple_tickets_tool'] and isinstance(tool_output, list):
             response_data = {
                 "type": "summary_result",
                 "content": tool_output,
-                "raw_output": result.get('output', '') # Keep the text version for history
+                "raw_output": result.get('output', '') 
             }
         elif tool_used in ['start_ticket_creation', 'set_ticket_field'] and isinstance(tool_output, dict) and 'options' in tool_output:
             response_data = {
