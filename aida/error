@@ -7,6 +7,9 @@ Traceback (most recent call last):
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/__init__.py", line 18, in <module>
     from apex.interfaces import (ApexImplementation,
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/interfaces.py", line 1, in <module>
-    from zope.interface import implements
-ImportError: cannot import name 'implements' from 'zope.interface' (/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/zope/interface/__init__.py). Did you mean: 'implementer'?
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/interfaces.py", line 10, in <module>
+    class ApexImplementation(object):
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/apex/interfaces.py", line 14, in ApexImplementation
+    implements(IApex)
+  File "/mnt/c/users/ianheath/desktop/snowflake-aida/venv/lib/python3.12/site-packages/zope/interface/declarations.py", line 483, in implements
+    raise TypeError(_ADVICE_ERROR % 'implementer')
