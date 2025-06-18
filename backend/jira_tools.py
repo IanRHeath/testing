@@ -25,12 +25,13 @@ class TicketCreator:
     def __init__(self):
         self.reset()
 
-    def reset(self):
+      def reset(self):
+        """Resets the state to start a new ticket creation."""
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
         self.required_fields = [
-            "project", "program", "system", "severity",
-            "triage_category", "triage_assignment",
+            "project", "program", "system", "summary",
+            "severity", "triage_category", "triage_assignment",
             "silicon_revision", "iod_silicon_die_revision", "ccd_silicon_die_revision",
             "bios_version", "description", "steps_to_reproduce"
         ]
@@ -44,6 +45,7 @@ class TicketCreator:
         return self._get_next_required_field()
 
     def set_field(self, field_name: str, field_value: str) -> dict:
+        """Sets a field in the draft and returns the next required field question."""
         if not self.is_active:
             return {
                 "question": "Error: No ticket creation is currently in progress. Please start by using 'start_ticket_creation'.",
@@ -52,15 +54,18 @@ class TicketCreator:
 
         field_name_lower = field_name.lower().replace(" ", "_")
 
-        if field_name_lower == 'program':
-            self.draft_data[field_name_lower] = field_value
-            self._run_duplicate_check()
+        if field_name_lower == 'summary' and field_value.strip().lower() == 'keep':
+            print("INFO: Keeping existing summary.")
         else:
             self.draft_data[field_name_lower] = field_value
 
+        if field_name_lower == 'program':
+            self._run_duplicate_check()
+            
         return self._get_next_required_field()
 
     def _get_next_required_field(self) -> dict:
+        """Helper to determine the next required field and return a structured question."""
         for field in self.required_fields:
             if field not in self.draft_data:
                 question = f"Next, please provide the '{field.replace('_', ' ').title()}'."
@@ -73,6 +78,10 @@ class TicketCreator:
                     program_code = self.draft_data.get('program', '').upper()
                     options = system_map.get(program_code, [])
                     question = f"What System is this for (Program: {program_code})?"
+                elif field == 'summary':
+                    current_summary = self.draft_data.get('summary', '')
+                    question = f"The current summary is: \"{current_summary}\". Please provide the final summary, or type 'keep' to use this one."
+                    options = [] 
                 elif field == 'severity':
                     options = list(VALID_SEVERITY_LEVELS)
                     question = "What is the Severity?"
