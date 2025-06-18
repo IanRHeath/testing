@@ -2,19 +2,22 @@
 setlocal
 
 :: ============================================================================
-:: Jira Agent Frontend Launcher for Windows
+:: Jira Agent Frontend SETUP Script for Windows
 :: ============================================================================
-:: This script checks for Node.js/npm, cleans up old dependencies, 
-:: installs fresh ones, and starts the React development server.
-:: Place this file in the 'frontend' directory.
+:: DESCRIPTION:
+:: This script should be run ONLY ONCE to set up the frontend environment
+:: or when you are experiencing issues with dependencies. It will:
+:: 1. Check for Node.js/npm.
+:: 2. Clean up any old installations.
+:: 3. Install all necessary packages.
 :: ============================================================================
 
 echo.
-echo === Jira Agent Frontend Launcher ===
+echo === Jira Agent Frontend Setup ===
 echo.
 
 :: --- Step 1: Prerequisite Check ---
-echo [1/5] Checking for Node.js and NPM...
+echo [1/4] Checking for Node.js and NPM...
 where node >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Node.js not found in your system's PATH.
@@ -36,20 +39,8 @@ echo      ...Node.js and NPM found.
 echo.
 
 
-:: --- Step 2: Verify Location ---
-echo [2/5] Verifying location...
-if not exist "package.json" (
-    echo [ERROR] This script must be run from the 'frontend' directory.
-    echo 'package.json' not found.
-    pause
-    exit /b 1
-)
-echo      ...Correct directory found.
-echo.
-
-
-:: --- Step 3: Clean Up Old Dependencies ---
-echo [3/5] Cleaning up previous installation...
+:: --- Step 2: Clean Up Old Dependencies ---
+echo [2/4] Cleaning up previous installation...
 if exist "node_modules" (
     echo      ...Removing 'node_modules' directory. This may take a moment.
     rmdir /s /q node_modules
@@ -61,8 +52,8 @@ if exist "package-lock.json" (
 echo      ...Cleanup complete.
 echo.
 
-:: --- Step 4: Install Fresh Dependencies ---
-echo [4/5] Installing Node.js packages...
+:: --- Step 3: Install Fresh Dependencies ---
+echo [3/4] Installing Node.js packages...
 npm install
 if %errorlevel% neq 0 (
     echo [ERROR] 'npm install' failed. Please check your Node.js/npm installation and network connection.
@@ -72,11 +63,11 @@ if %errorlevel% neq 0 (
 echo      ...Dependencies installed successfully.
 echo.
 
-
-:: --- Step 5: Start the Frontend Application ---
-echo [5/5] Starting the React development server...
-echo      (A new browser window should open. To stop the server, press CTRL+C in this window.)
+:: --- Step 4: Done ---
+echo [4/4] Setup Complete!
 echo.
-npm start
+echo You can now run the frontend application by double-clicking 'run_frontend.bat'.
+echo.
+pause
 
 endlocal
