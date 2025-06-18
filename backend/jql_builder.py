@@ -14,6 +14,7 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Could not initialize raw Azure OpenAI client at startup for JQL builder: {e}")
 
+# --- (No change to these maps) ---
 program_map = {
     "STX": "Strix1 [PRG-000384]",
     "STXH": "Strix Halo [PRG-000391]",
@@ -76,6 +77,17 @@ triage_assignment_map = {
     ]
 }
 VALID_SEVERITY_LEVELS = {"Critical", "High", "Medium", "Low"}
+
+# --- *** NEW DESCRIPTIVE PRIORITY MAP *** ---
+descriptive_priority_map = {
+    "CRITICAL": "P1",
+    "HIGHEST": "P1",
+    "HIGH": "P2",
+    "MEDIUM": "P3",
+    "LOW": "P4",
+    "LOWEST": "P4",
+}
+
 priority_map = {
     "P1": "P1 (Gating)",
     "P2": "P2 (Must Solve)",
@@ -277,13 +289,15 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
 
     # --- *** MODIFIED LOGIC FOR PRIORITY HANDLING *** ---
     if raw_prio := params.get("priority"):
-        # If the AI returns a list of priorities (e.g., for "P1 or P2 tickets")
+        # If the AI returns a list of priorities (e.g., for "P1 or High priority tickets")
         if isinstance(raw_prio, list):
             mapped_prios = []
             for prio in raw_prio:
                 prio_upper = str(prio).strip().upper()
-                if prio_upper in priority_map:
-                    mapped_prios.append(f'"{priority_map[prio_upper]}"')
+                prio_code = descriptive_priority_map.get(prio_upper) or (prio_upper if prio_upper in priority_map else None)
+                
+                if prio_code:
+                    mapped_prios.append(f'"{priority_map[prio_code]}"')
                 else:
                     print(f"WARNING: Invalid priority '{prio}' in list ignored.")
             if mapped_prios:
@@ -291,12 +305,18 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
         # Otherwise, handle it as a single string
         elif isinstance(raw_prio, str):
             prio_upper = raw_prio.strip().upper()
-            if prio_upper in priority_map:
-                jql_parts.append(f"priority = \"{priority_map[prio_upper]}\"")
+            
+            # Check if the input is a descriptive word (e.g., "High"), then check for a code (e.g., "P1")
+            prio_code = descriptive_priority_map.get(prio_upper) or (prio_upper if prio_upper in priority_map else None)
+
+            if prio_code:
+                jql_parts.append(f'priority = "{priority_map[prio_code]}"')
+            # As a fallback, check if the user provided the full JQL value directly
             elif raw_prio in priority_map.values():
-                jql_parts.append(f"priority = \"{raw_prio}\"")
+                jql_parts.append(f'priority = "{raw_prio}"')
             else:
-                raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {list(priority_map.keys())}.")
+                valid_options = list(priority_map.keys()) + list(descriptive_priority_map.keys())
+                raise JiraBotError(f"Invalid priority '{raw_prio}'. Must be one of {valid_options}")
     # --- *** END OF MODIFIED LOGIC *** ---
 
     if raw_prog := params.get("program", "").strip().upper():
