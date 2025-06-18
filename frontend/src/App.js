@@ -41,8 +41,8 @@ const JiraTicket = ({ ticket }) => {
             setTimeout(() => setCopied(false), 2000);
         });
     };
-    const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened') 
-        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+    const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened')
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
     return (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
@@ -108,14 +108,14 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
     const { options, next_field } = questionData;
 
     if (!options || options.length === 0) {
-        return null; 
+        return null;
     }
 
     if (options.length > 5) {
         return (
             <div className="mt-4">
-                <select 
-                    onChange={(e) => { if(e.target.value) onOptionSelect(next_field, e.target.value) }}
+                <select
+                    onChange={(e) => { if (e.target.value) onOptionSelect(next_field, e.target.value) }}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
                 >
                     <option value="">Select an option...</option>
@@ -175,7 +175,7 @@ export default function App() {
     const [darkMode, setDarkMode] = useState(false);
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
-    
+
     useEffect(() => {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         setDarkMode(isDarkMode);
@@ -197,15 +197,15 @@ export default function App() {
 
     const handleSend = async (prompt, isAutoTriggered = false) => {
         const textToSend = (typeof prompt === 'string') ? prompt : input;
-        
+
         if (!textToSend.trim() || isLoading) return;
 
         setShowSuggestions(false);
         if (!isAutoTriggered) {
-             const userMessage = { role: 'user', type: 'text', content: textToSend };
-             setMessages(prev => [...prev, userMessage]);
+            const userMessage = { role: 'user', type: 'text', content: textToSend };
+            setMessages(prev => [...prev, userMessage]);
         }
-       
+
         setInput('');
         setIsLoading(true);
         setCurrentQuestion(null);
@@ -224,7 +224,7 @@ export default function App() {
 
             const data = await response.json();
             if (!response.ok) throw new Error(data.content || 'An API error occurred.');
-            
+
             if (data.type === 'options_request') {
                 const questionMessage = { role: 'ai', type: 'text', content: data.content.question, raw_output: data.raw_output };
                 setMessages(prev => [...prev, questionMessage]);
@@ -238,11 +238,11 @@ export default function App() {
             setIsLoading(false);
         }
     };
-    
+
     const handleOptionSelect = (fieldName, fieldValue) => {
         const userMessage = { role: 'user', type: 'text', content: fieldValue };
         setMessages(prev => [...prev, userMessage]);
-        
+
         const command = `set_ticket_field(field_name='${fieldName}', field_value='${fieldValue}')`;
         handleSend(command, true);
     };
@@ -252,18 +252,19 @@ export default function App() {
         setShowSuggestions(true);
         setCurrentQuestion(null);
     };
-    
-    // --- **FIXED** HELPER FUNCTION TO PARSE SUMMARIES ---
+
+    // --- **FIXED & MORE ROBUST** HELPER FUNCTION TO PARSE SUMMARIES ---
     const parseSummaries = (text) => {
-        // This regex now makes the URL optional.
-        const summaryRegex = /Summary for ([A-Z0-9-]+):(?: (https?:\/\/[^\s]+))?\n\n([\s\S]*?)(?=\n\n---\n\n|$)/g;
+        // This regex is now more flexible.
+        // \s* handles optional spaces around the colon.
+        // \s+ handles one or more newlines or spaces between the header and body.
+        const summaryRegex = /Summary for ([A-Z0-9-]+):\s*(?:(https?:\/\/[^\s]+))?\s+([\s\S]*?)(?=\n\n---\n\n|$)/g;
         const summaries = [];
         let match;
         while ((match = summaryRegex.exec(text)) !== null) {
             summaries.push({
                 key: match[1],
-                // Use the captured URL (match[2]) if it exists, otherwise default to '#'
-                url: match[2] || '#',
+                url: match[2] || '#', // Fallback for missing URL
                 body: match[3].trim(),
                 rawText: match[0].trim()
             });
@@ -288,7 +289,7 @@ export default function App() {
                         // This logic is now more robust.
                         const isSummary = msg.role === 'ai' && msg.type === 'text' && msg.content.includes('Summary for');
                         const summaries = isSummary ? parseSummaries(msg.content) : [];
-                        
+
                         return (
                             <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'ai' && <AiIcon />}
@@ -313,7 +314,7 @@ export default function App() {
                         );
                     })}
                     {isLoading && (
-                         <div className="flex items-start gap-4 mb-6 justify-start">
+                        <div className="flex items-start gap-4 mb-6 justify-start">
                             <AiIcon />
                             <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700"><div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div><span className="text-gray-500 dark:text-gray-400">Thinking...</span></div></div>
                         </div>
@@ -325,7 +326,7 @@ export default function App() {
             <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
                 <div className="max-w-3xl mx-auto">
                     {currentQuestion && <OptionsInput questionData={currentQuestion} onOptionSelect={handleOptionSelect} />}
-                    
+
                     {showSuggestions && !currentQuestion && (
                         <div className="flex flex-wrap gap-2 mb-3 justify-center">
                             {suggestionPrompts.map((prompt, i) => (
