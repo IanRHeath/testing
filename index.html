@@ -12,13 +12,15 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
+    <!-- FIX: Load the main Tailwind library FIRST -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- THEN, configure it -->
     <script>
       tailwind.config = {
         darkMode: "class"
       }
     </script>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <title>Jira Triage Agent</title>
   </head>
