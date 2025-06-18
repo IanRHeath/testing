@@ -1,7 +1,20 @@
-INFO] Setting up environment...
-Traceback (most recent call last):
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 177, in <module>
-    setup_environment()
-  File "/mnt/c/users/ianheath/desktop/snowflake-aida/main.py", line 26, in setup_environment
-    raise EnvironmentError("CRITICAL: Ensure SNOWFLAKE_USER, AIDA_USER, and AIDA_PASSWORD are in .env file.")
-OSError: CRITICAL: Ensure SNOWFLAKE_USER, AIDA_USER, and AIDA_PASSWORD are in .env file.
+[INFO] Starting apex-next file download...
+[apex.results] - INFO - ----- downloading ERA package 131180509...
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/v2.0/authorize?client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8400&scope=https%3A%2F%2Fstorage.azure.com%2F.default+offline_access+openid+profile&state=LjHfaYrFRWStGUlB&code_challenge=eIl_yu7pl-wuI6IJAWf4lx-6CPNYV2lJrTLfL1feQ0s&code_challenge_method=S256&nonce=587485b50828ca1d32ca2314f84c7fe27efdaf4d04b6ca147769119045885360&client_info=1&prompt=select_account'
+InteractiveBrowserCredential.get_token_info failed: Authentication failed: access_denied
