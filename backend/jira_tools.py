@@ -17,12 +17,11 @@ except JiraBotError as e:
     print(f"CRITICAL ERROR: Could not initialize JIRA client at startup. Tools will not work: {e}")
 
 class TicketCreator:
-    """A stateful class to manage the ticket creation process."""
+    # ... (No Change in this class)
     def __init__(self):
         self.reset()
 
     def reset(self):
-        """Resets the state to start a new ticket creation."""
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
         self.required_fields = [
@@ -34,7 +33,6 @@ class TicketCreator:
         self.is_active = False
 
     def start(self, summary: str, project: str = "PLAT"):
-        """Starts the creation process and returns the first question."""
         self.reset()
         self.is_active = True
         self.draft_data['summary'] = summary
@@ -42,7 +40,6 @@ class TicketCreator:
         return self._get_next_required_field()
 
     def set_field(self, field_name: str, field_value: str) -> dict:
-        """Sets a field in the draft and returns the next required field question."""
         if not self.is_active:
             return {
                 "question": "Error: No ticket creation is currently in progress. Please start by using 'start_ticket_creation'.",
@@ -60,7 +57,6 @@ class TicketCreator:
         return self._get_next_required_field()
 
     def _get_next_required_field(self) -> dict:
-        """Helper to determine the next required field and return a structured question."""
         for field in self.required_fields:
             if field not in self.draft_data:
                 question = f"Next, please provide the '{field.replace('_', ' ').title()}'."
@@ -89,7 +85,6 @@ class TicketCreator:
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
 
     def _run_duplicate_check(self):
-        """Internal method to run duplicate check once program is known."""
         summary = self.draft_data.get('summary', '')
         project = self.draft_data.get('project', '')
         program_code = self.draft_data.get('program', '').upper()
@@ -103,7 +98,6 @@ class TicketCreator:
                 print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
 
     def finalize(self) -> str:
-        """Validates all data and creates the final ticket."""
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
             
@@ -168,8 +162,11 @@ def cancel_ticket_creation() -> str:
     return "Ticket creation process has been cancelled."
 
 
-def _get_single_ticket_summary(issue_key: str, question: str) -> str:
-    """Internal helper to get a summary for one ticket, tailored to a specific question."""
+# --- *** MODIFIED FUNCTION *** ---
+def _get_single_ticket_summary(issue_key: str, question: str) -> Dict[str, str]:
+    """
+    Internal helper to get a summary for one ticket, returning a structured dictionary.
+    """
     if JIRA_CLIENT_INSTANCE is None:
         raise JiraBotError("JIRA client not initialized.")
     
@@ -188,23 +185,22 @@ def _get_single_ticket_summary(issue_key: str, question: str) -> str:
     {details_text}
     ---
     **Instructions:**
-    1.  Begin your answer *always* with the ticket key and the link, like this: `Summary for PLAT-123: [Link]`
-    2.  If the question is a generic request for a "full summary", provide a detailed, structured summary with these four points: Problem Statement, Latest Analysis / Debug, Identified Root Cause, and Current Blockers.
-    3.  If the question is specific (e.g., "what is the root cause?"), provide a direct, concise answer to only that question.
+    1. If the question is a generic request for a "full summary", provide a detailed, structured summary with these four points: Problem Statement, Latest Analysis / Debug, Identified Root Cause, and Current Blockers.
+    2. If the question is specific (e.g., "what is the root cause?"), provide a direct, concise answer to only that question.
+    3. Do NOT include the ticket key or URL in your answer. Just provide the summary body.
     **Answer:**
     """
     summary_content = llm.invoke(prompt).content
-    if ticket_url in summary_content:
-        final_output = summary_content
-    else:
-        final_output = f"Summary for {sanitized_key}: {ticket_url}\n\n{summary_content}"
-    return final_output
+    
+    return {
+        "key": sanitized_key,
+        "url": ticket_url,
+        "body": summary_content
+    }
 
 @tool
 def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) -> str:
-    """
-    Use this tool when the user asks for the available or valid options for a specific ticket field...
-    """
+    # ... (No Change in this tool)
     field_lower = field_name.lower()
 
     if "program" in field_lower:
@@ -235,37 +231,45 @@ def get_field_options_tool(field_name: str, depends_on: Optional[str] = None) ->
     return f"Sorry, I cannot provide options for the field '{field_name}'."
 
 
+# --- *** MODIFIED TOOL *** ---
 @tool
-def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> str:
-    """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL."""
-    return _get_single_ticket_summary(issue_key, question)
-    
+def summarize_ticket_tool(issue_key: str, question: Optional[str] = "Provide a full 4-point summary.") -> List[Dict[str, str]]:
+    """Use this tool to summarize a SINGLE JIRA ticket OR to get its URL. Returns a list containing one summary object."""
+    summary_object = _get_single_ticket_summary(issue_key, question)
+    return [summary_object]
+
+# --- *** MODIFIED TOOL *** ---
 @tool
-def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
+def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str]]:
     """
     Use this tool to summarize MORE THAN ONE JIRA ticket. 
     It will provide individual summaries and then a final aggregate analysis of all tickets together.
+    Returns a list of summary objects.
     """
     if not issue_keys:
-        return "Please provide at least one issue key."
+        return [{"key": "Error", "url": "#", "body": "Please provide at least one issue key."}]
 
     summaries = []
+    all_details_text = []
     question_for_each = "Provide a full 4-point summary."
     for key in issue_keys:
         try:
-            summary_text = _get_single_ticket_summary(key, question_for_each)
-            summaries.append(summary_text)
+            summary_object = _get_single_ticket_summary(key, question_for_each)
+            summaries.append(summary_object)
+            # Collect details for aggregate summary
+            details_text, _ = get_ticket_details(key, JIRA_CLIENT_INSTANCE)
+            all_details_text.append(f"--- Ticket {key} ---\n{details_text}")
         except JiraBotError as e:
-            summaries.append(f"Could not generate summary for {key}: {e}")
-
-    individual_summaries_text = "\n\n---\n\n".join(summaries)
+            summaries.append({"key": key, "url": "#", "body": f"Could not generate summary for {key}: {e}"})
     
-    successful_summaries = [s for s in summaries if not s.startswith("Could not generate summary")]
+    successful_summaries = [s for s in summaries if not s['body'].startswith("Could not generate summary")]
     
     if len(successful_summaries) > 1:
         print("\n--- Generating aggregate summary for all tickets... ---")
         llm = get_llm()
         
+        individual_summaries_for_prompt = "\n\n".join([f"Ticket {s['key']}:\n{s['body']}" for s in successful_summaries])
+
         aggregate_prompt = f"""
         You are an expert engineering program manager. Your task is to analyze the following collection of JIRA ticket summaries and provide a high-level aggregate summary.
         Identify any common themes, recurring root causes, shared blockers, or patterns across all the tickets provided.
@@ -273,36 +277,34 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> str:
         - **Overall Status & Common Themes:**
         - **Potential Shared Root Causes:**
         - **Overarching Blockers or Dependencies:**
+        
         **Individual Ticket Summaries:**
         ---
-        {individual_summaries_text}
+        {individual_summaries_for_prompt}
         ---
         **Aggregate Analysis:**
         """
         
         try:
-            aggregate_summary = llm.invoke(aggregate_prompt).content
-            final_output = (
-                f"{individual_summaries_text}\n\n"
-                f"----------------------------------------\n"
-                f"**Aggregate Summary of {len(successful_summaries)} Tickets**\n"
-                f"----------------------------------------\n"
-                f"{aggregate_summary}"
-            )
-            return final_output
+            aggregate_summary_body = llm.invoke(aggregate_prompt).content
+            aggregate_summary_object = {
+                "key": f"Aggregate Summary of {len(successful_summaries)} Tickets",
+                "url": "#",
+                "body": aggregate_summary_body
+            }
+            # Append the aggregate summary to the list of individual summaries
+            summaries.append(aggregate_summary_object)
         except Exception as e:
             print(f"WARNING: Could not generate aggregate summary due to an error: {e}")
-            return individual_summaries_text
+            # Optionally add an error object to the list
+            summaries.append({"key": "Aggregate Summary", "url": "#", "body": f"Failed to generate aggregate summary: {e}"})
 
-    return individual_summaries_text
+    return summaries
 
 
 @tool
 def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
-    """
-    Use this tool to search for Jira issues based on a user's natural language query.
-    You must pass the user's complete, original query to the 'original_query' parameter.
-    """
+    # ... (No Change in this tool)
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
         params = extract_params(original_query)
@@ -324,10 +326,7 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-    """
-    Use this tool to find Jira tickets that are similar to an existing ticket.
-    The user must provide a single, valid issue key (e.g., 'PLAT-123').
-    """
+    # ... (No Change in this tool)
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
@@ -349,10 +348,7 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-    """
-    Use this tool to find potential duplicate Jira tickets based on a source ticket key.
-    This tool checks for other tickets in the same Program and Project with a very similar summary.
-    """
+    # ... (No Change in this tool)
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
     print(f"--- Received source issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
