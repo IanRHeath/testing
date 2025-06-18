@@ -1,5 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
+
+// --- Helper Components ---
 
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
@@ -168,6 +169,7 @@ export default function App() {
     }, [messages]);
 
     const handleSend = async (prompt, isAutoTriggered = false) => {
+        // --- FIX: Use the passed prompt if it exists, otherwise default to the input state ---
         const textToSend = (typeof prompt === 'string') ? prompt : input;
         
         if (!textToSend.trim() || isLoading) return;
@@ -281,12 +283,12 @@ export default function App() {
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => { if (e.key === 'Enter') handleSend() }}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleSend(input) }}
                             placeholder={currentQuestion ? "Please make a selection above or type your answer..." : "Type your Jira request..."}
                             className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
                             disabled={isLoading}
                         />
-                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
+                        <button onClick={() => handleSend(input)} disabled={isLoading || !input.trim()} className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
                             Send
                         </button>
                     </div>
