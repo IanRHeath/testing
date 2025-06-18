@@ -306,7 +306,10 @@ def summarize_multiple_tickets_tool(issue_keys: List[str]) -> List[Dict[str, str
 
 @tool
 def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
-    # ... (No Change in this tool)
+   """
+    Use this tool to search for Jira issues based on a user's natural language query.
+    You must pass the user's complete, original query to the 'original_query' parameter.
+    """
     if JIRA_CLIENT_INSTANCE is None: raise JiraBotError("JIRA client not initialized.")
     try:
         params = extract_params(original_query)
@@ -328,7 +331,11 @@ def jira_search_tool(original_query: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-    # ... (No Change in this tool)
+   """
+    Use this tool to find Jira tickets that are similar in content to an existing ticket.
+    This is useful for finding related issues or tickets that discuss the same topic.
+    You must provide a single, valid 'issue_key' (e.g., 'PLAT-123') for the source ticket.
+    """
     print(f"\n--- TOOL CALLED: find_similar_tickets_tool ---")
     print(f"--- Received issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
@@ -350,7 +357,11 @@ def find_similar_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
 
 @tool
 def find_duplicate_tickets_tool(issue_key: str) -> List[Dict[str, Any]]:
-    # ... (No Change in this tool)
+   """
+    Use this tool to find potential *duplicate* Jira tickets for a given source ticket.
+    This tool is more specific than finding similar tickets; it looks for tickets in the same Program and Project with a very similar summary text.
+    You must provide a single, valid 'issue_key' (e.g., 'PLAT-123').
+    """
     print(f"\n--- TOOL CALLED: find_duplicate_tickets_tool ---")
     print(f"--- Received source issue_key: {issue_key} ---")
     source_ticket_data = get_ticket_data_for_analysis(issue_key, JIRA_CLIENT_INSTANCE)
