@@ -97,21 +97,32 @@ const JiraSummary = ({ summary }) => {
     );
 };
 
-
+// --- *** MODIFIED COMPONENT *** ---
 const MarkdownRenderer = ({ text }) => {
     const createMarkup = (markdownText) => {
         if (typeof markdownText !== 'string') return { __html: '' };
+
+        // Regex to find URLs and turn them into clickable links
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+
         const html = markdownText
+            // First, escape HTML to prevent injection attacks
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            // Then, apply formatting
+            .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">$1</a>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/^- (.*$)/gm, '<ul class="list-disc list-inside ml-4"><li>$1</li></ul>')
             .replace(/\n/g, '<br />');
+
         return { __html: html };
     };
     return <div dangerouslySetInnerHTML={createMarkup(text)} />;
 };
 
 const OptionsInput = ({ questionData, onOptionSelect }) => {
+    // ... (No Change)
     const { options, next_field } = questionData;
 
     if (!options || options.length === 0) {
@@ -150,6 +161,7 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
 };
 
 const ThemeToggle = ({ darkMode, setDarkMode }) => {
+    // ... (No Change)
     const MoonIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
@@ -169,9 +181,8 @@ const ThemeToggle = ({ darkMode, setDarkMode }) => {
     );
 };
 
-
-// --- MAIN APP COMPONENT (Logic Changed) ---
 export default function App() {
+    // ... (No change in the main App component logic)
     const initialMessage = { role: 'ai', type: 'text', content: "Welcome to the Jira Triage LLM Agent! How can I help you today?" };
     const [messages, setMessages] = useState([initialMessage]);
     const [input, setInput] = useState('');
@@ -260,8 +271,6 @@ export default function App() {
         setCurrentQuestion(null);
     };
 
-    // --- The complex parsing function is now GONE ---
-
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
@@ -278,7 +287,6 @@ export default function App() {
                         <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <AiIcon />}
                             <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
-                                {/* --- *** SIMPLIFIED RENDER LOGIC *** --- */}
                                 {msg.type === 'text' ? (
                                     <MarkdownRenderer text={msg.content} />
                                 ) : msg.type === 'error' ? (
