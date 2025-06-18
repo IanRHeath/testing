@@ -69,7 +69,8 @@ const JiraTicket = ({ ticket }) => {
 const JiraSummary = ({ summary }) => {
     const [copied, setCopied] = useState(false);
     const handleCopy = () => {
-        navigator.clipboard.writeText(summary.rawText).then(() => {
+        const textToCopy = `Key: ${summary.key}\n\n${summary.body}`;
+        navigator.clipboard.writeText(textToCopy).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
@@ -78,7 +79,13 @@ const JiraSummary = ({ summary }) => {
     return (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800">
             <div className="flex justify-between items-start mb-2">
-                <a href={summary.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{summary.key}</a>
+                <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                    {summary.url !== '#' ? (
+                         <a href={summary.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{summary.key}</a>
+                    ) : (
+                        <span>{summary.key}</span>
+                    )}
+                </div>
                 <button onClick={handleCopy} title="Copy Summary" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                     {copied ? <CheckIcon /> : <CopyIcon />}
                 </button>
@@ -212,7 +219,7 @@ export default function App() {
 
         const apiHistory = messages.map(msg => ({
             role: msg.role,
-            content: msg.raw_output || msg.content
+            content: msg.raw_output || msg.content // Use raw_output for history if available
         }));
 
         try {
@@ -253,25 +260,7 @@ export default function App() {
         setCurrentQuestion(null);
     };
 
-    // --- **FIXED & MORE ROBUST** HELPER FUNCTION TO PARSE SUMMARIES ---
-    const parseSummaries = (text) => {
-        // This regex is now more flexible.
-        // \s* handles optional spaces around the colon.
-        // \s+ handles one or more newlines or spaces between the header and body.
-        const summaryRegex = /Summary for ([A-Z0-9-]+):\s*(?:(https?:\/\/[^\s]+))?\s+([\s\S]*?)(?=\n\n---\n\n|$)/g;
-        const summaries = [];
-        let match;
-        while ((match = summaryRegex.exec(text)) !== null) {
-            summaries.push({
-                key: match[1],
-                url: match[2] || '#', // Fallback for missing URL
-                body: match[3].trim(),
-                rawText: match[0].trim()
-            });
-        }
-        return summaries;
-    };
-
+    // --- The complex parsing function is now GONE ---
 
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
@@ -285,34 +274,30 @@ export default function App() {
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                 <div className="max-w-3xl mx-auto">
-                    {messages.map((msg, index) => {
-                        // This logic is now more robust.
-                        const isSummary = msg.role === 'ai' && msg.type === 'text' && msg.content.includes('Summary for');
-                        const summaries = isSummary ? parseSummaries(msg.content) : [];
-
-                        return (
-                            <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                {msg.role === 'ai' && <AiIcon />}
-                                <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
-                                    {isSummary && summaries.length > 0 ? (
-                                        <div>
-                                            {summaries.map((summary, i) => <JiraSummary key={i} summary={summary} />)}
-                                        </div>
-                                    ) : msg.type === 'text' ? (
-                                        <MarkdownRenderer text={msg.content} />
-                                    ) : msg.type === 'error' ? (
-                                        <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>
-                                    ) : msg.type === 'search_result' ? (
-                                        <div>
-                                            <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">I found the following tickets:</p>
-                                            {msg.content.map((ticket, i) => <JiraTicket key={i} ticket={ticket} />)}
-                                        </div>
-                                    ) : null}
-                                </div>
-                                {msg.role === 'user' && <UserIcon />}
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.role === 'ai' && <AiIcon />}
+                            <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
+                                {/* --- *** SIMPLIFIED RENDER LOGIC *** --- */}
+                                {msg.type === 'text' ? (
+                                    <MarkdownRenderer text={msg.content} />
+                                ) : msg.type === 'error' ? (
+                                    <div className="text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 p-3 rounded-md"><strong className="font-bold block mb-1">Error:</strong> <MarkdownRenderer text={msg.content} /></div>
+                                ) : msg.type === 'search_result' ? (
+                                    <div>
+                                        <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">I found the following tickets:</p>
+                                        {msg.content.map((ticket, i) => <JiraTicket key={i} ticket={ticket} />)}
+                                    </div>
+                                ) : msg.type === 'summary_result' ? (
+                                    <div>
+                                        <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Here is the requested summary:</p>
+                                        {msg.content.map((summary, i) => <JiraSummary key={i} summary={summary} />)}
+                                    </div>
+                                ) : null}
                             </div>
-                        );
-                    })}
+                            {msg.role === 'user' && <UserIcon />}
+                        </div>
+                    ))}
                     {isLoading && (
                         <div className="flex items-start gap-4 mb-6 justify-start">
                             <AiIcon />
