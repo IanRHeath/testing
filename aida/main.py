@@ -1,4 +1,4 @@
-# main_script.py
+# main_script.py (with completed Step 2 logic)
 
 import os
 import snowflake.connector
@@ -9,31 +9,23 @@ import requests
 import time
 import shutil
 import asyncio
-
-# --- Imports from your snippet ---
 from azure.identity import InteractiveBrowserCredential
 import apex.results as arp
 import apex.clients as ac
 
-# --- Configuration and Setup ---
-
+# --- Configuration and Setup (no changes) ---
 def setup_environment():
-    """
-    Loads credentials from a .env file into the environment.
-    """
+    # ...
     print("[INFO] Setting up environment...")
     load_dotenv()
     if not os.getenv("SNOWFLAKE_USER") or not os.getenv("AIDA_USER") or not os.getenv("AIDA_PASSWORD"):
         raise EnvironmentError("CRITICAL: Ensure SNOWFLAKE_USER, AIDA_USER, and AIDA_PASSWORD are in .env file.")
     print("[SUCCESS] Environment configured.")
 
-# --- Snowflake Logic (from Step 1, no changes) ---
 
+# --- Snowflake Logic (no changes) ---
 def find_unprocessed_failures(execution_label: str) -> list:
-    """
-    Connects to Snowflake and finds all unprocessed failures for a given execution_label.
-    """
-    # This function remains exactly the same as in Step 1.
+    # ... (This function remains exactly the same)
     print(f"\n[INFO] Connecting to Snowflake to find failures for label: '{execution_label}'")
     snowflake_user = os.getenv("SNOWFLAKE_USER")
     conn = None
@@ -67,56 +59,87 @@ def find_unprocessed_failures(execution_label: str) -> list:
             print("[INFO] Closing Snowflake connection.")
             conn.close()
 
-# --- Data Enrichment Module ---
+
+# --- Data Enrichment Module (UPDATED) ---
 
 def get_enrichment_data(failure_info: dict) -> dict:
-    """
-    Takes a single failure dictionary and enriches it with data from AIDA and apex-next.
-    """
     print(f"\n--- Starting Enrichment for SEQ ID: {failure_info['TEST_RESULT_SEQ_ID']} ---")
     
     enriched_context = {"original_failure": failure_info}
     
-    # --- AIDA Analysis (no changes) ---
+    # --- AIDA Analysis ---
     print(f"[INFO] Starting AIDA analysis...")
-    # ... AIDA logic remains the same ...
-    # (This section is collapsed for brevity but is unchanged from the previous version)
+    try:
+        pattern = r'/([0-9a-fA-F-]{36})/reports'
+        match = re.search(pattern, str(failure_info['ADS_RESULT_LINK']))
+        if not match: raise ValueError("Could not parse Job ID from ADS_RESULT_LINK.")
+        job_id = match.group(1)
 
+        session = requests.Session()
+        certificate_path = "./certificates/tls-ca-bundle.crt"
+        
+        login_data = { "username": os.getenv("AIDA_USER"), "password": os.getenv("AIDA_PASSWORD") }
+        login_response = session.post("https://aida.amd.com/api/auth/login", json=login_data, verify=certificate_path)
+        login_response.raise_for_status()
+        
+        start_debug_data = {"queueType": "ads", "debugData": { "jobId": str(job_id), "useOfflineMethod": "true", "configOption": "16" }}
+        aida_response = session.post("https://aida.amd.com/api/debug/queueDebug", json=start_debug_data, verify=certificate_path)
+        aida_response.raise_for_status()
+        adId = aida_response.json().get('adId')
+        
+        enriched_context['aida_id'] = adId # Storing the AIDA ID
+        print(f"[INFO] AIDA debug run started with ID: {adId}")
 
-    # --- Apex-Next File Analysis (IMPLEMENTATION FROM YOUR SNIPPET) ---
-    print(f"\n[INFO] Starting apex-next file download using your provided snippet's logic...")
-    
-    # I've adapted your snippet to work within our function.
-    # Instead of a hardcoded seqid, it uses the one passed into this function.
+        summary_url = f"https://aida.amd.com/api/debug/{adId}"
+        while True:
+            summary_response = session.get(summary_url, verify=certificate_path)
+            summary_response.raise_for_status()
+            prompts = summary_response.json().get('debugData', {}).get('prompts', [])
+            if prompts and prompts[0].get('status', '').lower() == "completed":
+                # *** NEW: Storing the AIDA summary in our context dictionary ***
+                enriched_context['aida_summary'] = prompts[0].get('outputlog')
+                print("[SUCCESS] AIDA analysis completed.")
+                break
+            print("[INFO] Waiting for AIDA completion...")
+            time.sleep(10)
+
+    except Exception as e:
+        print(f"[ERROR] AIDA analysis failed: {e}")
+        enriched_context['aida_summary'] = f"AIDA analysis failed: {e}"
+
+    # --- Apex-Next File Analysis ---
+    print(f"\n[INFO] Starting apex-next file download...")
+    seqid = failure_info['TEST_RESULT_SEQ_ID']
+    target_dir = f"./temp_eras/{seqid}"
     
     try:
         pipeline = arp.Pipeline.apex
         tenant_id = ac._AMD_TENANT_ID
-        seqid = [failure_info['TEST_RESULT_SEQ_ID']] # Using the dynamic seqid from the failure
-        target_dir = "./eras/" + str(seqid[0]) # Using the same directory structure
-
-        # pipeline.devinfo # This was commented out in your snippet
         storageinfo = pipeline.prodinfo
-        creds = InteractiveBrowserCredential(
-                tenant_id=tenant_id,
-                )
+        creds = InteractiveBrowserCredential(tenant_id=tenant_id)
         
-        print(f"[INFO] Calling arp.download_eras for SEQ ID: {seqid[0]}...")
         asyncio.run(arp.download_eras(
-            seqids=seqid,
-            download_dir=target_dir,
-            creds=creds,
-            storageinfo=storageinfo,
-            ))
-        print(f"[SUCCESS] Download call for apex-next files completed.")
+            seqids=[seqid], download_dir=target_dir, creds=creds, storageinfo=storageinfo
+        ))
+        print(f"[SUCCESS] Downloaded apex-next files to {target_dir}")
         
-        # We can add file parsing here if the download succeeds
+        # *** NEW: Parsing the file and storing the result in our context dictionary ***
+        # This logic is from your get_ticket_info.py script
+        testflow_path = os.path.join(target_dir, "platform-test-results", "flat-storage", str(seqid), "testflow.log")
+        if os.path.exists(testflow_path):
+            with open(testflow_path, 'r') as file:
+                for line in file:
+                    if 'revision :' in line:
+                        enriched_context['die_revision'] = line.split('revision :', 1)[1].split(',', 1)[0].strip()
+                        print(f"[SUCCESS] Found Die Revision: {enriched_context['die_revision']}")
+                        break
+        else:
+            enriched_context['die_revision'] = "testflow.log not found"
 
     except Exception as e:
         print(f"[ERROR] Apex-next file processing failed: {e}")
-        enriched_context['apex_next_status'] = f"Processing failed: {e}"
+        enriched_context['die_revision'] = f"File processing failed: {e}"
     finally:
-        # Clean up the downloaded files if the directory was created
         if os.path.exists(target_dir):
             shutil.rmtree(target_dir)
             print(f"[INFO] Cleaned up temporary directory: {target_dir}")
@@ -124,9 +147,9 @@ def get_enrichment_data(failure_info: dict) -> dict:
     return enriched_context
 
 
-# --- Main Execution Block ---
-
+# --- Main Execution Block (no changes) ---
 if __name__ == "__main__":
+    # ...
     setup_environment()
     
     test_execution_label = "SYSVAL.INT.STXH.101BCDENDA-250417.FP11.0530.PPSV4694.EXP04_1001cRC2_Pre01_RevertPSP_RC62-NDA_CS7.05.16.143_TDR0_1500RB-S5_Test"
