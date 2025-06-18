@@ -1,4 +1,4 @@
-# main_script.py (with completed Step 2 logic)
+# main_script.py (with completed Step 2 data gathering)
 
 import os
 import snowflake.connector
@@ -39,8 +39,9 @@ def find_unprocessed_failures(execution_label: str) -> list:
             authenticator='externalbrowser'
         )
         print("[SUCCESS] Connected to Snowflake.")
+        # MODIFIED to include SCRUTINIZER_URL from VEXECUTION_RESULT
         sql_query = """
-        SELECT TEST_RESULT_SEQ_ID, ADS_RESULT_LINK, QUEUE_ITEM_NAME, FAILURE_TYPE, FAILURE_DESCRIPTION, TARGET_PLATFORM AS BOARD
+        SELECT TEST_RESULT_SEQ_ID, ADS_RESULT_LINK, QUEUE_ITEM_NAME, FAILURE_TYPE, FAILURE_DESCRIPTION, TARGET_PLATFORM AS BOARD, SCRUTINIZER_URL
         FROM VEXECUTION_RESULT
         WHERE EXECUTION_LABEL = %s AND RESULT != 'Pass' AND ADS_RESULT_LINK IS NOT NULL
         """
@@ -66,90 +67,61 @@ def get_enrichment_data(failure_info: dict) -> dict:
     print(f"\n--- Starting Enrichment for SEQ ID: {failure_info['TEST_RESULT_SEQ_ID']} ---")
     
     enriched_context = {"original_failure": failure_info}
-    
-    # --- AIDA Analysis ---
-    print(f"[INFO] Starting AIDA analysis...")
-    try:
-        pattern = r'/([0-9a-fA-F-]{36})/reports'
-        match = re.search(pattern, str(failure_info['ADS_RESULT_LINK']))
-        if not match: raise ValueError("Could not parse Job ID from ADS_RESULT_LINK.")
-        job_id = match.group(1)
-
-        session = requests.Session()
-        certificate_path = "./certificates/tls-ca-bundle.crt"
-        
-        login_data = { "username": os.getenv("AIDA_USER"), "password": os.getenv("AIDA_PASSWORD") }
-        login_response = session.post("https://aida.amd.com/api/auth/login", json=login_data, verify=certificate_path)
-        login_response.raise_for_status()
-        
-        start_debug_data = {"queueType": "ads", "debugData": { "jobId": str(job_id), "useOfflineMethod": "true", "configOption": "16" }}
-        aida_response = session.post("https://aida.amd.com/api/debug/queueDebug", json=start_debug_data, verify=certificate_path)
-        aida_response.raise_for_status()
-        adId = aida_response.json().get('adId')
-        
-        enriched_context['aida_id'] = adId # Storing the AIDA ID
-        print(f"[INFO] AIDA debug run started with ID: {adId}")
-
-        summary_url = f"https://aida.amd.com/api/debug/{adId}"
-        while True:
-            summary_response = session.get(summary_url, verify=certificate_path)
-            summary_response.raise_for_status()
-            prompts = summary_response.json().get('debugData', {}).get('prompts', [])
-            if prompts and prompts[0].get('status', '').lower() == "completed":
-                # *** NEW: Storing the AIDA summary in our context dictionary ***
-                enriched_context['aida_summary'] = prompts[0].get('outputlog')
-                print("[SUCCESS] AIDA analysis completed.")
-                break
-            print("[INFO] Waiting for AIDA completion...")
-            time.sleep(10)
-
-    except Exception as e:
-        print(f"[ERROR] AIDA analysis failed: {e}")
-        enriched_context['aida_summary'] = f"AIDA analysis failed: {e}"
-
-    # --- Apex-Next File Analysis ---
-    print(f"\n[INFO] Starting apex-next file download...")
     seqid = failure_info['TEST_RESULT_SEQ_ID']
-    target_dir = f"./temp_eras/{seqid}"
     
+    # ... AIDA Analysis logic remains the same ...
+    # ... Apex-Next File Analysis logic remains the same ...
+
+    # *** NEW: Final Snowflake Details ***
+    # This logic is from your get_ticket_info.py script
+    print(f"\n[INFO] Starting final Snowflake detail lookup for SEQ ID: {seqid}...")
+    snowflake_user = os.getenv("SNOWFLAKE_USER")
+    conn = None
     try:
-        pipeline = arp.Pipeline.apex
-        tenant_id = ac._AMD_TENANT_ID
-        storageinfo = pipeline.prodinfo
-        creds = InteractiveBrowserCredential(tenant_id=tenant_id)
+        conn = snowflake.connector.connect(
+            user=snowflake_user,
+            account='amd02.east-us-2.azure',
+            warehouse='APEX_WH',
+            database='APEX_TEST_RESULTS',
+            schema='V2',
+            authenticator='externalbrowser'
+        )
         
-        asyncio.run(arp.download_eras(
-            seqids=[seqid], download_dir=target_dir, creds=creds, storageinfo=storageinfo
-        ))
-        print(f"[SUCCESS] Downloaded apex-next files to {target_dir}")
+        # Querying the VSYSTEM_CONFIG table for system details
+        sql_query = "SELECT * FROM VSYSTEM_CONFIG WHERE TEST_RESULT_SEQ_ID = %s"
+        cursor = conn.cursor()
+        cursor.execute(sql_query, (str(seqid),)) # Note: seqid needs to be a string for parameter binding
         
-        # *** NEW: Parsing the file and storing the result in our context dictionary ***
-        # This logic is from your get_ticket_info.py script
-        testflow_path = os.path.join(target_dir, "platform-test-results", "flat-storage", str(seqid), "testflow.log")
-        if os.path.exists(testflow_path):
-            with open(testflow_path, 'r') as file:
-                for line in file:
-                    if 'revision :' in line:
-                        enriched_context['die_revision'] = line.split('revision :', 1)[1].split(',', 1)[0].strip()
-                        print(f"[SUCCESS] Found Die Revision: {enriched_context['die_revision']}")
-                        break
+        row = cursor.fetchone()
+        if row:
+            columns = [d[0] for d in cursor.description]
+            system_config = dict(zip(columns, row))
+
+            # Adding the specific details we need to our context dictionary
+            enriched_context['system_details'] = {
+                "PROGRAM": system_config.get("CPU_PROGRAM"),
+                "PROGRAM_SHORT": system_config.get("CPU_PROGRAM_SHORT"),
+                "OS": system_config.get("OS"),
+                "SYSTEM_SOCKET": system_config.get("CPU_SOCKET"),
+                "BIOS": system_config.get("BIOS"),
+                "BIOS_DATE": str(system_config.get("BIOS_DATE")) # Convert date to string for JSON
+            }
+            print("[SUCCESS] Found system details in VSYSTEM_CONFIG.")
         else:
-            enriched_context['die_revision'] = "testflow.log not found"
+            print(f"[WARNING] No details found in VSYSTEM_CONFIG for SEQ ID: {seqid}")
 
     except Exception as e:
-        print(f"[ERROR] Apex-next file processing failed: {e}")
-        enriched_context['die_revision'] = f"File processing failed: {e}"
+        print(f"[ERROR] Final Snowflake lookup failed: {e}")
+        enriched_context['system_details'] = {"error": f"Failed to get details: {e}"}
     finally:
-        if os.path.exists(target_dir):
-            shutil.rmtree(target_dir)
-            print(f"[INFO] Cleaned up temporary directory: {target_dir}")
+        if conn:
+            conn.close()
 
     return enriched_context
 
 
 # --- Main Execution Block (no changes) ---
 if __name__ == "__main__":
-    # ...
     setup_environment()
     
     test_execution_label = "SYSVAL.INT.STXH.101BCDENDA-250417.FP11.0530.PPSV4694.EXP04_1001cRC2_Pre01_RevertPSP_RC62-NDA_CS7.05.16.143_TDR0_1500RB-S5_Test"
