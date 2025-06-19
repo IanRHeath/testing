@@ -309,6 +309,20 @@ export default function App() {
         handleSend(command, true);
     };
 
+    const handleConfirmCreation = () => {
+        const command = `finalize_ticket_creation(confirmed=True)`;
+        const userMessage = { role: 'user', type: 'text', content: "Yes, create the ticket." };
+        setMessages(prev => [...prev, userMessage]);
+        handleSend(command, true);
+    };
+
+    const handleCancelCreation = () => {
+        const command = `cancel_ticket_creation()`;
+        const userMessage = { role: 'user', type: 'text', content: "No, cancel it." };
+        setMessages(prev => [...prev, userMessage]);
+        handleSend(command, true);
+    };
+    
     const startNewChat = () => {
         setMessages([initialMessage]);
         setShowSuggestions(true);
