@@ -306,7 +306,8 @@ export default function App() {
     };
 
     return (
-        <div className="flex flex-col h-screen font-sans dark-radial-background text-gray-200">
+        <div className="relative flex flex-col h-screen font-sans dark-radial-background text-gray-200">
+        <div className="pulsating-light"></div> {/* <-- ADD THIS LINE */}
             <header className="p-4 shadow-sm flex justify-between items-center bg-black/30 border-b border-white/10 backdrop-blur-sm">
                 <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
                     New Chat
