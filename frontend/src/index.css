@@ -14,6 +14,7 @@ body {
   background-image: none;
 }
 
+/* Replace the existing .pulsating-light class with this one */
 .pulsating-light {
   position: absolute;
   top: 50%;
@@ -21,27 +22,30 @@ body {
   transform: translate(-50%, -50%);
   width: 500px;
   height: 500px;
+  /* The light is now slightly brighter (from 0.08 to 0.12 opacity) */
   background-image: radial-gradient(
     circle,
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0) 70%   
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0) 70%
   );
   border-radius: 50%;
   animation: pulse-animation 6s infinite ease-in-out;
-  z-index: 0; 
+  z-index: 0;
 }
 
+/* Replace the existing @keyframes rule with this one */
 @keyframes pulse-animation {
   0% {
-    transform: translate(-50%, -50%) scale(0.95);
+    /* The pulse effect is now more pronounced (scales between 0.9 and 1.2) */
+    transform: translate(-50%, -50%) scale(0.9);
     opacity: 0.7;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.1);
+    transform: translate(-50%, -50%) scale(1.2);
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: translate(-50%, -50%) scale(0.9);
     opacity: 0.7;
   }
 }
