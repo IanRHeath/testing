@@ -210,12 +210,6 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
     );
 };
 
-const ThemeToggle = ({ darkMode, setDarkMode }) => {
-    const MoonIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-        </svg>
-    );
 
     const SunIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -238,30 +232,9 @@ export default function App() {
     const messagesEndRef = useRef(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
     const [currentQuestion, setCurrentQuestion] = useState(null);
-    const [darkMode, setDarkMode] = useState(false);
     const [inputType, setInputType] = useState('text'); 
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('darkMode');
-        if (savedTheme !== null) {
-            setDarkMode(savedTheme === 'true');
-        } else {
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setDarkMode(prefersDark);
-        }
-    }, []);;
-
-    useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('darkMode', 'true');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('darkMode', 'false');
-        }
-    }, [darkMode]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -350,13 +323,13 @@ export default function App() {
     };
 
     return (
-        <div className={`flex flex-col h-screen font-sans transition-colors duration-500 ${darkMode ? 'animated-gradient text-gray-200' : 'bg-gray-100'}`}>
+        <div className="flex flex-col h-screen font-sans animated-gradient text-gray-200">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
                 <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
                     New Chat
                 </button>
                 <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
-                <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+                <div className="w-20"></div> {/* This empty div keeps the title centered */}
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
