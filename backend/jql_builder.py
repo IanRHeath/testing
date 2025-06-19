@@ -195,9 +195,10 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     Your goal is to create a JSON object based on the user's request.
 
     Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days, date_number, date_unit, date_field, date_operator.
-    The "maxResults" field is MANDATORY.
     
     **Extraction Rules:**
+    # --- ADD THIS NEW RULE ---
+    - **LIMITS:** If the user specifies a number of tickets (e.g., 'find 3 tickets', 'show me 5 bugs'), use that number for `maxResults`. If no number is given, default to 20. The "maxResults" field is MANDATORY.
     - For time queries like "created in the last 2 years", extract "date_number": 2, "date_unit": "year", "date_field": "created", "date_operator": "after".
     - For "stale tickets" or "not updated in X days", extract `stale_days`. This overrides other date fields.
     - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
