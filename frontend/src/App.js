@@ -94,6 +94,50 @@ const JiraSummary = ({ summary }) => {
     );
 };
 
+
+const JiraConfirmation = ({ confirmationData }) => {
+    const { draft_data, duplicates } = confirmationData;
+
+    return (
+        <div>
+            <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Please review the final ticket information:</p>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800 text-sm">
+                {Object.entries(draft_data).map(([key, value]) => {
+                    // Don't show internal fields or empty values
+                    if (key === 'project' || key === 'problem_details_group' || key === 'silicon_revisions_group' || !value) return null; 
+                    const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    return (
+                        <div key={key} className="grid grid-cols-3 gap-2 mb-1">
+                            <strong className="font-medium text-gray-600 dark:text-gray-300 col-span-1">{formattedKey}:</strong>
+                            <span className="text-gray-800 dark:text-gray-200 col-span-2">{String(value)}</span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                <p className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Duplicate Check Results:</p>
+                {duplicates && duplicates.length > 0 ? (
+                    <div>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-2">Warning: The following potential duplicates were found:</p>
+                        <ul className="list-disc list-inside text-sm">
+                            {duplicates.map(ticket => (
+                                <li key={ticket.key}>
+                                    <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {ticket.key}: {ticket.summary}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 italic">No potential duplicates were found.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const MarkdownRenderer = ({ text }) => {
     const createMarkup = (markdownText) => {
         if (typeof markdownText !== 'string') return { __html: '' };
@@ -308,6 +352,8 @@ export default function App() {
                                         <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Here is the requested summary:</p>
                                         {msg.content.map((summary, i) => <JiraSummary key={i} summary={summary} />)}
                                     </div>
+                                ) : msg.type === 'confirmation_request' ? (
+                                    <JiraConfirmation confirmationData={msg.content} />
                                 ) : null}
                             </div>
                             {msg.role === 'user' && <UserIcon />}
