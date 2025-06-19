@@ -243,9 +243,14 @@ export default function App() {
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
     useEffect(() => {
-        const isDarkMode = localStorage.getItem('darkMode') === 'true';
-        setDarkMode(isDarkMode);
-    }, []);
+        const savedTheme = localStorage.getItem('darkMode');
+        if (savedTheme !== null) {
+            setDarkMode(savedTheme === 'true');
+        } else {
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setDarkMode(prefersDark);
+        }
+    }, []);;
 
     useEffect(() => {
         if (darkMode) {
