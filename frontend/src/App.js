@@ -366,7 +366,11 @@ export default function App() {
                     {showSuggestions && !currentQuestion && (
                         <div className="flex flex-wrap gap-2 mb-3 justify-center">
                             {suggestionPrompts.map((prompt, i) => (
-                                <button key={i} onClick={() => handleSend(prompt)} className="bg-white/5 border border-white/20 text-gray-300 text-sm py-1.5 px-3 rounded-full hover:bg-white/10 hover:border-white/30 hover:text-gray-100 transition-colors"
+                                <button
+                                    key={i}
+                                    onClick={() => handleSend(prompt)}
+                                    className="bg-transparent border border-white/20 text-gray-300 text-sm py-1.5 px-3 rounded-full hover:bg-white/10 hover:border-white/30 hover:text-gray-100 transition-colors"
+                                >
                                     {prompt}
                                 </button>
                             ))}
@@ -393,7 +397,11 @@ export default function App() {
                                 disabled={isLoading}
                             />
                         )}
-                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="self-end bg-gray-200 text-zinc-900 font-semibold rounded-md px-4 py-2 text-sm hover:bg-white disabled:bg-zinc-700 disabled:text-zinc-400 disabled:cursor-not-allowed transition-colors"
+                        <button
+                            onClick={() => handleSend()}
+                            disabled={isLoading || !input.trim()}
+                            className="self-end bg-gray-200 text-zinc-900 font-semibold rounded-md px-4 py-2 text-sm hover:bg-white disabled:bg-zinc-700 disabled:text-zinc-400 disabled:cursor-not-allowed transition-colors"
+                        >
                             Send
                         </button>
                     </div>
