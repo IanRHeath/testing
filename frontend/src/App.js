@@ -43,7 +43,7 @@ const JiraTicket = ({ ticket }) => {
         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
     return (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+        <div className="border border-slate-700 rounded-lg p-4 mb-3 bg-slate-800/60 hover:bg-slate-700/60 transition-colors duration-200">
             <div className="flex justify-between items-start mb-2">
                 <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ticket.key}</a>
                 <div className="flex items-center gap-2">
