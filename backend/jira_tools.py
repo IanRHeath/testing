@@ -45,8 +45,14 @@ class TicketCreator:
         self.draft_data['project'] = project
         return self._get_next_required_field()
 
-    def set_field(self, field_name: str, field_value: str) -> dict:
-        """Sets a field in the draft and returns the next required field question."""
+   # In the TicketCreator class in jira_tools.py
+
+    def set_field(self, field_name: str, field_value: str) -> dict | str:
+        """
+        Sets a field in the draft. If it's the last field, it automatically
+        returns the formatted ticket data for confirmation. Otherwise, it returns
+        the next required field question.
+        """
         if not self.is_active:
             return {
                 "question": "Error: No ticket creation is currently in progress. Please start by using 'start_ticket_creation'.",
@@ -59,8 +65,13 @@ class TicketCreator:
             print("INFO: Keeping existing summary.")
         else:
             self.draft_data[field_name_lower] = field_value
-            
-        return self._get_next_required_field()
+
+        next_step = self._get_next_required_field()
+
+        if next_step.get("next_field") == "None":
+            return self.finalize(confirmed=False)
+        else:
+            return next_step
 
     def _get_next_required_field(self) -> dict:
         """Helper to determine the next required field and return a structured question."""
