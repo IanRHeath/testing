@@ -323,7 +323,7 @@ export default function App() {
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <AiIcon />}
-                            <div className={`rounded-lg p-4 max-w-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700'}`}>
+                            <div className={`rounded-lg p-4 max-w-lg shadow-lg ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-black/20 backdrop-blur-sm border border-white/10'}`}>
                                 {msg.type === 'text' ? (
                                     <MarkdownRenderer text={msg.content} />
                                 ) : msg.type === 'error' ? (
