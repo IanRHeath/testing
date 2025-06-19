@@ -177,13 +177,12 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
     if (!options || options.length === 0) {
         return null;
     }
-
     if (options.length > 5) {
         return (
             <div className="mt-4">
-                <select
+                <select 
                     onChange={(e) => { if (e.target.value) onOptionSelect(next_field, e.target.value) }}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-zinc-700 rounded-md bg-zinc-800 text-gray-200 focus:ring-indigo-500 focus:border-indigo-500 shadow-inner"
                 >
                     <option value="">Select an option...</option>
                     {options.map((option, i) => (
@@ -193,14 +192,13 @@ const OptionsInput = ({ questionData, onOptionSelect }) => {
             </div>
         );
     }
-
     return (
         <div className="mt-4 flex flex-wrap gap-2">
             {options.map((option, i) => (
                 <button
                     key={i}
                     onClick={() => onOptionSelect(next_field, option)}
-                    className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium py-1.5 px-3 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    className="bg-transparent border border-white/20 text-gray-300 text-sm font-medium py-1.5 px-3 rounded-full hover:bg-white/10 hover:border-white/30 hover:text-gray-100 transition-colors"
                 >
                     {option}
                 </button>
