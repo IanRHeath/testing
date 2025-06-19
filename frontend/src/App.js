@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './index.css';
-import { ReactComponent as CompanyLogo } from './logo.svg';
+import companyLogo from './amd-logo-1.svg';
 
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
@@ -311,9 +311,7 @@ export default function App() {
         <div className="pulsating-light"></div> {/* <-- ADD THIS LINE */}
             <header className="p-4 shadow-sm flex justify-between items-center bg-black/30 border-b border-white/10 backdrop-blur-sm">
                 <div className="flex items-center">
-                    <div className="bg-white rounded-full p-1 mr-3 flex items-center justify-center">
-                        <img src={companyLogo} alt="Company Logo" className="h-6 w-auto" />
-                    </div>
+                    <img src={companyLogo} alt="Company Logo" className="h-8 w-auto mr-4" />
                     <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-300 hover:text-white font-semibold py-1 px-3 border border-white/30 rounded-md hover:bg-white/10 transition-colors">
                         New Chat
                     </button>
