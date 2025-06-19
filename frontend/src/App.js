@@ -351,8 +351,13 @@ export default function App() {
                     {isLoading && (
                         <div className="flex items-start gap-4 mb-6 justify-start">
                             <AiIcon />
-                            <div className="rounded-lg p-4 max-w-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700"><div className="flex items-center gap-2"><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.1s]"></div><div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse [animation-delay:0.2s]"></div><span className="text-gray-500 dark:text-gray-400">Thinking...</span></div></div>
-                        </div>
+                            <div className="rounded-lg p-4 max-w-lg shadow-lg bg-black/20 backdrop-blur-sm border border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse [animation-delay:0.1s]"></div>
+                                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                                    <span className="text-gray-300">Thinking...</span>
+                                </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
