@@ -181,6 +181,7 @@ export default function App() {
     const [showSuggestions, setShowSuggestions] = useState(true);
     const [currentQuestion, setCurrentQuestion] = useState(null);
     const [darkMode, setDarkMode] = useState(false);
+    const [inputType, setInputType] = useState('text'); 
 
     const suggestionPrompts = ["Find stale tickets", "Create a new ticket", "Summarize PLAT-12345"];
 
@@ -205,15 +206,16 @@ export default function App() {
 
     const handleSend = async (prompt, isAutoTriggered = false) => {
         const textToSend = (typeof prompt === 'string') ? prompt : input;
-
+        
         if (!textToSend.trim() || isLoading) return;
 
+        setInputType('text');
         setShowSuggestions(false);
         if (!isAutoTriggered) {
-            const userMessage = { role: 'user', type: 'text', content: textToSend };
-            setMessages(prev => [...prev, userMessage]);
+             const userMessage = { role: 'user', type: 'text', content: textToSend };
+             setMessages(prev => [...prev, userMessage]);
         }
-
+       
         setInput('');
         setIsLoading(true);
         setCurrentQuestion(null);
@@ -232,6 +234,13 @@ export default function App() {
 
             const data = await response.json();
             if (!response.ok) throw new Error(data.content || 'An API error occurred.');
+            
+            const nextField = data.content?.next_field;
+            if (nextField === 'description' || nextField === 'steps_to_reproduce') {
+                setInputType('textarea');
+            } else {
+                setInputType('text'); 
+            }
 
             if (data.type === 'options_request') {
                 const questionMessage = { role: 'ai', type: 'text', content: data.content.question, raw_output: data.raw_output };
@@ -248,11 +257,19 @@ export default function App() {
     };
 
     const handleOptionSelect = (fieldName, fieldValue) => {
+        setInputType('text'); 
         const userMessage = { role: 'user', type: 'text', content: fieldValue };
         setMessages(prev => [...prev, userMessage]);
-
+        
         const command = `set_ticket_field(field_name='${fieldName}', field_value='${fieldValue}')`;
         handleSend(command, true);
+    };
+
+    const startNewChat = () => {
+        setMessages([initialMessage]);
+        setShowSuggestions(true);
+        setCurrentQuestion(null);
+        setInputType('text');
     };
 
     const startNewChat = () => {
@@ -319,17 +336,28 @@ export default function App() {
                             ))}
                         </div>
                     )}
-                    <div className="flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-2">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => { if (e.key === 'Enter') handleSend() }}
-                            placeholder={currentQuestion ? "Please make a selection above or type your answer..." : "Type your Jira request..."}
-                            className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
-                            disabled={isLoading}
-                        />
-                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
+                    <div className="flex items-start bg-gray-100 dark:bg-gray-900 rounded-lg p-2">
+                        {inputType === 'textarea' ? (
+                            <textarea
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Enter details... Use Enter for new lines. Click Send to submit."
+                                className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200 resize-none"
+                                rows="4"
+                                disabled={isLoading}
+                            />
+                        ) : (
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={(e) => { if (e.key === 'Enter') handleSend() }}
+                                placeholder={currentQuestion ? "Please make a selection above or type your answer..." : "Type your Jira request..."}
+                                className="flex-1 bg-transparent border-none focus:ring-0 outline-none px-2 text-gray-800 dark:text-gray-200"
+                                disabled={isLoading}
+                            />
+                        )}
+                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="self-end bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
                             Send
                         </button>
                     </div>
