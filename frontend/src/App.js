@@ -40,9 +40,7 @@ const JiraTicket = ({ ticket }) => {
         });
     };
     
-    const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened')
-        ? 'bg-zinc-700 text-zinc-200' 
-        : 'bg-green-800/50 text-green-200';
+    const statusClass = 'bg-green-800/50 text-green-200';
     return (
         <div className="border border-slate-700 rounded-lg p-4 mb-3 bg-slate-800/60 hover:bg-slate-700/60 transition-colors duration-200">
             <div className="flex justify-between items-start mb-2">
