@@ -316,12 +316,6 @@ export default function App() {
         setInputType('text');
     };
 
-    const startNewChat = () => {
-        setMessages([initialMessage]);
-        setShowSuggestions(true);
-        setCurrentQuestion(null);
-    };
-
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm flex justify-between items-center">
