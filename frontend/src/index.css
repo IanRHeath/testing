@@ -7,20 +7,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.animated-gradient {
-  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0c4a6e);
-  background-size: 400% 400%;
-  animation: gradient-animation 15s ease infinite;
-}
-
-@keyframes gradient-animation {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.metallic-background {
+  background-color: #2d3748;
+  background-image: linear-gradient(
+    160deg,
+    hsl(220, 5%, 35%) 0%,
+    hsl(220, 5%, 20%) 20%,
+    hsl(220, 5%, 25%) 40%,
+    hsl(220, 5%, 25%) 60%,
+    hsl(220, 5%, 20%) 80%,
+    hsl(220, 5%, 35%) 100%
+  );
 }
