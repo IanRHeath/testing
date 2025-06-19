@@ -1,126 +1,64 @@
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: C:\Users\ianheath\Desktop\jira_auto_triage\frontend\src\App.js: Identifier 'startNewChat' has already been declared. (275:10)
 
-> Entering new AgentExecutor chain...
-
-Invoking: `set_ticket_field` with `{'field_name': 'steps_to_reproduce', 'field_value': '1.turn that machine on. 2. turn it off'}`
-
-
---- Running duplicate check with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" ---
-
-Attempting JIRA search with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" | Limit: 25
-Successfully found 25 issues.
---- Found 25 candidates. Comparing summaries for duplicates... ---
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-**Please review the following ticket information:**
-
-- **Project**: PLAT
-- **Program**: KRK
-- **Summary**: hellogoodbyesummary
-- **System**: System-Krackan1 FP8 APU
-- **Severity**: Low
-- **Triage Category**: CPU
-- **Triage Assignment**: Automation Infrastructure
-- **Silicon Revision**: B0B
-- **Iod Silicon Die Revision**: B0D
-- **Ccd Silicon Die Revision**: B1
-- **Bios Version**: test432
-- **Description**: goodbye
-- **Steps To Reproduce**: 1.turn that machine on. 2. turn it off
-
----
-*No potential duplicates were found.*
-
-Invoking: `finalize_ticket_creation` with `{'confirmed': False}`
-
-
---- Running duplicate check with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" ---
-
-Attempting JIRA search with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" | Limit: 25
-Successfully found 25 issues.
---- Found 25 candidates. Comparing summaries for duplicates... ---
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-DEBUG: Similarity score between summaries is '1'.
-**Please review the following ticket information:**
-
-- **Project**: PLAT
-- **Program**: KRK
-- **Summary**: hellogoodbyesummary
-- **System**: System-Krackan1 FP8 APU
-- **Severity**: Low
-- **Triage Category**: CPU
-- **Triage Assignment**: Automation Infrastructure
-- **Silicon Revision**: B0B
-- **Iod Silicon Die Revision**: B0D
-- **Ccd Silicon Die Revision**: B1
-- **Bios Version**: test432
-- **Description**: goodbye
-- **Steps To Reproduce**: 1.turn that machine on. 2. turn it off
-
----
-*No potential duplicates were found.*
-Here is the information I have collected for your new ticket:
-
-- Project: PLAT
-- Program: KRK
-- Summary: hellogoodbyesummary
-- System: System-Krackan1 FP8 APU
-- Severity: Low
-- Triage Category: CPU
-- Triage Assignment: Automation Infrastructure
-- Silicon Revision: B0B
-- Iod Silicon Die Revision: B0D
-- Ccd Silicon Die Revision: B1
-- Bios Version: test432
-- Description: goodbye
-- Steps To Reproduce: 1.turn that machine on. 2. turn it off
-
-Is this information correct? Please respond with 'yes' to create the ticket or 'no' to cancel.
-
-> Finished chain.
-127.0.0.1 - - [18/Jun/2025 20:50:27] "POST /api/query HTTP/1.1" 200 -
+  273 |     };
+  274 |
+> 275 |     const startNewChat = () => {
+      |           ^
+  276 |         setMessages([initialMessage]);
+  277 |         setShowSuggestions(true);
+  278 |         setCurrentQuestion(null);
+    at constructor (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:363:19)
+    at FlowParserMixin.raise (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:6609:19)
+    at FlowScopeHandler.checkRedeclarationInScope (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:1626:19)
+    at FlowScopeHandler.declareName (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:1592:12)
+    at FlowScopeHandler.declareName (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:1693:11)
+    at FlowParserMixin.declareNameFromIdentifier (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:7538:16)
+    at FlowParserMixin.checkIdentifier (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:7534:12)
+    at FlowParserMixin.checkLVal (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:7475:12)
+    at FlowParserMixin.parseVarId (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13327:10)
+    at FlowParserMixin.parseVarId (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:3486:11)
+    at FlowParserMixin.parseVar (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13302:12)
+    at FlowParserMixin.parseVarStatement (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13149:10)
+    at FlowParserMixin.parseStatementContent (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12770:23)
+    at FlowParserMixin.parseStatementLike (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12685:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:2928:24)
+    at FlowParserMixin.parseStatementListItem (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12665:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13235:61)
+    at FlowParserMixin.parseBlockBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13228:10)
+    at FlowParserMixin.parseBlock (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13216:10)
+    at FlowParserMixin.parseFunctionBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12035:24)
+    at FlowParserMixin.parseFunctionBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:2905:11)
+    at FlowParserMixin.parseFunctionBodyAndFinish (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12021:10)
+    at FlowParserMixin.parseFunctionBodyAndFinish (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:2913:18)
+    at C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13360:12
+    at FlowParserMixin.withSmartMixTopicForbiddingContext (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12338:14)
+    at FlowParserMixin.parseFunction (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13359:10)
+    at FlowParserMixin.parseExportDefaultExpression (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13822:19)
+    at FlowParserMixin.parseExportDefaultExpression (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:2976:18)
+    at FlowParserMixin.parseExport (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13743:25)
+    at FlowParserMixin.parseStatementContent (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12797:27)
+    at FlowParserMixin.parseStatementLike (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12685:17)
+    at FlowParserMixin.parseStatementLike (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:2928:24)
+    at FlowParserMixin.parseModuleItem (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12662:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13235:36)
+    at FlowParserMixin.parseBlockBody (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:13228:10)
+    at FlowParserMixin.parseProgram (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12541:10)
+    at FlowParserMixin.parseTopLevel (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:12531:25)
+    at FlowParserMixin.parseTopLevel (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:3697:28)
+    at FlowParserMixin.parse (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:14410:10)
+    at parse (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\parser\lib\index.js:14444:38)
+    at parser (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\@babel\core\lib\transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\gensync\index.js:261:32)
+    at C:\Users\ianheath\Desktop\jira_auto_triage\frontend\node_modules\gensync\index.js:273:13
+ERROR
+[eslint] 
+src\App.js
+  Line 275:10:  Parsing error: Identifier 'startNewChat' has already been declared. (275:10)
