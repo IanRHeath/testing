@@ -75,7 +75,7 @@ const JiraSummary = ({ summary }) => {
     };
 
     return (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-800">
+        <div className="border border-slate-700 rounded-lg p-4 mb-3 bg-slate-800/60">
             <div className="flex justify-between items-start mb-2">
                 <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                     {summary.url !== '#' ? (
