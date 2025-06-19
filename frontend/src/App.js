@@ -393,7 +393,7 @@ export default function App() {
                                 disabled={isLoading}
                             />
                         )}
-                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="self-end bg-blue-500 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors">
+                        <button onClick={() => handleSend()} disabled={isLoading || !input.trim()} className="self-end bg-gray-200 text-zinc-900 font-semibold rounded-md px-4 py-2 text-sm hover:bg-white disabled:bg-zinc-700 disabled:text-zinc-400 disabled:cursor-not-allowed transition-colors"
                             Send
                         </button>
                     </div>
