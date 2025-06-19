@@ -372,7 +372,7 @@ export default function App() {
                             ))}
                         </div>
                     )}
-                    <div className="flex items-start bg-gray-100 dark:bg-gray-900 rounded-lg p-2">
+                    <div className="flex items-start bg-zinc-800 border border-zinc-700 rounded-lg p-2 shadow-inner">
                         {inputType === 'textarea' ? (
                             <textarea
                                 value={input}
