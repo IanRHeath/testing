@@ -30,8 +30,9 @@ class TicketCreator:
         """Resets the state to start a new ticket creation."""
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
+        self.initial_title = ""  
         self.required_fields = [
-            "project", "program", "system", "summary",
+            "project", "program", "summary", "system",
             "severity", "triage_category", "triage_assignment",
             "silicon_revision", "iod_silicon_die_revision", "ccd_silicon_die_revision",
             "bios_version", "description", "steps_to_reproduce"
@@ -39,13 +40,12 @@ class TicketCreator:
         self.is_active = False
 
     def start(self, summary: str, project: str = "PLAT"):
+        """Starts the creation process and returns the first question."""
         self.reset()
         self.is_active = True
-        self.draft_data['summary'] = summary
+        self.initial_title = summary
         self.draft_data['project'] = project
         return self._get_next_required_field()
-
-   # In the TicketCreator class in jira_tools.py
 
     def set_field(self, field_name: str, field_value: str) -> dict | str:
         """
@@ -61,14 +61,12 @@ class TicketCreator:
 
         field_name_lower = field_name.lower().replace(" ", "_")
 
-        if field_name_lower == 'summary' and field_value.strip().lower() == 'keep':
-            print("INFO: Keeping existing summary.")
-        else:
-            self.draft_data[field_name_lower] = field_value
-
+        self.draft_data[field_name_lower] = field_value
+            
         next_step = self._get_next_required_field()
-
+        
         if next_step.get("next_field") == "None":
+
             return self.finalize(confirmed=False)
         else:
             return next_step
@@ -83,14 +81,13 @@ class TicketCreator:
                 if field == 'program':
                     options = list(program_map.keys())
                     question = "What Program is this ticket for?"
+                elif field == 'summary':
+                    question = f"You started this ticket for '{self.initial_title}'. Please provide a concise, formal summary for the ticket."
+                    options = []
                 elif field == 'system':
                     program_code = self.draft_data.get('program', '').upper()
                     options = system_map.get(program_code, [])
                     question = f"What System is this for (Program: {program_code})?"
-                elif field == 'summary':
-                    current_summary = self.draft_data.get('summary', '')
-                    question = f"The current summary is: \"{current_summary}\". Please provide the final summary, or type 'keep' to use this one."
-                    options = []
                 elif field == 'severity':
                     options = list(VALID_SEVERITY_LEVELS)
                     question = "What is the Severity?"
@@ -112,10 +109,11 @@ class TicketCreator:
                     options = sorted(list(VALID_SILICON_REVISIONS))
                 elif field == 'steps_to_reproduce':
                     question = "Please provide detailed steps to reproduce the issue."
-                    
+
                 return {"next_field": field, "question": question, "options": options}
 
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
+        
     def _run_duplicate_check(self):
         summary = self.draft_data.get('summary', '')
         project = self.draft_data.get('project', '')
