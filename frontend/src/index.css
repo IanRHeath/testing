@@ -8,12 +8,10 @@ body {
 }
 
 .dark-radial-background {
-  background-color: #18181b; 
-  background-image: radial-gradient(
-    circle at 25% 25%,
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0) 40% 
-  );
+  /* A darker charcoal, equivalent to Tailwind's zinc-950 */
+  background-color: #09090b;
+  /* We remove the top-left gradient to focus on the central pulsating light */
+  background-image: none;
 }
 
 .pulsating-light {
