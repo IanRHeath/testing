@@ -117,17 +117,27 @@ class TicketCreator:
             if candidate_tickets:
                 print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
 
-    def finalize(self) -> str:
+    def finalize(self, confirmed: bool = False) -> str:
+        """
+        If not confirmed, returns a formatted string of the draft data for user review.
+        If confirmed, validates all data and creates the final ticket.
+        """
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
 
         for field in self.required_fields:
             if field not in self.draft_data:
                 return f"Error: Cannot finalize ticket. Missing required field: '{field}'."
+        
+        if not confirmed:
+            review_data = "Please review the following ticket information:\n\n"
+            for key, value in self.draft_data.items():
+                review_data += f"- **{key.replace('_', ' ').title()}**: {value}\n"
+            return review_data
 
         print("--- Finalizing ticket with data ---")
         print(self.draft_data)
-
+        
         try:
             new_issue = create_jira_issue(
                 client=JIRA_CLIENT_INSTANCE,
@@ -169,11 +179,13 @@ def set_ticket_field(field_name: str, field_value: str) -> dict:
     return ticket_creator.set_field(field_name, field_value)
 
 @tool
-def finalize_ticket_creation() -> str:
+def finalize_ticket_creation(confirmed: bool = False) -> str:
     """
-    Finalizes the ticket creation after all required fields have been provided.
+    Use this tool as the final step in ticket creation.
+    First, call it with confirmed=False to show the user the collected data for review.
+    If the user confirms the data is correct, call it a second time with confirmed=True to create the ticket in Jira.
     """
-    return ticket_creator.finalize()
+    return ticket_creator.finalize(confirmed)
 
 @tool
 def cancel_ticket_creation() -> str:
