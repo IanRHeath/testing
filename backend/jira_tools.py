@@ -34,9 +34,10 @@ class TicketCreator:
         self.required_fields = [
             "project", "program", "summary", "system",
             "severity", "triage_category", "triage_assignment",
-            "silicon_revision",  
+            "silicon_revision",
             "bios_version",
-            "problem_details_group"
+            "description",          
+            "steps_to_reproduce"   
         ]
         self.is_active = False
 
@@ -57,26 +58,14 @@ class TicketCreator:
             return { "question": "Error: No ticket creation is currently in progress.", "options": [] }
 
         field_name_lower = field_name.lower().replace(" ", "_")
-        
+
         if field_name_lower == 'silicon_revision':
             self.draft_data['silicon_revision'] = field_value
             self.draft_data['iod_silicon_die_revision'] = field_value
             self.draft_data['ccd_silicon_die_revision'] = field_value
-        
-        elif field_name_lower == 'problem_details_group':
-            try:
-                if '---' not in field_value:
-                    raise ValueError("Please use '---' to separate the description from the steps to reproduce.")
-                description, steps = field_value.split('---', 1)
-                self.draft_data['description'] = description.strip()
-                self.draft_data['steps_to_reproduce'] = steps.strip()
-                self.draft_data['problem_details_group'] = 'completed'
-            except ValueError as e:
-                return { "next_field": field_name_lower, "question": f"Error: {e}. Please try again.", "options": [] }
-        
         else:
             self.draft_data[field_name_lower] = field_value
-            
+        
         next_step = self._get_next_required_field()
         
         if next_step.get("next_field") == "None":
@@ -113,10 +102,11 @@ class TicketCreator:
                 elif field == 'silicon_revision':
                     question = "What is the Silicon Revision? (This value will be used for all revision fields)"
                     options = sorted(list(VALID_SILICON_REVISIONS))
-                elif field == 'problem_details_group':
-                    question = "Please provide the Description, followed by '---', then the Steps to Reproduce. Example: System hangs at POST code 55. --- 1. Apply power. 2. Observe POST code."
-                    options = []
-                
+                elif field == 'description':
+                    question = "Please provide a detailed description of the issue."
+                elif field == 'steps_to_reproduce':
+                    question = "Please provide detailed steps to reproduce the issue."
+
                 return {"next_field": field, "question": question, "options": options}
 
         return {"next_field": "None", "question": "All required fields are set.", "options": []}
