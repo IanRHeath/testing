@@ -94,8 +94,7 @@ const JiraSummary = ({ summary }) => {
     );
 };
 
-
-const JiraConfirmation = ({ confirmationData }) => {
+const JiraConfirmation = ({ confirmationData, onConfirm, onCancel }) => {
     const { draft_data, duplicates } = confirmationData;
 
     return (
@@ -103,8 +102,7 @@ const JiraConfirmation = ({ confirmationData }) => {
             <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Please review the final ticket information:</p>
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800 text-sm">
                 {Object.entries(draft_data).map(([key, value]) => {
-                    // Don't show internal fields or empty values
-                    if (key === 'project' || key === 'problem_details_group' || key === 'silicon_revisions_group' || !value) return null; 
+                    if (key === 'project' || key === 'problem_details_group' || key === 'silicon_revisions_group' || !value) return null;
                     const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     return (
                         <div key={key} className="grid grid-cols-3 gap-2 mb-1">
@@ -133,6 +131,21 @@ const JiraConfirmation = ({ confirmationData }) => {
                 ) : (
                     <p className="text-sm text-gray-600 dark:text-gray-400 italic">No potential duplicates were found.</p>
                 )}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button 
+                    onClick={onCancel}
+                    className="text-sm font-semibold py-2 px-4 rounded-md text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                >
+                    No, cancel
+                </button>
+                <button 
+                    onClick={onConfirm}
+                    className="text-sm font-semibold py-2 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                >
+                    Yes, create ticket
+                </button>
             </div>
         </div>
     );
@@ -361,7 +374,11 @@ export default function App() {
                                         {msg.content.map((summary, i) => <JiraSummary key={i} summary={summary} />)}
                                     </div>
                                 ) : msg.type === 'confirmation_request' ? (
-                                    <JiraConfirmation confirmationData={msg.content} />
+                                    <JiraConfirmation
+                                        confirmationData={msg.content}
+                                        onConfirm={handleConfirmCreation}
+                                        onCancel={handleCancelCreation}
+                                    />
                                 ) : null}
                             </div>
                             {msg.role === 'user' && <UserIcon />}
