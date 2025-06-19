@@ -311,7 +311,7 @@ export default function App() {
                 <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
                     New Chat
                 </button>
-                <h1 className="text-xl font-bold text-center text-gray-800 dark:text-gray-100">Jira Triage Agent</h1>
+               <h1 className="text-xl font-bold text-center text-gray-100 [text-shadow:0_0_8px_rgba(255,255,255,0.3)]">Jira Triage Agent</h1>
                 <div className="w-20"></div> {/* This empty div keeps the title centered */}
             </header>
 
