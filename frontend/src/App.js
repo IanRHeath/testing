@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './index.css';
+import companyLogo from './logo.svg';
 
 const UserIcon = () => (
     <div className="w-8 h-8 text-white bg-blue-500 rounded-full p-1.5 shrink-0">
@@ -309,11 +310,14 @@ export default function App() {
         <div className="relative flex flex-col h-screen font-sans dark-radial-background text-gray-200">
         <div className="pulsating-light"></div> {/* <-- ADD THIS LINE */}
             <header className="p-4 shadow-sm flex justify-between items-center bg-black/30 border-b border-white/10 backdrop-blur-sm">
-                <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold py-1 px-3 border border-gray-300 dark:border-gray-600 rounded-md hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
-                    New Chat
-                </button>
-               <h1 className="text-xl font-bold text-center text-gray-100 [text-shadow:0_0_8px_rgba(255,255,255,0.3)]">Jira Triage Agent</h1>
-                <div className="w-20"></div> {/* This empty div keeps the title centered */}
+                <div className="flex items-center">
+                    <img src={companyLogo} alt="Company Logo" className="h-8 w-auto mr-4" />
+                    <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-300 hover:text-white font-semibold py-1 px-3 border border-white/30 rounded-md hover:bg-white/10 transition-colors">
+                        New Chat
+                    </button>
+                </div>
+                <h1 className="text-xl font-bold text-center text-gray-100 [text-shadow:0_0_8px_rgba(255,255,255,0.3)]">Jira Triage Agent</h1>
+                <div className="w-48"></div> {/* Adjusted width for balance */}
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
