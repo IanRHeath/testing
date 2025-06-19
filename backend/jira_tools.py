@@ -30,12 +30,13 @@ class TicketCreator:
         """Resets the state to start a new ticket creation."""
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
-        self.initial_title = ""  
+        self.initial_title = ""
         self.required_fields = [
             "project", "program", "summary", "system",
             "severity", "triage_category", "triage_assignment",
-            "silicon_revision", "iod_silicon_die_revision", "ccd_silicon_die_revision",
-            "bios_version", "description", "steps_to_reproduce"
+            "silicon_revision",  
+            "bios_version",
+            "problem_details_group"
         ]
         self.is_active = False
 
@@ -49,24 +50,36 @@ class TicketCreator:
 
     def set_field(self, field_name: str, field_value: str) -> dict | str:
         """
-        Sets a field in the draft. If it's the last field, it automatically
-        returns the formatted ticket data for confirmation. Otherwise, it returns
-        the next required field question.
+        Sets a field in the draft. If the silicon_revision is provided, it populates
+        all three silicon revision fields automatically.
         """
         if not self.is_active:
-            return {
-                "question": "Error: No ticket creation is currently in progress. Please start by using 'start_ticket_creation'.",
-                "options": []
-            }
+            return { "question": "Error: No ticket creation is currently in progress.", "options": [] }
 
         field_name_lower = field_name.lower().replace(" ", "_")
-
-        self.draft_data[field_name_lower] = field_value
+        
+        if field_name_lower == 'silicon_revision':
+            self.draft_data['silicon_revision'] = field_value
+            self.draft_data['iod_silicon_die_revision'] = field_value
+            self.draft_data['ccd_silicon_die_revision'] = field_value
+        
+        elif field_name_lower == 'problem_details_group':
+            try:
+                if '---' not in field_value:
+                    raise ValueError("Please use '---' to separate the description from the steps to reproduce.")
+                description, steps = field_value.split('---', 1)
+                self.draft_data['description'] = description.strip()
+                self.draft_data['steps_to_reproduce'] = steps.strip()
+                self.draft_data['problem_details_group'] = 'completed'
+            except ValueError as e:
+                return { "next_field": field_name_lower, "question": f"Error: {e}. Please try again.", "options": [] }
+        
+        else:
+            self.draft_data[field_name_lower] = field_value
             
         next_step = self._get_next_required_field()
         
         if next_step.get("next_field") == "None":
-
             return self.finalize(confirmed=False)
         else:
             return next_step
@@ -83,7 +96,6 @@ class TicketCreator:
                     question = "What Program is this ticket for?"
                 elif field == 'summary':
                     question = f"You started this ticket for '{self.initial_title}'. Please provide a concise, formal summary for the ticket."
-                    options = []
                 elif field == 'system':
                     program_code = self.draft_data.get('program', '').upper()
                     options = system_map.get(program_code, [])
@@ -99,20 +111,15 @@ class TicketCreator:
                     options = triage_assignment_map.get(category_code, [])
                     question = f"What is the Triage Assignment (Category: {category_code})?"
                 elif field == 'silicon_revision':
-                    question = "What is the main Silicon Revision? (e.g., A0, B1)"
+                    question = "What is the Silicon Revision? (This value will be used for all revision fields)"
                     options = sorted(list(VALID_SILICON_REVISIONS))
-                elif field == 'iod_silicon_die_revision':
-                    question = "Next, what is the IOD Silicon Die Revision?"
-                    options = sorted(list(VALID_SILICON_REVISIONS))
-                elif field == 'ccd_silicon_die_revision':
-                    question = "And what is the CCD Silicon Die Revision?"
-                    options = sorted(list(VALID_SILICON_REVISIONS))
-                elif field == 'steps_to_reproduce':
-                    question = "Please provide detailed steps to reproduce the issue."
-
+                elif field == 'problem_details_group':
+                    question = "Please provide the Description, followed by '---', then the Steps to Reproduce. Example: System hangs at POST code 55. --- 1. Apply power. 2. Observe POST code."
+                    options = []
+                
                 return {"next_field": field, "question": question, "options": options}
 
-        return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
+        return {"next_field": "None", "question": "All required fields are set.", "options": []}
         
     def _run_duplicate_check(self) -> list:
         """
