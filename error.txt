@@ -1,1 +1,126 @@
-Invalid priority 'High'. Must be one of ['P1', 'P2', 'P3', 'P4'].
+
+> Entering new AgentExecutor chain...
+
+Invoking: `set_ticket_field` with `{'field_name': 'steps_to_reproduce', 'field_value': '1.turn that machine on. 2. turn it off'}`
+
+
+--- Running duplicate check with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" ---
+
+Attempting JIRA search with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" | Limit: 25
+Successfully found 25 issues.
+--- Found 25 candidates. Comparing summaries for duplicates... ---
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+**Please review the following ticket information:**
+
+- **Project**: PLAT
+- **Program**: KRK
+- **Summary**: hellogoodbyesummary
+- **System**: System-Krackan1 FP8 APU
+- **Severity**: Low
+- **Triage Category**: CPU
+- **Triage Assignment**: Automation Infrastructure
+- **Silicon Revision**: B0B
+- **Iod Silicon Die Revision**: B0D
+- **Ccd Silicon Die Revision**: B1
+- **Bios Version**: test432
+- **Description**: goodbye
+- **Steps To Reproduce**: 1.turn that machine on. 2. turn it off
+
+---
+*No potential duplicates were found.*
+
+Invoking: `finalize_ticket_creation` with `{'confirmed': False}`
+
+
+--- Running duplicate check with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" ---
+
+Attempting JIRA search with JQL: project = "PLAT" AND "Program" = "Krackan1 [PRG-000388]" | Limit: 25
+Successfully found 25 issues.
+--- Found 25 candidates. Comparing summaries for duplicates... ---
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+DEBUG: Similarity score between summaries is '1'.
+**Please review the following ticket information:**
+
+- **Project**: PLAT
+- **Program**: KRK
+- **Summary**: hellogoodbyesummary
+- **System**: System-Krackan1 FP8 APU
+- **Severity**: Low
+- **Triage Category**: CPU
+- **Triage Assignment**: Automation Infrastructure
+- **Silicon Revision**: B0B
+- **Iod Silicon Die Revision**: B0D
+- **Ccd Silicon Die Revision**: B1
+- **Bios Version**: test432
+- **Description**: goodbye
+- **Steps To Reproduce**: 1.turn that machine on. 2. turn it off
+
+---
+*No potential duplicates were found.*
+Here is the information I have collected for your new ticket:
+
+- Project: PLAT
+- Program: KRK
+- Summary: hellogoodbyesummary
+- System: System-Krackan1 FP8 APU
+- Severity: Low
+- Triage Category: CPU
+- Triage Assignment: Automation Infrastructure
+- Silicon Revision: B0B
+- Iod Silicon Die Revision: B0D
+- Ccd Silicon Die Revision: B1
+- Bios Version: test432
+- Description: goodbye
+- Steps To Reproduce: 1.turn that machine on. 2. turn it off
+
+Is this information correct? Please respond with 'yes' to create the ticket or 'no' to cancel.
+
+> Finished chain.
+127.0.0.1 - - [18/Jun/2025 20:50:27] "POST /api/query HTTP/1.1" 200 -
