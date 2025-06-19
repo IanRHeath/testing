@@ -9,7 +9,8 @@ from jira_utils import (
 )
 from jql_builder import (
     extract_params, build_jql, program_map, system_map,
-    VALID_SILICON_REVISIONS, VALID_TRIAGE_CATEGORIES, triage_assignment_map,
+    VALID_SILICON_REVISIONS,  
+    VALID_TRIAGE_CATEGORIES, triage_assignment_map,
     VALID_SEVERITY_LEVELS, extract_keywords_from_text, get_summary_similarity_score,
     descriptive_priority_map
 )
@@ -25,7 +26,7 @@ class TicketCreator:
     def __init__(self):
         self.reset()
 
-      def reset(self):
+    def reset(self):
         """Resets the state to start a new ticket creation."""
         print("INFO: TicketCreator state has been reset.")
         self.draft_data = {}
@@ -91,13 +92,16 @@ class TicketCreator:
                     question = f"What is the Triage Assignment (Category: {category_code})?"
                 elif field == 'silicon_revision':
                     question = "What is the main Silicon Revision? (e.g., A0, B1)"
+                    options = sorted(list(VALID_SILICON_REVISIONS))
                 elif field == 'iod_silicon_die_revision':
                     question = "Next, what is the IOD Silicon Die Revision?"
+                    options = sorted(list(VALID_SILICON_REVISIONS))
                 elif field == 'ccd_silicon_die_revision':
                     question = "And what is the CCD Silicon Die Revision?"
+                    options = sorted(list(VALID_SILICON_REVISIONS))
                 elif field == 'steps_to_reproduce':
                     question = "Please provide detailed steps to reproduce the issue."
-
+                    
                 return {"next_field": field, "question": question, "options": options}
 
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
