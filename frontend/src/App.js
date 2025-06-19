@@ -101,7 +101,7 @@ const JiraConfirmation = ({ confirmationData, onConfirm, onCancel }) => {
     return (
         <div>
             <p className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Please review the final ticket information:</p>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800 text-sm">
+            <div className="border border-slate-700 rounded-lg p-4 mb-4 bg-slate-800/60 text-sm">
                 {Object.entries(draft_data).map(([key, value]) => {
                     if (key === 'project' || key === 'problem_details_group' || key === 'silicon_revisions_group' || !value) return null;
                     const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
