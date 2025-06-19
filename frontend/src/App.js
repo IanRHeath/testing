@@ -311,7 +311,9 @@ export default function App() {
         <div className="pulsating-light"></div> {/* <-- ADD THIS LINE */}
             <header className="p-4 shadow-sm flex justify-between items-center bg-black/30 border-b border-white/10 backdrop-blur-sm">
                 <div className="flex items-center">
-                    <img src={companyLogo} alt="Company Logo" className="h-8 w-auto mr-4" />
+                    <div className="bg-white rounded-full p-1 mr-3 flex items-center justify-center">
+                        <img src={companyLogo} alt="Company Logo" className="h-6 w-auto" />
+                    </div>
                     <button onClick={startNewChat} title="Start a new chat" className="text-sm text-gray-300 hover:text-white font-semibold py-1 px-3 border border-white/30 rounded-md hover:bg-white/10 transition-colors">
                         New Chat
                     </button>
