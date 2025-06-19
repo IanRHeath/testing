@@ -114,23 +114,54 @@ class TicketCreator:
 
         return {"next_field": "None", "question": "All required fields are set. You can now finalize the ticket.", "options": ["Finalize Ticket", "Cancel"]}
         
-    def _run_duplicate_check(self):
-        summary = self.draft_data.get('summary', '')
-        project = self.draft_data.get('project', '')
+    def _run_duplicate_check(self) -> list:
+        """
+        Internal method to find potential duplicates based on the draft data.
+        Returns a list of potential duplicate ticket objects.
+        """
+        summary = self.draft_data.get('summary')
+        project = self.draft_data.get('project')
         program_code = self.draft_data.get('program', '').upper()
 
-        if program_code and program_code in program_map:
-            program_full_name = program_map[program_code]
-            dupe_jql = f'project = "{project}" AND "Program" = "{program_full_name}"'
-            candidate_tickets = search_jira_issues(dupe_jql, JIRA_CLIENT_INSTANCE, limit=25)
+        if not all([summary, project, program_code]):
+            print("WARNING: Not enough info for duplicate check (missing summary, project, or program).")
+            return []
 
-            if candidate_tickets:
-                print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
+        if program_code in program_map:
+            program_full_name = program_map[program_code]
+            jql_query = f'project = "{project}" AND "Program" = "{program_full_name}"'
+            
+            print(f"--- Running duplicate check with JQL: {jql_query} ---")
+            candidate_tickets = search_jira_issues(jql_query, JIRA_CLIENT_INSTANCE, limit=25)
+
+            if not candidate_tickets:
+                return []
+
+            print(f"--- Found {len(candidate_tickets)} candidates. Comparing summaries for duplicates... ---")
+            
+            SIMILARITY_THRESHOLD = 8
+            duplicate_tickets = []
+            for candidate in candidate_tickets:
+                candidate_summary = candidate.get('summary')
+                if not candidate_summary:
+                    continue
+                try:
+                    similarity_score = get_summary_similarity_score(summary, candidate_summary)
+                    if similarity_score >= SIMILARITY_THRESHOLD:
+                        print(f"--- Found likely duplicate: {candidate['key']} with score {similarity_score} ---")
+                        duplicate_tickets.append(candidate)
+                except JiraBotError as e:
+                    print(f"WARNING: Could not compare summary for {candidate['key']}. Error: {e}")
+                    continue
+            
+            return duplicate_tickets
+        return []
 
     def finalize(self, confirmed: bool = False) -> str:
         """
-        If not confirmed, returns a formatted string of the draft data for user review.
-        If confirmed, runs a duplicate check, then creates the final ticket.
+        If not confirmed, runs a duplicate check and returns a formatted string of the
+        draft data and any potential duplicates for user review.
+        If confirmed, creates the final ticket.
         """
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
@@ -140,17 +171,23 @@ class TicketCreator:
                 return f"Error: Cannot finalize ticket. Missing required field: '{field}'."
         
         if not confirmed:
-            review_data = "Please review the following ticket information:\n\n"
+            review_data = "**Please review the following ticket information:**\n\n"
             for key, value in self.draft_data.items():
                 review_data += f"- **{key.replace('_', ' ').title()}**: {value}\n"
+            
+            review_data += "\n---\n"
+
+            potential_duplicates = self._run_duplicate_check()
+            if potential_duplicates:
+                review_data += "**Warning: The following potential duplicates were found:**\n"
+                for ticket in potential_duplicates:
+                    review_data += f"- {ticket['key']}: {ticket['summary']} - {ticket['url']}\n"
+            else:
+                review_data += "*No potential duplicates were found.*\n"
+
             return review_data
-
-        # If confirmed=True, proceed with creating the ticket
+  
         print("--- Finalizing ticket with data ---")
-
-        # --- THE DUPLICATE CHECK IS NOW CALLED HERE ---
-        self._run_duplicate_check()
-
         print(self.draft_data)
         
         try:
