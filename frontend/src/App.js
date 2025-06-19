@@ -359,7 +359,7 @@ export default function App() {
                 </div>
             </main>
 
-            <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+            <footer className="p-4 bg-black/30 border-t border-white/10 backdrop-blur-sm">
                 <div className="max-w-3xl mx-auto">
                     {currentQuestion && <OptionsInput questionData={currentQuestion} onOptionSelect={handleOptionSelect} />}
 
