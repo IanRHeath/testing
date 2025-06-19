@@ -1,0 +1,100 @@
+> Finished chain.
+127.0.0.1 - - [18/Jun/2025 20:07:35] "POST /api/query HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2025 20:07:42] "OPTIONS /api/query HTTP/1.1" 200 -
+
+--- Received query: '1. hello 2. goodbye' ---
+
+
+> Entering new AgentExecutor chain...
+An unexpected error occurred: Connection error.
+Traceback (most recent call last):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_transports\default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_sync\connection.py", line 101, in handle_request
+    raise exc
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_sync\connection.py", line 78, in handle_request
+    stream = self._connect(request)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_sync\connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_backends\sync.py", line 207, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python310\lib\contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\openai\_base_client.py", line 972, in request
+    response = self._client.send(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_client.py", line 914, in send
+    response = self._send_handling_auth(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_transports\default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python310\lib\contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\app.py", line 49, in query_agent
+    result = agent_executor.invoke({
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\chains\base.py", line 167, in invoke
+    raise e
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\chains\base.py", line 157, in invoke
+    self._call(inputs, run_manager=run_manager)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\agents\agent.py", line 1620, in _call
+    next_step_output = self._take_next_step(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\agents\agent.py", line 1326, in _take_next_step
+    [
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\agents\agent.py", line 1326, in <listcomp>
+    [
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\agents\agent.py", line 1354, in _iter_next_step
+    output = self._action_agent.plan(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain\agents\agent.py", line 577, in plan
+    for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 3438, in stream
+    yield from self.transform(iter([input]), config, **kwargs)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 3424, in transform
+    yield from self._transform_stream_with_config(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 2215, in _transform_stream_with_config
+    chunk: Output = context.run(next, iterator)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 3386, in _transform
+    yield from final_pipeline
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 1429, in transform
+    for ichunk in input:
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 5647, in transform
+    yield from self.bound.transform(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\runnables\base.py", line 1447, in transform
+    yield from self.stream(final, config, **kwargs)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_core\language_models\chat_models.py", line 499, in stream
+    for chunk in self._stream(input_messages, stop=stop, **kwargs):
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\langchain_openai\chat_models\base.py", line 987, in _stream
+    response = self.client.create(**payload)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\openai\_utils\_utils.py", line 287, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\openai\resources\chat\completions\completions.py", line 925, in create
+    return self._post(
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\openai\_base_client.py", line 1249, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "C:\Users\ianheath\Desktop\jira_auto_triage\backend\venv\lib\site-packages\openai\_base_client.py", line 1004, in request
+    raise APIConnectionError(request=request) from err
+openai.APIConnectionError: Connection error.
+127.0.0.1 - - [18/Jun/2025 20:07:56] "POST /api/query HTTP/1.1" 500 -
