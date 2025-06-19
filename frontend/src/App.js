@@ -39,26 +39,27 @@ const JiraTicket = ({ ticket }) => {
             setTimeout(() => setCopied(false), 2000);
         });
     };
+    
     const statusClass = (ticket.status === 'Open' || ticket.status === 'Opened')
-        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        ? 'bg-zinc-700 text-zinc-200' 
+        : 'bg-green-800/50 text-green-200';
     return (
         <div className="border border-slate-700 rounded-lg p-4 mb-3 bg-slate-800/60 hover:bg-slate-700/60 transition-colors duration-200">
             <div className="flex justify-between items-start mb-2">
-                <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ticket.key}</a>
+                <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-gray-200 hover:text-white hover:underline">{ticket.key}</a>
                 <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>{ticket.status}</span>
-                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    <button onClick={handleCopy} title="Copy Details" className="p-1 text-gray-400 dark:text-gray-500 hover:text-white rounded-md hover:bg-gray-200/10 transition-colors">
                         {copied ? <CheckIcon /> : <CopyIcon />}
                     </button>
                 </div>
             </div>
-            <p className="text-gray-800 dark:text-gray-300 mb-3">{ticket.summary}</p>
+            <p className="text-gray-300 mb-3">{ticket.summary}</p>
             <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-2 gap-x-4">
-                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Assignee:</strong> {ticket.assignee}</p>
-                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Priority:</strong> {ticket.priority}</p>
-                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Created:</strong> {ticket.created}</p>
-                <p><strong className="font-medium text-gray-600 dark:text-gray-300">Updated:</strong> {ticket.updated}</p>
+                <p><strong className="font-medium text-gray-300">Assignee:</strong> {ticket.assignee}</p>
+                <p><strong className="font-medium text-gray-300">Priority:</strong> {ticket.priority}</p>
+                <p><strong className="font-medium text-gray-300">Created:</strong> {ticket.created}</p>
+                <p><strong className="font-medium text-gray-300">Updated:</strong> {ticket.updated}</p>
             </div>
         </div>
     );
