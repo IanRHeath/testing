@@ -39,7 +39,6 @@ def query_agent():
         if msg.get('role') == 'user':
             chat_history.append(HumanMessage(content=msg.get('content')))
         elif msg.get('role') == 'ai':
-
             chat_history.append(AIMessage(content=str(msg.get('raw_output', msg.get('content')))))
 
 
@@ -59,7 +58,14 @@ def query_agent():
             action, tool_output = result['intermediate_steps'][-1] 
             tool_used = action.tool
 
-        if tool_used in ['summarize_ticket_tool', 'summarize_multiple_tickets_tool'] and isinstance(tool_output, list):
+        if isinstance(tool_output, dict) and tool_output.get("type") == "confirmation_request":
+            response_data = {
+                "type": "confirmation_request",
+                "content": tool_output['content'],
+                "raw_output": "The user is currently reviewing the ticket details."
+            }
+
+        elif tool_used in ['summarize_ticket_tool', 'summarize_multiple_tickets_tool'] and isinstance(tool_output, list):
             response_data = {
                 "type": "summary_result",
                 "content": tool_output,
