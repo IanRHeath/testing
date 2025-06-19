@@ -58,9 +58,6 @@ class TicketCreator:
             print("INFO: Keeping existing summary.")
         else:
             self.draft_data[field_name_lower] = field_value
-
-        if field_name_lower == 'program':
-            self._run_duplicate_check()
             
         return self._get_next_required_field()
 
@@ -120,7 +117,7 @@ class TicketCreator:
     def finalize(self, confirmed: bool = False) -> str:
         """
         If not confirmed, returns a formatted string of the draft data for user review.
-        If confirmed, validates all data and creates the final ticket.
+        If confirmed, runs a duplicate check, then creates the final ticket.
         """
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
@@ -135,7 +132,12 @@ class TicketCreator:
                 review_data += f"- **{key.replace('_', ' ').title()}**: {value}\n"
             return review_data
 
+        # If confirmed=True, proceed with creating the ticket
         print("--- Finalizing ticket with data ---")
+
+        # --- THE DUPLICATE CHECK IS NOW CALLED HERE ---
+        self._run_duplicate_check()
+
         print(self.draft_data)
         
         try:
