@@ -154,11 +154,13 @@ class TicketCreator:
             return duplicate_tickets
         return []
 
-    def finalize(self, confirmed: bool = False) -> str:
+    # In the TicketCreator class in jira_tools.py
+
+    def finalize(self, confirmed: bool = False) -> dict | str:
         """
-        If not confirmed, runs a duplicate check and returns a formatted string of the
-        draft data and any potential duplicates for user review.
-        If confirmed, creates the final ticket.
+        If not confirmed, runs a duplicate check and returns a structured dictionary
+        containing the draft data and any potential duplicates.
+        If confirmed, creates the final ticket and returns a success string.
         """
         if not self.is_active:
             return "Error: No ticket creation is currently in progress."
@@ -167,23 +169,19 @@ class TicketCreator:
             if field not in self.draft_data:
                 return f"Error: Cannot finalize ticket. Missing required field: '{field}'."
         
+        # --- THIS BLOCK IS NOW REWRITTEN TO RETURN A DICTIONARY ---
         if not confirmed:
-            review_data = "**Please review the following ticket information:**\n\n"
-            for key, value in self.draft_data.items():
-                review_data += f"- **{key.replace('_', ' ').title()}**: {value}\n"
-            
-            review_data += "\n---\n"
-
+            print("--- Running duplicate check for final review ---")
             potential_duplicates = self._run_duplicate_check()
-            if potential_duplicates:
-                review_data += "**Warning: The following potential duplicates were found:**\n"
-                for ticket in potential_duplicates:
-                    review_data += f"- {ticket['key']}: {ticket['summary']} - {ticket['url']}\n"
-            else:
-                review_data += "*No potential duplicates were found.*\n"
-
-            return review_data
-  
+            
+            confirmation_data = {
+                "draft_data": self.draft_data,
+                "duplicates": potential_duplicates
+            }
+            # This special dictionary structure will be handled by app.py
+            return {"type": "confirmation_request", "content": confirmation_data}
+        
+        # If confirmed=True, proceed with creating the ticket
         print("--- Finalizing ticket with data ---")
         print(self.draft_data)
         
