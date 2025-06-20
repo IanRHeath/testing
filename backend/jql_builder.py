@@ -301,6 +301,15 @@ def build_jql(params: Dict[str, Any], exclude_key: str = None) -> str:
     if exclude_key:
         jql_parts.append(f"issueKey != '{exclude_key}'")
 
+    if status_val := params.get("status"):
+        if isinstance(status_val, list):
+            # Handle multiple statuses like "open or in progress"
+            formatted_statuses = [f'"{s.strip()}"' for s in status_val]
+            jql_parts.append(f"status in ({', '.join(formatted_statuses)})")
+        elif isinstance(status_val, str) and status_val.strip():
+            # Handle a single status
+            jql_parts.append(f'status = "{status_val.strip()}"')
+
     if raw_prio := params.get("priority"):
         if isinstance(raw_prio, list):
             mapped_prios = []
