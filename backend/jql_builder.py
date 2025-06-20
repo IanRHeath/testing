@@ -194,10 +194,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
     You are an expert in extracting JIRA query parameters from natural language prompts.
     Your goal is to create a JSON object based on the user's request.
 
-    Extractable fields are: intent, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days, date_number, date_unit, date_field, date_operator.
+    Extractable fields are: intent, status, priority, program, project, maxResults, order, keywords, created_after, created_before, updated_after, updated_before, assignee, reporter, stale_days, date_number, date_unit, date_field, date_operator.
     
     **Extraction Rules:**
     - **LIMITS:** If the user specifies a number of tickets (e.g., 'find 3 tickets') or uses a number word (e.g., 'find one ticket', 'show me two bugs'), use that number for `maxResults`. The word 'a' should be interpreted as 1. If no number is given, default to 20. The "maxResults" field is MANDATORY.
+    - **STATUS:** For words like 'open', 'closed', 'resolved', 'in progress', etc., extract them into the `status` field. The value should be capitalized correctly (e.g., "In Progress").
     - For time queries like "created in the last 2 years", extract "date_number": 2, "date_unit": "year", "date_field": "created", "date_operator": "after".
     - For "stale tickets" or "not updated in X days", extract `stale_days`. This overrides other date fields.
     - USERS: For "assigned to me", use "assignee": "currentUser()". For "assigned to Ian Heath", reformat to "assignee": "Heath, Ian".
@@ -214,14 +215,11 @@ def extract_params(prompt_text: str) -> Dict[str, Any]:
       "maxResults": 20
     }}
 
-    Example 2 (Relative Time - Month): "show bugs from last month"
+    Example 2 (Status and Keywords): "show me closed tickets about memory leaks"
     {{
       "intent": "list",
-      "keywords": "bug",
-      "date_number": 1,
-      "date_unit": "month",
-      "date_field": "created",
-      "date_operator": "after",
+      "status": "Closed",
+      "keywords": "memory leak",
       "maxResults": 20
     }}
     """
